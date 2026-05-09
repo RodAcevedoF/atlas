@@ -1,0 +1,14 @@
+{
+  "name": "@atlas/infra/llm-anthropic",
+  "projectType": "library",
+  "tags": ["scope:infrastructure", "type:lib"],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "{projectRoot}"
+      }
+    }
+  }
+}

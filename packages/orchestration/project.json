@@ -1,0 +1,14 @@
+{
+  "name": "@atlas/orchestration",
+  "projectType": "library",
+  "tags": ["scope:application", "type:lib"],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "{projectRoot}"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.nx/
+.turbo/
+*.local
+.env
+.env.*
+!.env.example
+bun.lock

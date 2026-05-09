@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@atlas/domain": ["packages/domain/src/index.ts"],
+      "@atlas/application": ["packages/application/src/index.ts"],
+      "@atlas/orchestration": ["packages/orchestration/src/index.ts"],
+      "@atlas/shared": ["packages/shared/src/index.ts"],
+      "@atlas/ui": ["packages/ui/src/index.ts"],
+      "@atlas/infra/llm-anthropic": ["packages/infrastructure/llm-anthropic/src/index.ts"],
+      "@atlas/infra/vectorstore-pgvector": ["packages/infrastructure/vectorstore-pgvector/src/index.ts"],
+      "@atlas/infra/market-polymarket": ["packages/infrastructure/market-polymarket/src/index.ts"],
+      "@atlas/infra/store-drizzle": ["packages/infrastructure/store-drizzle/src/index.ts"],
+      "@atlas/infra/orchestration-langgraph": ["packages/infrastructure/orchestration-langgraph/src/index.ts"],
+      "@atlas/infra/eventbus-sse": ["packages/infrastructure/eventbus-sse/src/index.ts"],
+      "@atlas/infra/queue-postgres": ["packages/infrastructure/queue-postgres/src/index.ts"]
+    }
+  }
+}

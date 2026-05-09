@@ -1,0 +1,17 @@
+{
+  "name": "@atlas/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/main.ts",
+    "start": "bun src/main.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@atlas/domain": "*",
+    "@atlas/application": "*",
+    "@atlas/shared": "*",
+    "fastify": "^5.2.1"
+  }
+}

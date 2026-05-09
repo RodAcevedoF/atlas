@@ -1,0 +1,14 @@
+{
+  "name": "@atlas/infra/vectorstore-pgvector",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@atlas/application": "*",
+    "@atlas/shared": "*"
+  }
+}
