@@ -1,9 +1,9 @@
 import type { SearchResult, VectorDoc, VectorStorePort } from "@atlas/application";
 import { NotImplementedError } from "@atlas/shared";
 
-export class PgvectorAdapter implements VectorStorePort {
+export class MongoVectorStore implements VectorStorePort {
   async upsert(_collection: string, _docs: VectorDoc[]): Promise<void> {
-    throw new NotImplementedError("PgvectorAdapter.upsert");
+    throw new NotImplementedError("MongoVectorStore.upsert");
   }
 
   async search(
@@ -12,10 +12,10 @@ export class PgvectorAdapter implements VectorStorePort {
     _topK: number,
     _filter?: Record<string, unknown>,
   ): Promise<SearchResult[]> {
-    throw new NotImplementedError("PgvectorAdapter.search");
+    throw new NotImplementedError("MongoVectorStore.search");
   }
 
   async delete(_collection: string, _ids: string[]): Promise<void> {
-    throw new NotImplementedError("PgvectorAdapter.delete");
+    throw new NotImplementedError("MongoVectorStore.delete");
   }
 }

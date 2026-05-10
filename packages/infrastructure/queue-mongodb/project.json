@@ -1,5 +1,5 @@
 {
-  "name": "@atlas/infra/queue-postgres",
+  "name": "@atlas/infra/queue-mongodb",
   "projectType": "library",
   "tags": ["scope:infrastructure", "type:lib"],
   "targets": {

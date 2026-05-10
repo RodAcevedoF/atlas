@@ -1,5 +1,5 @@
 {
-  "name": "@atlas/infra/vectorstore-pgvector",
+  "name": "@atlas/infra/store-mongodb",
   "projectType": "library",
   "tags": ["scope:infrastructure", "type:lib"],
   "targets": {

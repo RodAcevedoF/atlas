@@ -1,5 +1,5 @@
 {
-  "name": "@atlas/infra/vectorstore-pgvector",
+  "name": "@atlas/infra/queue-mongodb",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@atlas/application": "*",
-    "@atlas/shared": "*"
+    "@atlas/shared": "*",
+    "agenda": "^6.2.5",
+    "mongodb": "^7.2.0"
   }
 }

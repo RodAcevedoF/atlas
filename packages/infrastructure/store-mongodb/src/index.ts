@@ -1,3 +1,6 @@
+export * from "./client.ts";
+export * from "./collections.ts";
+export * from "./indexes.ts";
 import type { MarketStorePort } from "@atlas/application";
 import type {
   AnalysisRun,
@@ -13,53 +16,53 @@ import type {
 } from "@atlas/domain";
 import { NotImplementedError } from "@atlas/shared";
 
-export class DrizzleMarketStore implements MarketStorePort {
+export class MongoMarketStore implements MarketStorePort {
   async upsertMarket(_market: Market): Promise<void> {
-    throw new NotImplementedError("DrizzleMarketStore.upsertMarket");
+    throw new NotImplementedError("MongoMarketStore.upsertMarket");
   }
 
   async findMarket(_id: MarketId): Promise<Market | null> {
-    throw new NotImplementedError("DrizzleMarketStore.findMarket");
+    throw new NotImplementedError("MongoMarketStore.findMarket");
   }
 
   async listMarkets(_filter?: { status?: string; limit?: number }): Promise<Market[]> {
-    throw new NotImplementedError("DrizzleMarketStore.listMarkets");
+    throw new NotImplementedError("MongoMarketStore.listMarkets");
   }
 
   async upsertEvent(_event: PredictionEvent): Promise<void> {
-    throw new NotImplementedError("DrizzleMarketStore.upsertEvent");
+    throw new NotImplementedError("MongoMarketStore.upsertEvent");
   }
 
   async findEvent(_id: EventId): Promise<PredictionEvent | null> {
-    throw new NotImplementedError("DrizzleMarketStore.findEvent");
+    throw new NotImplementedError("MongoMarketStore.findEvent");
   }
 
   async listEvents(_filter?: { limit?: number }): Promise<PredictionEvent[]> {
-    throw new NotImplementedError("DrizzleMarketStore.listEvents");
+    throw new NotImplementedError("MongoMarketStore.listEvents");
   }
 
   async insertPriceTick(_tick: PriceTick): Promise<void> {
-    throw new NotImplementedError("DrizzleMarketStore.insertPriceTick");
+    throw new NotImplementedError("MongoMarketStore.insertPriceTick");
   }
 
   async getPriceHistory(_marketId: MarketId, _from: Date, _to: Date): Promise<PriceTick[]> {
-    throw new NotImplementedError("DrizzleMarketStore.getPriceHistory");
+    throw new NotImplementedError("MongoMarketStore.getPriceHistory");
   }
 
   async insertTrade(_trade: Trade): Promise<void> {
-    throw new NotImplementedError("DrizzleMarketStore.insertTrade");
+    throw new NotImplementedError("MongoMarketStore.insertTrade");
   }
 
   async getRecentTrades(_marketId: MarketId, _limit: number): Promise<Trade[]> {
-    throw new NotImplementedError("DrizzleMarketStore.getRecentTrades");
+    throw new NotImplementedError("MongoMarketStore.getRecentTrades");
   }
 
   async saveInsight(_insight: Insight): Promise<void> {
-    throw new NotImplementedError("DrizzleMarketStore.saveInsight");
+    throw new NotImplementedError("MongoMarketStore.saveInsight");
   }
 
   async findInsight(_id: string): Promise<Insight | null> {
-    throw new NotImplementedError("DrizzleMarketStore.findInsight");
+    throw new NotImplementedError("MongoMarketStore.findInsight");
   }
 
   async listInsights(_filter: {
@@ -68,26 +71,26 @@ export class DrizzleMarketStore implements MarketStorePort {
     kind?: InsightKind;
     limit?: number;
   }): Promise<Insight[]> {
-    throw new NotImplementedError("DrizzleMarketStore.listInsights");
+    throw new NotImplementedError("MongoMarketStore.listInsights");
   }
 
   async saveAnalysisRun(_run: AnalysisRun): Promise<void> {
-    throw new NotImplementedError("DrizzleMarketStore.saveAnalysisRun");
+    throw new NotImplementedError("MongoMarketStore.saveAnalysisRun");
   }
 
   async updateAnalysisRun(_id: string, _patch: Partial<AnalysisRun>): Promise<void> {
-    throw new NotImplementedError("DrizzleMarketStore.updateAnalysisRun");
+    throw new NotImplementedError("MongoMarketStore.updateAnalysisRun");
   }
 
   async findAnalysisRun(_id: string): Promise<AnalysisRun | null> {
-    throw new NotImplementedError("DrizzleMarketStore.findAnalysisRun");
+    throw new NotImplementedError("MongoMarketStore.findAnalysisRun");
   }
 
   async findWatchlist(_userId: string): Promise<Watchlist | null> {
-    throw new NotImplementedError("DrizzleMarketStore.findWatchlist");
+    throw new NotImplementedError("MongoMarketStore.findWatchlist");
   }
 
   async saveWatchlist(_watchlist: Watchlist): Promise<void> {
-    throw new NotImplementedError("DrizzleMarketStore.saveWatchlist");
+    throw new NotImplementedError("MongoMarketStore.saveWatchlist");
   }
 }
