@@ -1,4 +1,11 @@
-import type { Market, MarketCategory, MarketId, PredictionEvent, PriceTick, Trade } from "@atlas/domain";
+import type {
+  Market,
+  MarketCategory,
+  MarketId,
+  PredictionEvent,
+  PriceTick,
+  Trade,
+} from "@atlas/domain";
 import type { EventId } from "@atlas/domain";
 
 export interface MarketFilter {

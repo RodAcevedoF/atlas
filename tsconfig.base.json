@@ -18,10 +18,14 @@
       "@atlas/shared": ["packages/shared/src/index.ts"],
       "@atlas/ui": ["packages/ui/src/index.ts"],
       "@atlas/infra/llm-anthropic": ["packages/infrastructure/llm-anthropic/src/index.ts"],
-      "@atlas/infra/vectorstore-mongodb": ["packages/infrastructure/vectorstore-mongodb/src/index.ts"],
+      "@atlas/infra/vectorstore-mongodb": [
+        "packages/infrastructure/vectorstore-mongodb/src/index.ts"
+      ],
       "@atlas/infra/market-polymarket": ["packages/infrastructure/market-polymarket/src/index.ts"],
       "@atlas/infra/store-mongodb": ["packages/infrastructure/store-mongodb/src/index.ts"],
-      "@atlas/infra/orchestration-langgraph": ["packages/infrastructure/orchestration-langgraph/src/index.ts"],
+      "@atlas/infra/orchestration-langgraph": [
+        "packages/infrastructure/orchestration-langgraph/src/index.ts"
+      ],
       "@atlas/infra/eventbus-sse": ["packages/infrastructure/eventbus-sse/src/index.ts"],
       "@atlas/infra/queue-mongodb": ["packages/infrastructure/queue-mongodb/src/index.ts"]
     }

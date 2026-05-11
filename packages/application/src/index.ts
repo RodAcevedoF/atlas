@@ -20,6 +20,7 @@ export type {
   IngestMarketsOutput,
   IngestMarkets,
 } from "./use-cases/ingest-markets.ts";
+export { IngestMarketsUseCase } from "./use-cases/ingest-markets-usecase.ts";
 export type {
   RunMarketIntelligenceInput,
   RunMarketIntelligenceOutput,

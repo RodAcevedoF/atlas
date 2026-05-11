@@ -4,7 +4,12 @@ export interface GraphRunInput {
   runId?: string;
 }
 
-export type GraphEventType = "node:start" | "node:end" | "node:error" | "run:complete" | "run:error";
+export type GraphEventType =
+  | "node:start"
+  | "node:end"
+  | "node:error"
+  | "run:complete"
+  | "run:error";
 
 export interface GraphEvent {
   runId: string;

@@ -9,5 +9,8 @@ export interface TopTrader {
 
 export interface OnChainPort {
   getTopTraders(marketId: MarketId, limit?: number): Promise<TopTrader[]>;
-  getWalletActivity(walletAddress: string, marketId?: MarketId): Promise<{ volume: number; positions: number }>;
+  getWalletActivity(
+    walletAddress: string,
+    marketId?: MarketId,
+  ): Promise<{ volume: number; positions: number }>;
 }
