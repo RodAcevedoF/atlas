@@ -22,5 +22,9 @@ export interface GraphEvent {
 export interface OrchestrationPort {
   run(input: GraphRunInput): Promise<Record<string, unknown>>;
   stream(input: GraphRunInput): AsyncIterable<GraphEvent>;
-  resume(runId: string, resumeInput: Record<string, unknown>): Promise<Record<string, unknown>>;
+  resume(
+    graphName: string,
+    runId: string,
+    resumeInput: Record<string, unknown>,
+  ): Promise<Record<string, unknown>>;
 }

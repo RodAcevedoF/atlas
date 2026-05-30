@@ -1,5 +1,5 @@
 {
-  "name": "@atlas/infra/orchestration-langgraph",
+  "name": "@atlas/infra/orchestration-http",
   "projectType": "library",
   "tags": ["scope:infrastructure", "type:lib"],
   "targets": {

@@ -1,6 +1,6 @@
 # @atlas/intelligence
 
-Atlas Python intelligence microservice — FastAPI + LangGraph. Exposes `OrchestrationPort`-shaped HTTP endpoints (`/graphs/{name}/run`, `/stream`, `/resume/{runId}`) consumed by the TS API through the planned `orchestration-http` adapter.
+Atlas Python intelligence microservice — FastAPI + LangGraph. Exposes `OrchestrationPort`-shaped HTTP endpoints (`/graphs/{name}/run`, `/stream`, `/resume/{runId}`) consumed by the TS API through the `@atlas/infra/orchestration-http` adapter.
 
 ## Setup
 

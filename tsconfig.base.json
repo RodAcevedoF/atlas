@@ -23,8 +23,8 @@
       ],
       "@atlas/infra/market-polymarket": ["packages/infrastructure/market-polymarket/src/index.ts"],
       "@atlas/infra/store-mongodb": ["packages/infrastructure/store-mongodb/src/index.ts"],
-      "@atlas/infra/orchestration-langgraph": [
-        "packages/infrastructure/orchestration-langgraph/src/index.ts"
+      "@atlas/infra/orchestration-http": [
+        "packages/infrastructure/orchestration-http/src/index.ts"
       ],
       "@atlas/infra/eventbus-sse": ["packages/infrastructure/eventbus-sse/src/index.ts"],
       "@atlas/infra/queue-mongodb": ["packages/infrastructure/queue-mongodb/src/index.ts"]
