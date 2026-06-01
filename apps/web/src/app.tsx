@@ -1,16 +1,11 @@
-import { useEffect, useState } from 'react';
 import './app.css';
-import { useMarketRepository } from './providers.tsx';
 import type {
+	GeoRegion,
 	MarketCategory,
 	MarketRecord,
 	MarketStatus,
 } from './repositories/market-repository.ts';
-import {
-	loadMarketDashboard,
-	type MarketDashboardData,
-} from './use-cases/load-market-dashboard.ts';
-import { syncMarketSnapshot } from './use-cases/sync-market-snapshot.ts';
+import { useMarketDashboard } from './use-market-dashboard.ts';
 
 const CATEGORY_OPTIONS: Array<{ label: string; value: MarketCategory }> = [
 	{ label: 'Politics', value: 'politics' },
@@ -29,13 +24,26 @@ const STATUS_OPTIONS: Array<{ label: string; value: MarketStatus }> = [
 ];
 
 const REGION_CARDS = [
-	'North America',
-	'Latin America',
-	'Europe',
-	'Middle East',
-	'Africa',
-	'Asia-Pacific',
-];
+	'north-america',
+	'latin-america',
+	'europe',
+	'middle-east',
+	'africa',
+	'asia',
+	'oceania',
+	'global',
+] satisfies GeoRegion[];
+
+const REGION_LABELS: Record<GeoRegion, string> = {
+	'north-america': 'North America',
+	'latin-america': 'Latin America',
+	europe: 'Europe',
+	'middle-east': 'Middle East',
+	africa: 'Africa',
+	asia: 'Asia',
+	oceania: 'Oceania',
+	global: 'Global',
+};
 
 function formatCompactCurrency(value: number): string {
 	return new Intl.NumberFormat('en-US', {
@@ -70,78 +78,24 @@ function topOutcomeLabel(market: MarketRecord): string {
 }
 
 export function App() {
-	const repository = useMarketRepository();
-	const [category, setCategory] = useState<MarketCategory | ''>('');
-	const [status, setStatus] = useState<MarketStatus | ''>('active');
-	const [dashboard, setDashboard] = useState<MarketDashboardData | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
-	const [isSyncing, setIsSyncing] = useState(false);
-	const [refreshKey, setRefreshKey] = useState(0);
-	const [error, setError] = useState<string | null>(null);
-	const [syncMessage, setSyncMessage] = useState<string | null>(null);
-
-	useEffect(() => {
-		let cancelled = false;
-
-		async function run(): Promise<void> {
-			setIsLoading(true);
-			setError(null);
-
-			try {
-				const result = await loadMarketDashboard(repository, {
-					markets: {
-						status: status || undefined,
-						category: category || undefined,
-						limit: 24,
-					},
-					events: { limit: 6 },
-				});
-				if (!cancelled) setDashboard(result);
-			} catch (loadError) {
-				if (!cancelled) {
-					setError(
-						loadError instanceof Error ?
-							loadError.message
-						:	'Failed to load dashboard',
-					);
-				}
-			} finally {
-				if (!cancelled) setIsLoading(false);
-			}
-		}
-
-		void run();
-
-		return () => {
-			cancelled = true;
-		};
-	}, [category, repository, refreshKey, status]);
-
-	async function handleSync(): Promise<void> {
-		setIsSyncing(true);
-		setError(null);
-
-		try {
-			const result = await syncMarketSnapshot(repository, {
-				categories: category ? [category] : undefined,
-				maxMarkets: 100,
-			});
-			setSyncMessage(`Synced ${result.upserted} markets from Polymarket.`);
-			setRefreshKey((value) => value + 1);
-		} catch (syncError) {
-			setError(
-				syncError instanceof Error ?
-					syncError.message
-				:	'Failed to sync market snapshot',
-			);
-		} finally {
-			setIsSyncing(false);
-		}
-	}
+	const {
+		category,
+		setCategory,
+		status,
+		setStatus,
+		dashboard,
+		isLoading,
+		isSyncing,
+		error,
+		syncMessage,
+		handleSync,
+	} = useMarketDashboard();
 
 	const categorySummary = dashboard?.categorySummary.slice(0, 5) ?? [];
 	const markets = dashboard?.markets ?? [];
 	const events = dashboard?.events ?? [];
+	const regions = dashboard?.regionSummary ?? [];
+	const regionByKey = new Map(regions.map((entry) => [entry.region, entry]));
 
 	return (
 		<main className='appShell'>
@@ -204,21 +158,30 @@ export function App() {
 
 					<aside className='heroAside'>
 						<article className='panel mapCard'>
-							<div className='sectionLabel'>Geo map next</div>
+							<div className='sectionLabel'>Region pulse</div>
 							<p className='bodyCopy'>
-								The world-map view needs one more layer: derived region tags on
-								events and markets. This panel marks the target surface for the
-								next iteration without pretending you already have country-level
-								sentiment data.
+								Derived region tagging is now based on market and event text.
+								This keeps the surface honest: it shows where market attention
+								is aimed, not where traders physically are.
 							</p>
 
 							<div className='mapGrid'>
-								{REGION_CARDS.map((region) => (
-									<div className='mapRegion' key={region}>
-										<div className='meta'>Planned region</div>
-										<strong>{region}</strong>
-									</div>
-								))}
+								{REGION_CARDS.map((region) => {
+									const entry = regionByKey.get(region);
+									return (
+										<div className='mapRegion' key={region}>
+											<div className='meta'>
+												{entry ? `${entry.marketCount} markets` : 'No data yet'}
+											</div>
+											<strong>{REGION_LABELS[region]}</strong>
+											<div className='muted'>
+												{entry ?
+													formatCompactCurrency(entry.totalVolumeUsd)
+												:	'Sync data'}
+											</div>
+										</div>
+									);
+								})}
 							</div>
 						</article>
 					</aside>

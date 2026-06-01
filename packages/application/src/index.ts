@@ -56,6 +56,12 @@ export type {
 } from './use-cases/list-events.ts';
 export { ListEventsUseCase } from './use-cases/list-events-usecase.ts';
 export type {
+	ListRegionSummariesInput,
+	ListRegionSummariesOutput,
+	ListRegionSummaries,
+} from './use-cases/list-region-summaries.ts';
+export { ListRegionSummariesUseCase } from './use-cases/list-region-summaries-usecase.ts';
+export type {
 	RunMarketIntelligenceInput,
 	RunMarketIntelligenceOutput,
 	RunMarketIntelligence,

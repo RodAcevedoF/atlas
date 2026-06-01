@@ -4,6 +4,7 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*", "packages/infrastructure/*"],
   "scripts": {
+    "dev": "bun nx run-many -t dev --parallel=4",
     "typecheck": "bun nx run-many -t typecheck",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",

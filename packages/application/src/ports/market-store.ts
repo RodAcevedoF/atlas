@@ -1,6 +1,7 @@
 import type {
 	AnalysisRun,
 	EventId,
+	GeoRegion,
 	Insight,
 	InsightKind,
 	Market,
@@ -9,6 +10,7 @@ import type {
 	MarketStatus,
 	PredictionEvent,
 	PriceTick,
+	RegionSummary,
 	Trade,
 	Watchlist,
 } from '@atlas/domain';
@@ -25,6 +27,12 @@ export interface MarketStorePort {
 	upsertEvent(event: PredictionEvent): Promise<void>;
 	findEvent(id: EventId): Promise<PredictionEvent | null>;
 	listEvents(filter?: { limit?: number }): Promise<PredictionEvent[]>;
+	listRegionSummaries(filter?: {
+		status?: MarketStatus;
+		category?: MarketCategory;
+		limit?: number;
+		region?: GeoRegion;
+	}): Promise<RegionSummary[]>;
 
 	insertPriceTick(tick: PriceTick): Promise<void>;
 	getPriceHistory(

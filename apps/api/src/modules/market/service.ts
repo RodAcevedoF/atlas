@@ -5,6 +5,8 @@ import type {
 	ListEventsOutput,
 	ListMarketsInput,
 	ListMarketsOutput,
+	ListRegionSummariesInput,
+	ListRegionSummariesOutput,
 	MarketDataPort,
 	MarketStorePort,
 } from '@atlas/application';
@@ -12,12 +14,16 @@ import {
 	IngestMarketsUseCase,
 	ListEventsUseCase,
 	ListMarketsUseCase,
+	ListRegionSummariesUseCase,
 } from '@atlas/application';
 
 export interface IMarketService {
 	ingestMarkets(input: IngestMarketsInput): Promise<IngestMarketsOutput>;
 	listMarkets(input?: ListMarketsInput): Promise<ListMarketsOutput>;
 	listEvents(input?: ListEventsInput): Promise<ListEventsOutput>;
+	listRegionSummaries(
+		input?: ListRegionSummariesInput,
+	): Promise<ListRegionSummariesOutput>;
 }
 
 class MarketService implements IMarketService {
@@ -25,6 +31,7 @@ class MarketService implements IMarketService {
 		private readonly ingest: IngestMarketsUseCase,
 		private readonly listMarketsUseCase: ListMarketsUseCase,
 		private readonly listEventsUseCase: ListEventsUseCase,
+		private readonly listRegionSummariesUseCase: ListRegionSummariesUseCase,
 	) {}
 
 	ingestMarkets(input: IngestMarketsInput): Promise<IngestMarketsOutput> {
@@ -38,6 +45,12 @@ class MarketService implements IMarketService {
 	listEvents(input: ListEventsInput = {}): Promise<ListEventsOutput> {
 		return this.listEventsUseCase.execute(input);
 	}
+
+	listRegionSummaries(
+		input: ListRegionSummariesInput = {},
+	): Promise<ListRegionSummariesOutput> {
+		return this.listRegionSummariesUseCase.execute(input);
+	}
 }
 
 export function makeDependencies(deps: {
@@ -49,6 +62,7 @@ export function makeDependencies(deps: {
 			new IngestMarketsUseCase(deps.marketData, deps.store),
 			new ListMarketsUseCase(deps.store),
 			new ListEventsUseCase(deps.store),
+			new ListRegionSummariesUseCase(deps.store),
 		),
 	};
 }

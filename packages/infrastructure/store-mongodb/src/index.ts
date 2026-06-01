@@ -7,12 +7,14 @@ import type { MarketStorePort } from '@atlas/application';
 import type {
 	AnalysisRun,
 	EventId,
+	GeoRegion,
 	Insight,
 	InsightKind,
 	Market,
 	MarketId,
 	PredictionEvent,
 	PriceTick,
+	RegionSummary,
 	Trade,
 	Watchlist,
 } from '@atlas/domain';
@@ -27,8 +29,16 @@ import type {
 	WatchlistDoc,
 } from './collections.ts';
 
+const DEFAULT_REGION: GeoRegion = 'global';
+
+function coerceRegions(regions: GeoRegion[] | undefined): GeoRegion[] {
+	if (!regions || regions.length === 0) return [DEFAULT_REGION];
+	return [...new Set(regions)];
+}
+
 function docToMarket(doc: MarketDoc): Market {
 	const id = makeMarketId(doc._id);
+	const regions = coerceRegions(doc.regions);
 	return {
 		id,
 		eventId: doc.eventId ? makeEventId(doc.eventId) : null,
@@ -36,6 +46,8 @@ function docToMarket(doc: MarketDoc): Market {
 		title: doc.title,
 		description: doc.description,
 		category: doc.category,
+		primaryRegion: doc.primaryRegion ?? regions[0] ?? DEFAULT_REGION,
+		regions,
 		status: doc.status,
 		outcomes: doc.outcomes.map((o) => ({
 			id: makeOutcomeId(o._id),
@@ -53,12 +65,16 @@ function docToMarket(doc: MarketDoc): Market {
 }
 
 function docToEvent(doc: PredictionEventDoc): PredictionEvent {
+	const regions = coerceRegions(doc.regions);
 	return {
 		id: makeEventId(doc._id),
 		slug: doc.slug,
 		title: doc.title,
 		description: doc.description,
 		category: doc.category,
+		tags: doc.tags ?? [],
+		primaryRegion: doc.primaryRegion ?? regions[0] ?? DEFAULT_REGION,
+		regions,
 		marketIds: doc.marketIds.map(makeMarketId),
 		createdAt: doc.createdAt,
 	};
@@ -107,12 +123,15 @@ export class MongoMarketStore implements MarketStorePort {
 	constructor(private readonly db: Db) {}
 
 	async upsertMarket(market: Market): Promise<void> {
+		const regions = coerceRegions(market.regions);
 		const doc: Omit<MarketDoc, '_id'> = {
 			eventId: market.eventId,
 			slug: market.slug,
 			title: market.title,
 			description: market.description,
 			category: market.category,
+			primaryRegion: market.primaryRegion,
+			regions,
 			status: market.status,
 			outcomes: market.outcomes.map((o) => ({
 				_id: o.id,
@@ -156,11 +175,15 @@ export class MongoMarketStore implements MarketStorePort {
 	}
 
 	async upsertEvent(event: PredictionEvent): Promise<void> {
+		const regions = coerceRegions(event.regions);
 		const doc: Omit<PredictionEventDoc, '_id'> = {
 			slug: event.slug,
 			title: event.title,
 			description: event.description,
 			category: event.category,
+			tags: event.tags,
+			primaryRegion: event.primaryRegion,
+			regions,
 			marketIds: event.marketIds as string[],
 			createdAt: event.createdAt,
 		};
@@ -183,6 +206,78 @@ export class MongoMarketStore implements MarketStorePort {
 			.limit(filter?.limit ?? 0)
 			.toArray();
 		return docs.map((d) => docToEvent(d as unknown as PredictionEventDoc));
+	}
+
+	async listRegionSummaries(filter?: {
+		status?: Market['status'];
+		category?: Market['category'];
+		limit?: number;
+		region?: GeoRegion;
+	}): Promise<RegionSummary[]> {
+		const marketMatch: Record<string, unknown> = {};
+		if (filter?.status) marketMatch.status = filter.status;
+		if (filter?.category) marketMatch.category = filter.category;
+		if (filter?.region) marketMatch.regions = filter.region;
+
+		const eventMatch: Record<string, unknown> = {};
+		if (filter?.category) eventMatch.category = filter.category;
+		if (filter?.region) eventMatch.regions = filter.region;
+
+		const [marketRows, eventRows] = await Promise.all([
+			this.db
+				.collection<MarketDoc>('markets')
+				.aggregate<{
+					_id: GeoRegion;
+					marketCount: number;
+					activeMarketCount: number;
+					totalVolumeUsd: number;
+					totalLiquidityUsd: number;
+				}>([
+					{ $match: marketMatch },
+					{ $unwind: '$regions' },
+					{
+						$group: {
+							_id: '$regions',
+							marketCount: { $sum: 1 },
+							activeMarketCount: {
+								$sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] },
+							},
+							totalVolumeUsd: { $sum: '$volumeUsd' },
+							totalLiquidityUsd: { $sum: '$liquidityUsd' },
+						},
+					},
+				])
+				.toArray(),
+			this.db
+				.collection<PredictionEventDoc>('prediction_events')
+				.aggregate<{ _id: GeoRegion; eventCount: number }>([
+					{ $match: eventMatch },
+					{ $unwind: '$regions' },
+					{
+						$group: {
+							_id: '$regions',
+							eventCount: { $sum: 1 },
+						},
+					},
+				])
+				.toArray(),
+		]);
+
+		const eventCounts = new Map<GeoRegion, number>(
+			eventRows.map((row) => [row._id, row.eventCount]),
+		);
+		const summaries = marketRows.map((row) => ({
+			region: row._id,
+			marketCount: row.marketCount,
+			eventCount: eventCounts.get(row._id) ?? 0,
+			activeMarketCount: row.activeMarketCount,
+			totalVolumeUsd: row.totalVolumeUsd,
+			totalLiquidityUsd: row.totalLiquidityUsd,
+		}));
+		summaries.sort((left, right) => right.totalVolumeUsd - left.totalVolumeUsd);
+		return typeof filter?.limit === 'number' ?
+				summaries.slice(0, filter.limit)
+			:	summaries;
 	}
 
 	async insertPriceTick(tick: PriceTick): Promise<void> {

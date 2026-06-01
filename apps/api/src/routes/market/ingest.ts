@@ -3,8 +3,9 @@ import type {
 	IngestMarketsInput,
 	ListEventsInput,
 	ListMarketsInput,
+	ListRegionSummariesInput,
 } from '@atlas/application';
-import type { MarketCategory, MarketStatus } from '@atlas/domain';
+import type { GeoRegion, MarketCategory, MarketStatus } from '@atlas/domain';
 import type { AppDeps } from '../../core/bootstrap.ts';
 
 const MARKET_STATUSES: MarketStatus[] = ['active', 'closed', 'resolved'];
@@ -16,6 +17,16 @@ const MARKET_CATEGORIES: MarketCategory[] = [
 	'science',
 	'culture',
 	'other',
+];
+const GEO_REGIONS: GeoRegion[] = [
+	'north-america',
+	'latin-america',
+	'europe',
+	'middle-east',
+	'africa',
+	'asia',
+	'oceania',
+	'global',
 ];
 
 function parseLimit(value: unknown): number | undefined {
@@ -33,6 +44,11 @@ function parseStatus(value: unknown): MarketStatus | undefined {
 function parseCategory(value: unknown): MarketCategory | undefined {
 	if (typeof value !== 'string') return undefined;
 	return MARKET_CATEGORIES.find((category) => category === value);
+}
+
+function parseRegion(value: unknown): GeoRegion | undefined {
+	if (typeof value !== 'string') return undefined;
+	return GEO_REGIONS.find((region) => region === value);
 }
 
 export async function registerMarketRoutes(
@@ -62,6 +78,18 @@ export async function registerMarketRoutes(
 			limit: parseLimit(query.limit),
 		};
 		const result = await deps.marketService.listEvents(input);
+		return reply.send(result);
+	});
+
+	app.get('/regions/summary', async (req, reply) => {
+		const query = (req.query as Record<string, unknown> | undefined) ?? {};
+		const input: ListRegionSummariesInput = {
+			status: parseStatus(query.status),
+			category: parseCategory(query.category),
+			limit: parseLimit(query.limit),
+			region: parseRegion(query.region),
+		};
+		const result = await deps.marketService.listRegionSummaries(input);
 		return reply.send(result);
 	});
 }
