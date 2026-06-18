@@ -11,6 +11,11 @@ export type {
 	PredictionEvent,
 } from './entities/market.ts';
 export { makeMarketId, makeEventId, makeOutcomeId } from './entities/market.ts';
+export {
+	MARKET_STATUSES,
+	MARKET_CATEGORIES,
+	GEO_REGIONS,
+} from './entities/market.ts';
 
 export type { PriceTick, TradeSide, Trade } from './entities/activity.ts';
 

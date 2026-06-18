@@ -1,21 +1,6 @@
-export type MarketStatus = 'active' | 'closed' | 'resolved';
-export type MarketCategory =
-	| 'politics'
-	| 'crypto'
-	| 'sports'
-	| 'economics'
-	| 'science'
-	| 'culture'
-	| 'other';
-export type GeoRegion =
-	| 'north-america'
-	| 'latin-america'
-	| 'europe'
-	| 'middle-east'
-	| 'africa'
-	| 'asia'
-	| 'oceania'
-	| 'global';
+import type { GeoRegion, MarketCategory, MarketStatus } from '@atlas/domain';
+
+export type { GeoRegion, MarketCategory, MarketStatus };
 
 export interface RegionSummaryRecord {
 	region: GeoRegion;

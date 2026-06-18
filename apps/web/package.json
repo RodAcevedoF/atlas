@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@atlas/domain": "*",
     "@atlas/ui": "*",
     "@atlas/shared": "*",
     "react": "^19.0.0",

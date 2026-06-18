@@ -12,24 +12,31 @@ export function makeOutcomeId(v: string): OutcomeId {
 	return v as OutcomeId;
 }
 
-export type MarketStatus = 'active' | 'closed' | 'resolved';
-export type MarketCategory =
-	| 'politics'
-	| 'crypto'
-	| 'sports'
-	| 'economics'
-	| 'science'
-	| 'culture'
-	| 'other';
-export type GeoRegion =
-	| 'north-america'
-	| 'latin-america'
-	| 'europe'
-	| 'middle-east'
-	| 'africa'
-	| 'asia'
-	| 'oceania'
-	| 'global';
+export const MARKET_STATUSES = ['active', 'closed', 'resolved'] as const;
+export type MarketStatus = (typeof MARKET_STATUSES)[number];
+
+export const MARKET_CATEGORIES = [
+	'politics',
+	'crypto',
+	'sports',
+	'economics',
+	'science',
+	'culture',
+	'other',
+] as const;
+export type MarketCategory = (typeof MARKET_CATEGORIES)[number];
+
+export const GEO_REGIONS = [
+	'north-america',
+	'latin-america',
+	'europe',
+	'middle-east',
+	'africa',
+	'asia',
+	'oceania',
+	'global',
+] as const;
+export type GeoRegion = (typeof GEO_REGIONS)[number];
 
 export interface RegionSummary {
 	region: GeoRegion;

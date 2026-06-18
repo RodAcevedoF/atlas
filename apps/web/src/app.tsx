@@ -1,38 +1,29 @@
 import './app.css';
-import type {
-	GeoRegion,
-	MarketCategory,
-	MarketRecord,
-	MarketStatus,
-} from './repositories/market-repository.ts';
+import {
+	GEO_REGIONS,
+	MARKET_CATEGORIES,
+	MARKET_STATUSES,
+} from '@atlas/domain';
+import type { GeoRegion, MarketCategory, MarketStatus } from '@atlas/domain';
+import { Button } from '@atlas/ui';
+import {
+	formatCompactCurrency,
+	formatDate,
+	formatPercent,
+	toTitleCase,
+	topOutcomeLabel,
+} from './common/utils/index.ts';
 import { useMarketDashboard } from './use-market-dashboard.ts';
 
-const CATEGORY_OPTIONS: Array<{ label: string; value: MarketCategory }> = [
-	{ label: 'Politics', value: 'politics' },
-	{ label: 'Crypto', value: 'crypto' },
-	{ label: 'Sports', value: 'sports' },
-	{ label: 'Economics', value: 'economics' },
-	{ label: 'Science', value: 'science' },
-	{ label: 'Culture', value: 'culture' },
-	{ label: 'Other', value: 'other' },
-];
+const CATEGORY_OPTIONS = MARKET_CATEGORIES.map((value) => ({
+	value,
+	label: toTitleCase(value),
+}));
 
-const STATUS_OPTIONS: Array<{ label: string; value: MarketStatus }> = [
-	{ label: 'Active', value: 'active' },
-	{ label: 'Closed', value: 'closed' },
-	{ label: 'Resolved', value: 'resolved' },
-];
-
-const REGION_CARDS = [
-	'north-america',
-	'latin-america',
-	'europe',
-	'middle-east',
-	'africa',
-	'asia',
-	'oceania',
-	'global',
-] satisfies GeoRegion[];
+const STATUS_OPTIONS = MARKET_STATUSES.map((value) => ({
+	value,
+	label: toTitleCase(value),
+}));
 
 const REGION_LABELS: Record<GeoRegion, string> = {
 	'north-america': 'North America',
@@ -44,38 +35,6 @@ const REGION_LABELS: Record<GeoRegion, string> = {
 	oceania: 'Oceania',
 	global: 'Global',
 };
-
-function formatCompactCurrency(value: number): string {
-	return new Intl.NumberFormat('en-US', {
-		style: 'currency',
-		currency: 'USD',
-		notation: 'compact',
-		maximumFractionDigits: 1,
-	}).format(value);
-}
-
-function formatPercent(value: number): string {
-	return `${Math.round(value * 100)}%`;
-}
-
-function formatDate(value: string | null): string {
-	if (!value) return 'Open-ended';
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return 'Open-ended';
-	return new Intl.DateTimeFormat('en-US', {
-		month: 'short',
-		day: 'numeric',
-		year: 'numeric',
-	}).format(date);
-}
-
-function topOutcomeLabel(market: MarketRecord): string {
-	const topOutcome = [...market.outcomes].sort(
-		(left, right) => right.price - left.price,
-	)[0];
-	if (!topOutcome) return 'No outcome pricing yet';
-	return `${topOutcome.name} ${formatPercent(topOutcome.price)}`;
-}
 
 export function App() {
 	const {
@@ -113,12 +72,12 @@ export function App() {
 						</p>
 
 						<div className='heroActions'>
-							<button
-								className='actionButton'
+							<Button
+								className='rounded-full px-4'
 								onClick={() => void handleSync()}
 								disabled={isSyncing}>
 								{isSyncing ? 'Syncing snapshot...' : 'Sync latest markets'}
-							</button>
+							</Button>
 							<div className='hint'>
 								{syncMessage ??
 									'Use the sync action to pull fresh Gamma markets into MongoDB.'}
@@ -166,7 +125,7 @@ export function App() {
 							</p>
 
 							<div className='mapGrid'>
-								{REGION_CARDS.map((region) => {
+								{GEO_REGIONS.map((region) => {
 									const entry = regionByKey.get(region);
 									return (
 										<div className='mapRegion' key={region}>
@@ -276,7 +235,7 @@ export function App() {
 					<div className='stack'>
 						<article className='panel'>
 							<div className='sectionLabel'>Category pulse</div>
-							<div className='stack' style={{ marginTop: 16 }}>
+							<div className='stack stackInset'>
 								{categorySummary.length > 0 ?
 									categorySummary.map((entry) => (
 										<div className='summaryCard' key={entry.category}>
@@ -297,7 +256,7 @@ export function App() {
 
 						<article className='panel'>
 							<div className='sectionLabel'>Events</div>
-							<div className='stack' style={{ marginTop: 16 }}>
+							<div className='stack stackInset'>
 								{events.length > 0 ?
 									events.map((event) => (
 										<article className='eventCard' key={event.id}>

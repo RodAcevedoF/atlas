@@ -28,10 +28,10 @@ import type {
 //   Gamma API  — https://gamma-api.polymarket.com  (markets, events, metadata)
 //   CLOB API   — https://clob.polymarket.com        (orderbook, trades, prices)
 
-function parseGammaDate(s: string | null | undefined): Date | null {
-	if (!s) return null;
-	const d = new Date(s);
-	return Number.isNaN(d.getTime()) ? null : d;
+function parseGammaDate(value: string | null | undefined): Date | null {
+	if (!value) return null;
+	const parsed = new Date(value);
+	return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 function marketCategory(
@@ -52,11 +52,11 @@ function parseOutcomes(raw: GammaMarket): Outcome[] {
 	const tokenIds = JSON.parse(raw.clobTokenIds) as string[];
 	const marketId = makeMarketId(raw.conditionId);
 
-	return names.map((name, i) => ({
-		id: makeOutcomeId(tokenIds[i] ?? `${raw.conditionId}:${i}`),
+	return names.map((name, index) => ({
+		id: makeOutcomeId(tokenIds[index] ?? `${raw.conditionId}:${index}`),
 		marketId,
 		name,
-		price: Number.parseFloat(prices[i] ?? '0'),
+		price: Number.parseFloat(prices[index] ?? '0'),
 		shares: 0, // shares require CLOB order book data — deferred
 	}));
 }
@@ -92,7 +92,7 @@ function mapEvent(raw: GammaEvent): PredictionEvent {
 		tags: raw.tags.map((tag) => tag.label),
 		primaryRegion: 'global',
 		regions: ['global'],
-		marketIds: raw.markets.map((m) => makeMarketId(m.conditionId)),
+		marketIds: raw.markets.map((market) => makeMarketId(market.conditionId)),
 		createdAt: new Date(raw.createdAt),
 	};
 }
@@ -116,10 +116,10 @@ export class PolymarketAdapter implements MarketDataPort {
 
 		let markets = raw.map(mapMarket);
 		if (filter?.category !== undefined)
-			markets = markets.filter((m) => m.category === filter.category);
+			markets = markets.filter((market) => market.category === filter.category);
 		if (filter?.minVolumeUsd !== undefined) {
-			const min = filter.minVolumeUsd;
-			markets = markets.filter((m) => m.volumeUsd >= min);
+			const minVolumeUsd = filter.minVolumeUsd;
+			markets = markets.filter((market) => market.volumeUsd >= minVolumeUsd);
 		}
 		return markets;
 	}
@@ -146,7 +146,7 @@ export class PolymarketAdapter implements MarketDataPort {
 
 		let events = raw.map(mapEvent);
 		if (filter?.category !== undefined)
-			events = events.filter((e) => e.category === filter.category);
+			events = events.filter((event) => event.category === filter.category);
 		return events;
 	}
 

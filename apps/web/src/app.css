@@ -252,6 +252,10 @@ select {
   gap: 14px;
 }
 
+.stackInset {
+  margin-top: 16px;
+}
+
 .eventCard,
 .summaryCard {
   border-radius: 20px;

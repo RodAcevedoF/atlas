@@ -49,12 +49,12 @@ function docToMarket(doc: MarketDoc): Market {
 		primaryRegion: doc.primaryRegion ?? regions[0] ?? DEFAULT_REGION,
 		regions,
 		status: doc.status,
-		outcomes: doc.outcomes.map((o) => ({
-			id: makeOutcomeId(o._id),
+		outcomes: doc.outcomes.map((outcome) => ({
+			id: makeOutcomeId(outcome._id),
 			marketId: id,
-			name: o.name,
-			price: o.price,
-			shares: o.shares,
+			name: outcome.name,
+			price: outcome.price,
+			shares: outcome.shares,
 		})),
 		volumeUsd: doc.volumeUsd,
 		liquidityUsd: doc.liquidityUsd,
@@ -133,11 +133,11 @@ export class MongoMarketStore implements MarketStorePort {
 			primaryRegion: market.primaryRegion,
 			regions,
 			status: market.status,
-			outcomes: market.outcomes.map((o) => ({
-				_id: o.id,
-				name: o.name,
-				price: o.price,
-				shares: o.shares,
+			outcomes: market.outcomes.map((outcome) => ({
+				_id: outcome.id,
+				name: outcome.name,
+				price: outcome.price,
+				shares: outcome.shares,
 			})),
 			volumeUsd: market.volumeUsd,
 			liquidityUsd: market.liquidityUsd,
@@ -154,7 +154,7 @@ export class MongoMarketStore implements MarketStorePort {
 		const doc = await this.db
 			.collection<MarketDoc>('markets')
 			.findOne({ _id: id });
-		return doc ? docToMarket(doc as unknown as MarketDoc) : null;
+		return doc ? docToMarket(doc) : null;
 	}
 
 	async listMarkets(filter?: {
@@ -171,7 +171,7 @@ export class MongoMarketStore implements MarketStorePort {
 			.find(query)
 			.limit(filter?.limit ?? 0)
 			.toArray();
-		return docs.map((d) => docToMarket(d as unknown as MarketDoc));
+		return docs.map((doc) => docToMarket(doc));
 	}
 
 	async upsertEvent(event: PredictionEvent): Promise<void> {
@@ -196,7 +196,7 @@ export class MongoMarketStore implements MarketStorePort {
 		const doc = await this.db
 			.collection<PredictionEventDoc>('prediction_events')
 			.findOne({ _id: id });
-		return doc ? docToEvent(doc as unknown as PredictionEventDoc) : null;
+		return doc ? docToEvent(doc) : null;
 	}
 
 	async listEvents(filter?: { limit?: number }): Promise<PredictionEvent[]> {
@@ -205,7 +205,7 @@ export class MongoMarketStore implements MarketStorePort {
 			.find({})
 			.limit(filter?.limit ?? 0)
 			.toArray();
-		return docs.map((d) => docToEvent(d as unknown as PredictionEventDoc));
+		return docs.map((doc) => docToEvent(doc));
 	}
 
 	async listRegionSummaries(filter?: {
@@ -302,11 +302,11 @@ export class MongoMarketStore implements MarketStorePort {
 			})
 			.sort({ timestamp: 1 })
 			.toArray();
-		return docs.map((d) => ({
-			marketId: makeMarketId(d.marketId),
-			outcomeId: makeOutcomeId(d.outcomeId),
-			price: d.price,
-			timestamp: d.timestamp,
+		return docs.map((doc) => ({
+			marketId: makeMarketId(doc.marketId),
+			outcomeId: makeOutcomeId(doc.outcomeId),
+			price: doc.price,
+			timestamp: doc.timestamp,
 		}));
 	}
 
@@ -331,15 +331,15 @@ export class MongoMarketStore implements MarketStorePort {
 			.sort({ timestamp: -1 })
 			.limit(limit)
 			.toArray();
-		return docs.map((d) => ({
-			id: d._id,
-			marketId: makeMarketId(d.marketId),
-			outcomeId: makeOutcomeId(d.outcomeId),
-			side: d.side,
-			size: d.size,
-			price: d.price,
-			walletAddress: d.walletAddress,
-			timestamp: d.timestamp,
+		return docs.map((doc) => ({
+			id: doc._id,
+			marketId: makeMarketId(doc.marketId),
+			outcomeId: makeOutcomeId(doc.outcomeId),
+			side: doc.side,
+			size: doc.size,
+			price: doc.price,
+			walletAddress: doc.walletAddress,
+			timestamp: doc.timestamp,
 		}));
 	}
 
@@ -364,7 +364,7 @@ export class MongoMarketStore implements MarketStorePort {
 		const doc = await this.db
 			.collection<InsightDoc>('insights')
 			.findOne({ _id: id });
-		return doc ? docToInsight(doc as unknown as InsightDoc) : null;
+		return doc ? docToInsight(doc) : null;
 	}
 
 	async listInsights(filter: {
@@ -383,7 +383,7 @@ export class MongoMarketStore implements MarketStorePort {
 			.sort({ generatedAt: -1 })
 			.limit(filter.limit ?? 0)
 			.toArray();
-		return docs.map((d) => docToInsight(d as unknown as InsightDoc));
+		return docs.map((doc) => docToInsight(doc));
 	}
 
 	async saveAnalysisRun(run: AnalysisRun): Promise<void> {
@@ -415,14 +415,14 @@ export class MongoMarketStore implements MarketStorePort {
 		const doc = await this.db
 			.collection<AnalysisRunDoc>('analysis_runs')
 			.findOne({ _id: id });
-		return doc ? docToAnalysisRun(doc as unknown as AnalysisRunDoc) : null;
+		return doc ? docToAnalysisRun(doc) : null;
 	}
 
 	async findWatchlist(userId: string): Promise<Watchlist | null> {
 		const doc = await this.db
 			.collection<WatchlistDoc>('watchlists')
 			.findOne({ userId });
-		return doc ? docToWatchlist(doc as unknown as WatchlistDoc) : null;
+		return doc ? docToWatchlist(doc) : null;
 	}
 
 	async saveWatchlist(watchlist: Watchlist): Promise<void> {
