@@ -32,9 +32,7 @@ export class HttpOrchestration implements OrchestrationPort {
       },
     );
     if (!res.ok) {
-      throw new Error(
-        `POST /graphs/${input.graphName}/run ${res.status} ${res.statusText}`,
-      );
+      throw new Error(`POST /graphs/${input.graphName}/run ${res.status} ${res.statusText}`);
     }
     return (await res.json()) as Record<string, unknown>;
   }
@@ -52,14 +50,10 @@ export class HttpOrchestration implements OrchestrationPort {
       },
     );
     if (!res.ok) {
-      throw new Error(
-        `POST /graphs/${input.graphName}/stream ${res.status} ${res.statusText}`,
-      );
+      throw new Error(`POST /graphs/${input.graphName}/stream ${res.status} ${res.statusText}`);
     }
     if (!res.body) {
-      throw new Error(
-        `POST /graphs/${input.graphName}/stream returned no body`,
-      );
+      throw new Error(`POST /graphs/${input.graphName}/stream returned no body`);
     }
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
@@ -97,9 +91,7 @@ export class HttpOrchestration implements OrchestrationPort {
       },
     );
     if (!res.ok) {
-      throw new Error(
-        `POST /graphs/${graphName}/resume/${runId} ${res.status} ${res.statusText}`,
-      );
+      throw new Error(`POST /graphs/${graphName}/resume/${runId} ${res.status} ${res.statusText}`);
     }
     return (await res.json()) as Record<string, unknown>;
   }

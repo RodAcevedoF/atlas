@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type PropsWithChildren } from "react";
+import { type PropsWithChildren, createContext, useContext, useState } from "react";
 import { HttpMarketRepository } from "./repositories/http-market-repository.ts";
 import type { MarketRepository } from "./repositories/market-repository.ts";
 

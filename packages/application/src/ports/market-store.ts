@@ -1,62 +1,70 @@
 import type {
-	AnalysisRun,
-	EventId,
-	GeoRegion,
-	Insight,
-	InsightKind,
-	Market,
-	MarketCategory,
-	MarketId,
-	MarketStatus,
-	PredictionEvent,
-	PriceTick,
-	RegionSummary,
-	Trade,
-	Watchlist,
-} from '@atlas/domain';
+  AnalysisRun,
+  EventId,
+  GeoRegion,
+  Insight,
+  InsightKind,
+  Market,
+  MarketCategory,
+  MarketId,
+  MarketStatus,
+  PredictionEvent,
+  PriceTick,
+  RegionSummary,
+  RegionTopicBreakdown,
+  Signal,
+  SignalSource,
+  Topic,
+  Trade,
+  Watchlist,
+} from "@atlas/domain";
 
 export interface MarketStorePort {
-	upsertMarket(market: Market): Promise<void>;
-	findMarket(id: MarketId): Promise<Market | null>;
-	listMarkets(filter?: {
-		status?: MarketStatus;
-		category?: MarketCategory;
-		limit?: number;
-	}): Promise<Market[]>;
+  upsertMarket(market: Market): Promise<void>;
+  findMarket(id: MarketId): Promise<Market | null>;
+  listMarkets(filter?: {
+    status?: MarketStatus;
+    category?: MarketCategory;
+    limit?: number;
+  }): Promise<Market[]>;
 
-	upsertEvent(event: PredictionEvent): Promise<void>;
-	findEvent(id: EventId): Promise<PredictionEvent | null>;
-	listEvents(filter?: { limit?: number }): Promise<PredictionEvent[]>;
-	listRegionSummaries(filter?: {
-		status?: MarketStatus;
-		category?: MarketCategory;
-		limit?: number;
-		region?: GeoRegion;
-	}): Promise<RegionSummary[]>;
+  upsertEvent(event: PredictionEvent): Promise<void>;
+  findEvent(id: EventId): Promise<PredictionEvent | null>;
+  listEvents(filter?: { limit?: number }): Promise<PredictionEvent[]>;
+  listRegionSummaries(filter?: {
+    status?: MarketStatus;
+    category?: MarketCategory;
+    limit?: number;
+    region?: GeoRegion;
+  }): Promise<RegionSummary[]>;
 
-	insertPriceTick(tick: PriceTick): Promise<void>;
-	getPriceHistory(
-		marketId: MarketId,
-		from: Date,
-		to: Date,
-	): Promise<PriceTick[]>;
+  upsertSignals(signals: Signal[]): Promise<void>;
+  listRegionTopicBreakdowns(filter?: {
+    source?: SignalSource;
+    topic?: Topic;
+    region?: GeoRegion;
+    limit?: number;
+  }): Promise<RegionTopicBreakdown[]>;
 
-	insertTrade(trade: Trade): Promise<void>;
-	getRecentTrades(marketId: MarketId, limit: number): Promise<Trade[]>;
+  insertPriceTick(tick: PriceTick): Promise<void>;
+  getPriceHistory(marketId: MarketId, from: Date, to: Date): Promise<PriceTick[]>;
 
-	saveInsight(insight: Insight): Promise<void>;
-	findInsight(id: string): Promise<Insight | null>;
-	listInsights(filter: {
-		marketId?: MarketId;
-		eventId?: EventId;
-		kind?: InsightKind;
-		limit?: number;
-	}): Promise<Insight[]>;
+  insertTrade(trade: Trade): Promise<void>;
+  getRecentTrades(marketId: MarketId, limit: number): Promise<Trade[]>;
 
-	saveAnalysisRun(run: AnalysisRun): Promise<void>;
-	updateAnalysisRun(id: string, patch: Partial<AnalysisRun>): Promise<void>;
-	findAnalysisRun(id: string): Promise<AnalysisRun | null>;
+  saveInsight(insight: Insight): Promise<void>;
+  findInsight(id: string): Promise<Insight | null>;
+  listInsights(filter: {
+    marketId?: MarketId;
+    eventId?: EventId;
+    kind?: InsightKind;
+    limit?: number;
+  }): Promise<Insight[]>;
 
-	findWatchlist(userId: string): Promise<Watchlist | null>;
-	saveWatchlist(watchlist: Watchlist): Promise<void>;
+  saveAnalysisRun(run: AnalysisRun): Promise<void>;
+  updateAnalysisRun(id: string, patch: Partial<AnalysisRun>): Promise<void>;
+  findAnalysisRun(id: string): Promise<AnalysisRun | null>;
+
+  findWatchlist(userId: string): Promise<Watchlist | null>;
+  saveWatchlist(watchlist: Watchlist): Promise<void>;
 }

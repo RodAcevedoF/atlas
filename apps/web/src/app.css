@@ -1,7 +1,6 @@
 :root {
   color: #f7f2ea;
-  background:
-    radial-gradient(circle at top, rgba(255, 171, 88, 0.24), transparent 36%),
+  background: radial-gradient(circle at top, rgba(255, 171, 88, 0.24), transparent 36%),
     radial-gradient(circle at 20% 20%, rgba(86, 173, 255, 0.16), transparent 30%),
     linear-gradient(180deg, #08111f 0%, #09192e 52%, #050a12 100%);
   font-family: "Avenir Next", "Segoe UI", sans-serif;
@@ -99,10 +98,7 @@ select {
 
 .actionButton {
   cursor: pointer;
-  transition:
-    transform 140ms ease,
-    background 140ms ease,
-    border-color 140ms ease;
+  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
 }
 
 .actionButton:hover:enabled {
@@ -124,8 +120,7 @@ select {
 
 .mapCard {
   min-height: 100%;
-  background:
-    linear-gradient(180deg, rgba(255, 171, 88, 0.12), rgba(255, 171, 88, 0.02)),
+  background: linear-gradient(180deg, rgba(255, 171, 88, 0.12), rgba(255, 171, 88, 0.02)),
     rgba(255, 255, 255, 0.03);
 }
 

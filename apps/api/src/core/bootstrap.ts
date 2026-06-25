@@ -1,5 +1,5 @@
-import { MongoMarketStore, createMongoClient, ensureIndexes } from "@atlas/infra/store-mongodb";
 import { PolymarketAdapter } from "@atlas/infra/market-polymarket";
+import { MongoMarketStore, createMongoClient, ensureIndexes } from "@atlas/infra/store-mongodb";
 import { type IMarketService, makeDependencies } from "../modules/market/service.ts";
 
 export interface AppDeps {

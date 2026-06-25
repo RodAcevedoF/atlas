@@ -1,68 +1,74 @@
 import type {
-	IngestMarketsInput,
-	IngestMarketsOutput,
-	ListEventsInput,
-	ListEventsOutput,
-	ListMarketsInput,
-	ListMarketsOutput,
-	ListRegionSummariesInput,
-	ListRegionSummariesOutput,
-	MarketDataPort,
-	MarketStorePort,
-} from '@atlas/application';
+  IngestMarketsInput,
+  IngestMarketsOutput,
+  ListEventsInput,
+  ListEventsOutput,
+  ListMarketsInput,
+  ListMarketsOutput,
+  ListRegionSummariesInput,
+  ListRegionSummariesOutput,
+  ListWorldTopicsInput,
+  ListWorldTopicsOutput,
+  MarketDataPort,
+  MarketStorePort,
+} from "@atlas/application";
 import {
-	IngestMarketsUseCase,
-	ListEventsUseCase,
-	ListMarketsUseCase,
-	ListRegionSummariesUseCase,
-} from '@atlas/application';
+  IngestMarketsUseCase,
+  ListEventsUseCase,
+  ListMarketsUseCase,
+  ListRegionSummariesUseCase,
+  ListWorldTopicsUseCase,
+} from "@atlas/application";
 
 export interface IMarketService {
-	ingestMarkets(input: IngestMarketsInput): Promise<IngestMarketsOutput>;
-	listMarkets(input?: ListMarketsInput): Promise<ListMarketsOutput>;
-	listEvents(input?: ListEventsInput): Promise<ListEventsOutput>;
-	listRegionSummaries(
-		input?: ListRegionSummariesInput,
-	): Promise<ListRegionSummariesOutput>;
+  ingestMarkets(input: IngestMarketsInput): Promise<IngestMarketsOutput>;
+  listMarkets(input?: ListMarketsInput): Promise<ListMarketsOutput>;
+  listEvents(input?: ListEventsInput): Promise<ListEventsOutput>;
+  listRegionSummaries(input?: ListRegionSummariesInput): Promise<ListRegionSummariesOutput>;
+  listWorldTopics(input?: ListWorldTopicsInput): Promise<ListWorldTopicsOutput>;
 }
 
 class MarketService implements IMarketService {
-	constructor(
-		private readonly ingest: IngestMarketsUseCase,
-		private readonly listMarketsUseCase: ListMarketsUseCase,
-		private readonly listEventsUseCase: ListEventsUseCase,
-		private readonly listRegionSummariesUseCase: ListRegionSummariesUseCase,
-	) {}
+  constructor(
+    private readonly ingest: IngestMarketsUseCase,
+    private readonly listMarketsUseCase: ListMarketsUseCase,
+    private readonly listEventsUseCase: ListEventsUseCase,
+    private readonly listRegionSummariesUseCase: ListRegionSummariesUseCase,
+    private readonly listWorldTopicsUseCase: ListWorldTopicsUseCase,
+  ) {}
 
-	ingestMarkets(input: IngestMarketsInput): Promise<IngestMarketsOutput> {
-		return this.ingest.execute(input);
-	}
+  ingestMarkets(input: IngestMarketsInput): Promise<IngestMarketsOutput> {
+    return this.ingest.execute(input);
+  }
 
-	listMarkets(input: ListMarketsInput = {}): Promise<ListMarketsOutput> {
-		return this.listMarketsUseCase.execute(input);
-	}
+  listMarkets(input: ListMarketsInput = {}): Promise<ListMarketsOutput> {
+    return this.listMarketsUseCase.execute(input);
+  }
 
-	listEvents(input: ListEventsInput = {}): Promise<ListEventsOutput> {
-		return this.listEventsUseCase.execute(input);
-	}
+  listEvents(input: ListEventsInput = {}): Promise<ListEventsOutput> {
+    return this.listEventsUseCase.execute(input);
+  }
 
-	listRegionSummaries(
-		input: ListRegionSummariesInput = {},
-	): Promise<ListRegionSummariesOutput> {
-		return this.listRegionSummariesUseCase.execute(input);
-	}
+  listRegionSummaries(input: ListRegionSummariesInput = {}): Promise<ListRegionSummariesOutput> {
+    return this.listRegionSummariesUseCase.execute(input);
+  }
+
+  listWorldTopics(input: ListWorldTopicsInput = {}): Promise<ListWorldTopicsOutput> {
+    return this.listWorldTopicsUseCase.execute(input);
+  }
 }
 
 export function makeDependencies(deps: {
-	marketData: MarketDataPort;
-	store: MarketStorePort;
+  marketData: MarketDataPort;
+  store: MarketStorePort;
 }): { service: IMarketService } {
-	return {
-		service: new MarketService(
-			new IngestMarketsUseCase(deps.marketData, deps.store),
-			new ListMarketsUseCase(deps.store),
-			new ListEventsUseCase(deps.store),
-			new ListRegionSummariesUseCase(deps.store),
-		),
-	};
+  return {
+    service: new MarketService(
+      new IngestMarketsUseCase(deps.marketData, deps.store),
+      new ListMarketsUseCase(deps.store),
+      new ListEventsUseCase(deps.store),
+      new ListRegionSummariesUseCase(deps.store),
+      new ListWorldTopicsUseCase(deps.store),
+    ),
+  };
 }

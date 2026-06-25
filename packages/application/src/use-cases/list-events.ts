@@ -1,11 +1,11 @@
-import type { PredictionEvent } from '@atlas/domain';
+import type { PredictionEvent } from "@atlas/domain";
 
 export interface ListEventsInput {
-	limit?: number;
+  limit?: number;
 }
 
 export type ListEventsOutput = PredictionEvent[];
 
 export interface ListEvents {
-	execute(input?: ListEventsInput): Promise<ListEventsOutput>;
+  execute(input?: ListEventsInput): Promise<ListEventsOutput>;
 }
