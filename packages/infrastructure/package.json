@@ -10,7 +10,6 @@
     "@atlas/application": "*",
     "@atlas/domain": "*",
     "@atlas/shared": "*",
-    "agenda": "^6.2.5",
     "mongodb": "^7.2.0"
   }
 }

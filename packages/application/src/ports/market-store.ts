@@ -16,7 +16,6 @@ import type {
   SignalSource,
   Topic,
   Trade,
-  Watchlist,
 } from "@atlas/domain";
 
 export interface MarketStorePort {
@@ -64,7 +63,4 @@ export interface MarketStorePort {
   saveAnalysisRun(run: AnalysisRun): Promise<void>;
   updateAnalysisRun(id: string, patch: Partial<AnalysisRun>): Promise<void>;
   findAnalysisRun(id: string): Promise<AnalysisRun | null>;
-
-  findWatchlist(userId: string): Promise<Watchlist | null>;
-  saveWatchlist(watchlist: Watchlist): Promise<void>;
 }

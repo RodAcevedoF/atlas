@@ -20,7 +20,6 @@ import type {
   Topic,
   TopicCount,
   Trade,
-  Watchlist,
 } from "@atlas/domain";
 import { makeEventId, makeMarketId, makeOutcomeId } from "@atlas/domain";
 import type { Db } from "mongodb";
@@ -32,7 +31,6 @@ import type {
   PriceTickDoc,
   SignalDoc,
   TradeDoc,
-  WatchlistDoc,
 } from "./collections.ts";
 
 const DEFAULT_REGION: GeoRegion = "global";
@@ -112,16 +110,6 @@ function docToAnalysisRun(doc: AnalysisRunDoc): AnalysisRun {
     startedAt: doc.startedAt,
     completedAt: doc.completedAt,
     error: doc.error,
-  };
-}
-
-function docToWatchlist(doc: WatchlistDoc): Watchlist {
-  return {
-    id: doc._id,
-    userId: doc.userId,
-    marketIds: doc.marketIds.map(makeMarketId),
-    createdAt: doc.createdAt,
-    updatedAt: doc.updatedAt,
   };
 }
 
@@ -483,22 +471,5 @@ export class MongoMarketStore implements MarketStorePort {
   async findAnalysisRun(id: string): Promise<AnalysisRun | null> {
     const doc = await this.db.collection<AnalysisRunDoc>("analysis_runs").findOne({ _id: id });
     return doc ? docToAnalysisRun(doc) : null;
-  }
-
-  async findWatchlist(userId: string): Promise<Watchlist | null> {
-    const doc = await this.db.collection<WatchlistDoc>("watchlists").findOne({ userId });
-    return doc ? docToWatchlist(doc) : null;
-  }
-
-  async saveWatchlist(watchlist: Watchlist): Promise<void> {
-    const doc: Omit<WatchlistDoc, "_id"> = {
-      userId: watchlist.userId,
-      marketIds: watchlist.marketIds as string[],
-      createdAt: watchlist.createdAt,
-      updatedAt: watchlist.updatedAt,
-    };
-    await this.db
-      .collection<WatchlistDoc>("watchlists")
-      .replaceOne({ _id: watchlist.id }, doc, { upsert: true });
   }
 }

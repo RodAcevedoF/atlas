@@ -116,11 +116,3 @@ export interface AnalysisRunDoc {
   completedAt: Date | null;
   error: string | null;
 }
-
-export interface WatchlistDoc {
-  _id: string;
-  userId: string;
-  marketIds: string[];
-  createdAt: Date;
-  updatedAt: Date;
-}

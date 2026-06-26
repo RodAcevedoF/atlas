@@ -19,6 +19,5 @@ export async function ensureIndexes(db: Db): Promise<void> {
       ]),
     db.collection("insights").createIndexes([{ key: { marketId: 1, kind: 1, generatedAt: -1 } }]),
     db.collection("analysis_runs").createIndexes([{ key: { status: 1 } }]),
-    db.collection("watchlists").createIndexes([{ key: { userId: 1 }, unique: true }]),
   ]);
 }

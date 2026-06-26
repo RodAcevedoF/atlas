@@ -31,8 +31,6 @@ export type {
   AnalysisRun,
 } from "./entities/analysis-run.ts";
 
-export type { Watchlist } from "./entities/watchlist.ts";
-
 export type {
   SignalId,
   SignalSource,
