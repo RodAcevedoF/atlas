@@ -1,4 +1,5 @@
 import type {
+  IngestNewsInput,
   ListEventsInput,
   ListMarketsInput,
   ListRegionSummariesInput,
@@ -67,6 +68,13 @@ export function parseRegionSummariesQuery(query: RawQuery): ListRegionSummariesI
     category: parseCategory(query.category),
     limit: parseLimit(query.limit),
     region: parseRegion(query.region),
+  };
+}
+
+export function parseIngestNewsBody(body: RawQuery): IngestNewsInput {
+  return {
+    query: typeof body.query === "string" ? body.query : undefined,
+    limit: parseLimit(body.limit),
   };
 }
 

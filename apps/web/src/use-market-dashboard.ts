@@ -6,6 +6,7 @@ import {
   loadMarketDashboard,
 } from "./use-cases/load-market-dashboard.ts";
 import { syncMarketSnapshot } from "./use-cases/sync-market-snapshot.ts";
+import { syncNewsSnapshot } from "./use-cases/sync-news-snapshot.ts";
 
 export interface UseMarketDashboardResult {
   category: MarketCategory | "";
@@ -15,9 +16,11 @@ export interface UseMarketDashboardResult {
   dashboard: MarketDashboardData | null;
   isLoading: boolean;
   isSyncing: boolean;
+  isSyncingNews: boolean;
   error: string | null;
   syncMessage: string | null;
   handleSync: () => Promise<void>;
+  handleSyncNews: () => Promise<void>;
 }
 
 export function useMarketDashboard(): UseMarketDashboardResult {
@@ -27,6 +30,7 @@ export function useMarketDashboard(): UseMarketDashboardResult {
   const [dashboard, setDashboard] = useState<MarketDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncingNews, setIsSyncingNews] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
@@ -51,6 +55,7 @@ export function useMarketDashboard(): UseMarketDashboardResult {
             category: category || undefined,
             limit: 8,
           },
+          worldTopics: { limit: 8 },
         });
         if (!cancelled) setDashboard(result);
       } catch (loadError) {
@@ -87,6 +92,21 @@ export function useMarketDashboard(): UseMarketDashboardResult {
     }
   }
 
+  async function handleSyncNews(): Promise<void> {
+    setIsSyncingNews(true);
+    setError(null);
+
+    try {
+      const result = await syncNewsSnapshot(repository, { limit: 75 });
+      setSyncMessage(`Ingested ${result.upserted} news signals from GDELT.`);
+      setRefreshKey((value) => value + 1);
+    } catch (syncError) {
+      setError(syncError instanceof Error ? syncError.message : "Failed to sync news snapshot");
+    } finally {
+      setIsSyncingNews(false);
+    }
+  }
+
   return {
     category,
     setCategory,
@@ -95,8 +115,10 @@ export function useMarketDashboard(): UseMarketDashboardResult {
     dashboard,
     isLoading,
     isSyncing,
+    isSyncingNews,
     error,
     syncMessage,
     handleSync,
+    handleSyncNews,
   };
 }

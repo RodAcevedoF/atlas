@@ -36,12 +36,19 @@ export type {
   JobQueuePort,
 } from "./ports/job-queue.ts";
 export type { ClockPort, IdPort } from "./ports/utilities.ts";
+export type { SignalSourceFilter, SignalSourcePort } from "./ports/signal-source.ts";
 
 export type {
   IngestMarketsInput,
   IngestMarketsOutput,
   IngestMarkets,
 } from "./use-cases/ingest-markets.ts";
+export type {
+  IngestNewsInput,
+  IngestNewsOutput,
+  IngestNews,
+} from "./use-cases/ingest-news.ts";
+export { IngestNewsUseCase } from "./use-cases/ingest-news-usecase.ts";
 export { IngestMarketsUseCase } from "./use-cases/ingest-markets-usecase.ts";
 export type {
   ListMarketsInput,

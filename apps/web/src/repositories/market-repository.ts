@@ -1,6 +1,19 @@
-import type { GeoRegion, MarketCategory, MarketStatus } from "@atlas/domain";
+import type { GeoRegion, MarketCategory, MarketStatus, SignalSource, Topic } from "@atlas/domain";
 
-export type { GeoRegion, MarketCategory, MarketStatus };
+export type { GeoRegion, MarketCategory, MarketStatus, SignalSource, Topic };
+
+export interface TopicCountRecord {
+  topic: Topic;
+  signalCount: number;
+  totalWeight: number;
+}
+
+export interface RegionTopicBreakdownRecord {
+  region: GeoRegion;
+  signalCount: number;
+  totalWeight: number;
+  topics: TopicCountRecord[];
+}
 
 export interface RegionSummaryRecord {
   region: GeoRegion;
@@ -67,6 +80,13 @@ export interface ListRegionSummariesInput {
   region?: GeoRegion;
 }
 
+export interface ListWorldTopicsInput {
+  source?: SignalSource;
+  topic?: Topic;
+  region?: GeoRegion;
+  limit?: number;
+}
+
 export interface IngestMarketsInput {
   categories?: string[];
   maxMarkets?: number;
@@ -77,9 +97,20 @@ export interface IngestMarketsResult {
   ticksRecorded: number;
 }
 
+export interface IngestNewsInput {
+  query?: string;
+  limit?: number;
+}
+
+export interface IngestNewsResult {
+  upserted: number;
+}
+
 export interface MarketRepository {
   listMarkets(input?: ListMarketsInput): Promise<MarketRecord[]>;
   listEvents(input?: ListEventsInput): Promise<EventRecord[]>;
   listRegionSummaries(input?: ListRegionSummariesInput): Promise<RegionSummaryRecord[]>;
+  listWorldTopics(input?: ListWorldTopicsInput): Promise<RegionTopicBreakdownRecord[]>;
   ingestMarkets(input?: IngestMarketsInput): Promise<IngestMarketsResult>;
+  ingestNews(input?: IngestNewsInput): Promise<IngestNewsResult>;
 }

@@ -47,3 +47,5 @@ export {
   marketToSignal,
 } from "./entities/signal.ts";
 export { SIGNAL_SOURCES, TOPICS } from "./entities/signal.ts";
+
+export { deriveRegionsFromText, deriveTopicFromText } from "./entities/geography.ts";

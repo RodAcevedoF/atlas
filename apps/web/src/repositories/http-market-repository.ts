@@ -2,12 +2,16 @@ import type {
   EventRecord,
   IngestMarketsInput,
   IngestMarketsResult,
+  IngestNewsInput,
+  IngestNewsResult,
   ListEventsInput,
   ListMarketsInput,
   ListRegionSummariesInput,
+  ListWorldTopicsInput,
   MarketRecord,
   MarketRepository,
   RegionSummaryRecord,
+  RegionTopicBreakdownRecord,
 } from "./market-repository.ts";
 
 function buildQuery(input?: Record<string, string | number | undefined>): string {
@@ -56,6 +60,18 @@ export class HttpMarketRepository implements MarketRepository {
     return readJson<RegionSummaryRecord[]>(response);
   }
 
+  async listWorldTopics(input: ListWorldTopicsInput = {}): Promise<RegionTopicBreakdownRecord[]> {
+    const response = await fetch(
+      `/api/world/topics${buildQuery({
+        source: input.source,
+        topic: input.topic,
+        region: input.region,
+        limit: input.limit,
+      })}`,
+    );
+    return readJson<RegionTopicBreakdownRecord[]>(response);
+  }
+
   async ingestMarkets(input: IngestMarketsInput = {}): Promise<IngestMarketsResult> {
     const response = await fetch("/api/market/ingest", {
       method: "POST",
@@ -63,5 +79,14 @@ export class HttpMarketRepository implements MarketRepository {
       body: JSON.stringify(input),
     });
     return readJson<IngestMarketsResult>(response);
+  }
+
+  async ingestNews(input: IngestNewsInput = {}): Promise<IngestNewsResult> {
+    const response = await fetch("/api/world/news/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    return readJson<IngestNewsResult>(response);
   }
 }

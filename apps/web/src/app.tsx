@@ -1,14 +1,14 @@
 import "./app.css";
-import { GEO_REGIONS, MARKET_CATEGORIES, MARKET_STATUSES } from "@atlas/domain";
-import type { GeoRegion, MarketCategory, MarketStatus } from "@atlas/domain";
+import { MARKET_CATEGORIES, MARKET_STATUSES } from "@atlas/domain";
+import type { MarketCategory, MarketStatus } from "@atlas/domain";
 import { Button } from "@atlas/ui";
 import {
   formatCompactCurrency,
   formatDate,
-  formatPercent,
   toTitleCase,
   topOutcomeLabel,
 } from "./common/utils/index.ts";
+import { WorldAttentionMap } from "./components/world-attention-map.tsx";
 import { useMarketDashboard } from "./use-market-dashboard.ts";
 
 const CATEGORY_OPTIONS = MARKET_CATEGORIES.map((value) => ({
@@ -21,17 +21,6 @@ const STATUS_OPTIONS = MARKET_STATUSES.map((value) => ({
   label: toTitleCase(value),
 }));
 
-const REGION_LABELS: Record<GeoRegion, string> = {
-  "north-america": "North America",
-  "latin-america": "Latin America",
-  europe: "Europe",
-  "middle-east": "Middle East",
-  africa: "Africa",
-  asia: "Asia",
-  oceania: "Oceania",
-  global: "Global",
-};
-
 export function App() {
   const {
     category,
@@ -41,27 +30,28 @@ export function App() {
     dashboard,
     isLoading,
     isSyncing,
+    isSyncingNews,
     error,
     syncMessage,
     handleSync,
+    handleSyncNews,
   } = useMarketDashboard();
 
   const categorySummary = dashboard?.categorySummary.slice(0, 5) ?? [];
   const markets = dashboard?.markets ?? [];
   const events = dashboard?.events ?? [];
-  const regions = dashboard?.regionSummary ?? [];
-  const regionByKey = new Map(regions.map((entry) => [entry.region, entry]));
+  const worldTopics = dashboard?.worldTopics ?? [];
 
   return (
     <main className="appShell">
       <div className="dashboard">
         <section className="hero">
           <article className="panel">
-            <div className="eyebrow">Atlas / Market Pulse MVP</div>
-            <h1 className="heroTitle">See where prediction markets are concentrating attention.</h1>
+            <div className="eyebrow">Atlas / World Awareness Dashboard</div>
+            <h1 className="heroTitle">See where the world's attention is concentrating.</h1>
             <p className="heroLead">
-              This release gives you a read-side market pulse over stored Polymarket data: active
-              questions, event clusters, category volume, and a clean path toward regional mapping.
+              A per-region topic breakdown fused across prediction markets (the people's-pulse
+              layer) and live news. Every source normalizes to a signal; the map reads only signals.
             </p>
 
             <div className="heroActions">
@@ -70,10 +60,18 @@ export function App() {
                 onClick={() => void handleSync()}
                 disabled={isSyncing}
               >
-                {isSyncing ? "Syncing snapshot..." : "Sync latest markets"}
+                {isSyncing ? "Syncing markets..." : "Sync latest markets"}
+              </Button>
+              <Button
+                className="rounded-full px-4"
+                variant="secondary"
+                onClick={() => void handleSyncNews()}
+                disabled={isSyncingNews}
+              >
+                {isSyncingNews ? "Ingesting news..." : "Sync latest news"}
               </Button>
               <div className="hint">
-                {syncMessage ?? "Use the sync action to pull fresh Gamma markets into MongoDB."}
+                {syncMessage ?? "Sync markets and news to fuse fresh signals into the world map."}
               </div>
             </div>
 
@@ -105,33 +103,25 @@ export function App() {
               </select>
             </div>
           </article>
+        </section>
 
-          <aside className="heroAside">
-            <article className="panel mapCard">
-              <div className="sectionLabel">Region pulse</div>
-              <p className="bodyCopy">
-                Derived region tagging is now based on market and event text. This keeps the surface
-                honest: it shows where market attention is aimed, not where traders physically are.
-              </p>
-
-              <div className="mapGrid">
-                {GEO_REGIONS.map((region) => {
-                  const entry = regionByKey.get(region);
-                  return (
-                    <div className="mapRegion" key={region}>
-                      <div className="meta">
-                        {entry ? `${entry.marketCount} markets` : "No data yet"}
-                      </div>
-                      <strong>{REGION_LABELS[region]}</strong>
-                      <div className="muted">
-                        {entry ? formatCompactCurrency(entry.totalVolumeUsd) : "Sync data"}
-                      </div>
-                    </div>
-                  );
-                })}
+        <section className="rounded-3xl border border-border bg-card/70 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                World attention map
               </div>
-            </article>
-          </aside>
+              <h2 className="mt-1 text-xl font-semibold text-foreground">
+                Per-region topic breakdown
+              </h2>
+            </div>
+            <span className="text-sm text-muted-foreground">
+              Markets + news signals · click a region for its topics
+            </span>
+          </div>
+          <div className="mt-4">
+            <WorldAttentionMap breakdowns={worldTopics} />
+          </div>
         </section>
 
         {error ? <div className="errorBanner">{error}</div> : null}

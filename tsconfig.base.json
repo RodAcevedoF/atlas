@@ -28,7 +28,8 @@
         "./packages/infrastructure/orchestration-http/src/index.ts"
       ],
       "@atlas/infra/eventbus-sse": ["./packages/infrastructure/eventbus-sse/src/index.ts"],
-      "@atlas/infra/queue-mongodb": ["./packages/infrastructure/queue-mongodb/src/index.ts"]
+      "@atlas/infra/queue-mongodb": ["./packages/infrastructure/queue-mongodb/src/index.ts"],
+      "@atlas/infra/news-gdelt": ["./packages/infrastructure/news-gdelt/src/index.ts"]
     }
   }
 }
