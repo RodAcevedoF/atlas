@@ -8,7 +8,7 @@ import {
   toTitleCase,
   topOutcomeLabel,
 } from "./common/utils/index.ts";
-import { WorldAttentionMap } from "./components/world-attention-map.tsx";
+import { WorldAttentionMap } from "./components/world-map/world-attention-map.tsx";
 import { useMarketDashboard } from "./use-market-dashboard.ts";
 
 const CATEGORY_OPTIONS = MARKET_CATEGORIES.map((value) => ({
