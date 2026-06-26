@@ -7,7 +7,6 @@ export interface SignalSourceFilter {
   limit?: number;
 }
 
-
 export interface SignalSourcePort {
   fetchSignals(filter?: SignalSourceFilter): Promise<Signal[]>;
 }

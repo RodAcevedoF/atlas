@@ -11,5 +11,5 @@ app.get("/health", async () => {
 const deps = await bootstrap();
 await registerMarketRoutes(app, deps);
 
-const port = Number(process.env["PORT"] ?? 3001);
+const port = Number(process.env.PORT ?? 3001);
 await app.listen({ port, host: "0.0.0.0" });

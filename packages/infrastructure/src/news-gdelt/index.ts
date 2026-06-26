@@ -4,7 +4,6 @@ import { deriveRegionsFromText, deriveTopicFromText, makeSignalId } from "@atlas
 import { fetchGdeltDoc } from "./gdelt-client.ts";
 import type { GdeltArticle } from "./gdelt-types.ts";
 
-
 const DEFAULT_QUERY =
   "(election OR conflict OR economy OR climate OR technology OR protest OR sanctions OR diplomacy OR outbreak)";
 

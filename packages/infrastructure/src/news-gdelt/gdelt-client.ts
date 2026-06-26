@@ -11,7 +11,6 @@ function buildDocUrl(searchParams: Record<string, string | number | undefined>):
   return url;
 }
 
-
 export async function fetchGdeltDoc(
   searchParams: Record<string, string | number | undefined>,
 ): Promise<GdeltDocResponse> {

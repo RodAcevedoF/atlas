@@ -62,12 +62,13 @@ export class HttpOrchestration implements OrchestrationPort {
       const { value, done } = await reader.read();
       if (done) break;
       buf += decoder.decode(value, { stream: true });
-      let idx: number;
-      while ((idx = buf.indexOf("\n\n")) !== -1) {
+      let idx = buf.indexOf("\n\n");
+      while (idx !== -1) {
         const block = buf.slice(0, idx);
         buf = buf.slice(idx + 2);
         const event = parseSseBlock(block);
         if (event) yield event;
+        idx = buf.indexOf("\n\n");
       }
     }
     buf += decoder.decode();

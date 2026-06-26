@@ -6,7 +6,7 @@ export class AnthropicLLMAdapter implements LLMPort {
     throw new NotImplementedError("AnthropicLLMAdapter.complete");
   }
 
-  async *stream(_messages: LLMMessage[], _options?: LLMOptions): AsyncIterable<string> {
+  stream(_messages: LLMMessage[], _options?: LLMOptions): AsyncIterable<string> {
     throw new NotImplementedError("AnthropicLLMAdapter.stream");
   }
 }

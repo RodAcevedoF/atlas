@@ -1,4 +1,3 @@
-
 export interface GdeltArticle {
   url: string;
   url_mobile?: string;

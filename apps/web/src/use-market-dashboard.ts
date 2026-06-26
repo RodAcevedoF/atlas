@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useMarketRepository } from "./providers.tsx";
 import type { MarketCategory, MarketStatus } from "./repositories/market-repository.ts";
 import {
@@ -31,14 +31,11 @@ export function useMarketDashboard(): UseMarketDashboardResult {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSyncingNews, setIsSyncingNews] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function run(): Promise<void> {
+  const load = useCallback(
+    async (token?: { cancelled: boolean }): Promise<void> => {
       setIsLoading(true);
       setError(null);
 
@@ -57,22 +54,26 @@ export function useMarketDashboard(): UseMarketDashboardResult {
           },
           worldTopics: { limit: 8 },
         });
-        if (!cancelled) setDashboard(result);
+        if (!token?.cancelled) setDashboard(result);
       } catch (loadError) {
-        if (!cancelled) {
+        if (!token?.cancelled) {
           setError(loadError instanceof Error ? loadError.message : "Failed to load dashboard");
         }
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!token?.cancelled) setIsLoading(false);
       }
-    }
+    },
+    [category, repository, status],
+  );
 
-    void run();
+  useEffect(() => {
+    const token = { cancelled: false };
+    void load(token);
 
     return () => {
-      cancelled = true;
+      token.cancelled = true;
     };
-  }, [category, refreshKey, repository, status]);
+  }, [load]);
 
   async function handleSync(): Promise<void> {
     setIsSyncing(true);
@@ -84,7 +85,7 @@ export function useMarketDashboard(): UseMarketDashboardResult {
         maxMarkets: 100,
       });
       setSyncMessage(`Synced ${result.upserted} markets from Polymarket.`);
-      setRefreshKey((value) => value + 1);
+      void load();
     } catch (syncError) {
       setError(syncError instanceof Error ? syncError.message : "Failed to sync market snapshot");
     } finally {
@@ -99,7 +100,7 @@ export function useMarketDashboard(): UseMarketDashboardResult {
     try {
       const result = await syncNewsSnapshot(repository, { limit: 75 });
       setSyncMessage(`Ingested ${result.upserted} news signals from GDELT.`);
-      setRefreshKey((value) => value + 1);
+      void load();
     } catch (syncError) {
       setError(syncError instanceof Error ? syncError.message : "Failed to sync news snapshot");
     } finally {
