@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useMarketRepository } from "./providers.tsx";
-import type { MarketCategory, MarketStatus } from "./repositories/market-repository.ts";
+import type {
+  MarketCategory,
+  MarketStatus,
+  SignalSource,
+} from "./repositories/market-repository.ts";
+
+export type SourceFilter = SignalSource | "all";
 import {
   type MarketDashboardData,
   loadMarketDashboard,
@@ -13,6 +19,8 @@ export interface UseMarketDashboardResult {
   setCategory: (value: MarketCategory | "") => void;
   status: MarketStatus | "";
   setStatus: (value: MarketStatus | "") => void;
+  source: SourceFilter;
+  setSource: (value: SourceFilter) => void;
   dashboard: MarketDashboardData | null;
   isLoading: boolean;
   isSyncing: boolean;
@@ -27,6 +35,7 @@ export function useMarketDashboard(): UseMarketDashboardResult {
   const repository = useMarketRepository();
   const [category, setCategory] = useState<MarketCategory | "">("");
   const [status, setStatus] = useState<MarketStatus | "">("active");
+  const [source, setSource] = useState<SourceFilter>("all");
   const [dashboard, setDashboard] = useState<MarketDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -52,7 +61,7 @@ export function useMarketDashboard(): UseMarketDashboardResult {
             category: category || undefined,
             limit: 8,
           },
-          worldTopics: { limit: 8 },
+          worldTopics: { source: source === "all" ? undefined : source, limit: 8 },
         });
         if (!token?.cancelled) setDashboard(result);
       } catch (loadError) {
@@ -63,7 +72,7 @@ export function useMarketDashboard(): UseMarketDashboardResult {
         if (!token?.cancelled) setIsLoading(false);
       }
     },
-    [category, repository, status],
+    [category, repository, status, source],
   );
 
   useEffect(() => {
@@ -113,6 +122,8 @@ export function useMarketDashboard(): UseMarketDashboardResult {
     setCategory,
     status,
     setStatus,
+    source,
+    setSource,
     dashboard,
     isLoading,
     isSyncing,

@@ -1,34 +1,42 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
 /* @atlas/ui lives outside this app's source tree, so register it for class scanning. */
 @source '../../../packages/ui/src';
 
 /*
- * shadcn token set mapped to the existing dark + amber dashboard aesthetic
- * (see app.css). Defined once here so future shadcn components resolve their
- * colors without revisiting the theme.
+ * shadcn token set, aligned to the Claude Design "World Awareness Dashboard"
+ * (dark near-black + amber). Defined once here so shadcn/@atlas/ui components
+ * resolve their colors without revisiting the theme.
  */
 :root {
-  --background: #08111f;
-  --foreground: #f7f2ea;
-  --card: #0b1626;
-  --card-foreground: #f7f2ea;
-  --popover: #0b1a2e;
-  --popover-foreground: #f7f2ea;
+  --background: #0a0a0a;
+  --foreground: #ececee;
+  --card: #101114;
+  --card-foreground: #ececee;
+  --card-2: #15171b;
+  --popover: #121316;
+  --popover-foreground: #ececee;
   --primary: #ffab58;
-  --primary-foreground: #1a1207;
-  --secondary: #15243a;
-  --secondary-foreground: #f7f2ea;
-  --muted: #15243a;
-  --muted-foreground: rgba(233, 237, 245, 0.62);
-  --accent: #1b2c45;
-  --accent-foreground: #f7f2ea;
-  --destructive: #e5484d;
+  --primary-foreground: #1c1205;
+  --secondary: #15171b;
+  --secondary-foreground: #ececee;
+  --muted: #1a1c20;
+  --muted-foreground: #8b8e95;
+  --accent: #1a1c20;
+  --accent-foreground: #ececee;
+  --positive: #5fcf80;
+  --negative: #f0766a;
+  --info: #6ea8fe;
+  --destructive: #f0766a;
   --destructive-foreground: #fff7f5;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.14);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --input: rgba(255, 255, 255, 0.15);
   --ring: #ffab58;
-  --radius: 0.75rem;
+  --radius: 16px;
+  --font-sans: "Geist", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
 }
 
 @theme inline {
@@ -36,6 +44,7 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-card-2: var(--card-2);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
@@ -46,9 +55,59 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-info: var(--info);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100%;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+  background-clip: padding-box;
+}
+
+@keyframes atlas-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
