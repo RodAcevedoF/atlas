@@ -1,14 +1,14 @@
 {
-  "name": "@atlas/infra/queue-mongodb",
+  "name": "@atlas/infra",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    "./*": "./src/*/index.ts"
   },
   "dependencies": {
     "@atlas/application": "*",
+    "@atlas/domain": "*",
     "@atlas/shared": "*",
     "agenda": "^6.2.5",
     "mongodb": "^7.2.0"

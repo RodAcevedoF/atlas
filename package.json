@@ -2,7 +2,7 @@
   "name": "atlas",
   "version": "0.0.0",
   "private": true,
-  "workspaces": ["apps/*", "packages/*", "packages/infrastructure/*"],
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "bun nx run-many -t dev --parallel=4",
     "typecheck": "bun nx run-many -t typecheck",
