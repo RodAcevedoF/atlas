@@ -19,7 +19,7 @@ interface TopBarProps {
 
 function Spinner() {
   return (
-    <span className="inline-block h-[13px] w-[13px] animate-spin rounded-full border-[1.8px] border-current border-t-transparent" />
+    <span className="inline-block h-3.25 w-3.25 animate-spin rounded-full border-[1.8px] border-current border-t-transparent" />
   );
 }
 
@@ -32,7 +32,7 @@ export function TopBar({
   isSyncingNews,
 }: TopBarProps) {
   return (
-    <header className="flex h-[46px] flex-none items-center justify-between gap-4">
+    <header className="flex h-11.5 flex-none items-center justify-between gap-4">
       <div className="flex items-center gap-3.5">
         <div className="flex items-center gap-2.5">
           <div
@@ -62,7 +62,7 @@ export function TopBar({
             </span>
           </div>
         </div>
-        <div className="h-[22px] w-px bg-border" />
+        <div className="h-5.5 w-px bg-border" />
         <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
           <span
             className="h-1.5 w-1.5 rounded-full bg-positive"
@@ -76,7 +76,7 @@ export function TopBar({
       </div>
 
       <div className="flex items-center gap-2.5">
-        <div className="flex items-center gap-0.5 rounded-[11px] border border-border bg-muted p-[3px]">
+        <div className="flex items-center gap-0.5 rounded-[11px] border border-border bg-muted p-0.75">
           {SOURCE_OPTIONS.map((option) => {
             const isActive = source === option.id;
             return (
@@ -84,9 +84,9 @@ export function TopBar({
                 key={option.id}
                 type="button"
                 onClick={() => onSourceChange(option.id)}
-                className={`h-[27px] rounded-lg px-[13px] text-xs font-medium transition-colors ${
+                className={`h-6.75 rounded-lg px-3.25 text-xs font-medium transition-colors ${
                   isActive
-                    ? "bg-white/[0.08] text-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]"
+                    ? "bg-white/8 text-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -100,7 +100,7 @@ export function TopBar({
           type="button"
           onClick={onSyncNews}
           disabled={isSyncingNews}
-          className="flex h-[34px] items-center gap-[7px] rounded-[10px] border border-border-strong bg-card-2 px-3.5 text-[12.5px] font-medium text-foreground transition-colors hover:border-white/20 disabled:opacity-60"
+          className="flex h-8.5 items-center gap-1.75 rounded-[10px] border border-border-strong bg-card-2 px-3.5 text-[12.5px] font-medium text-foreground transition-colors hover:border-white/20 disabled:opacity-60"
         >
           {isSyncingNews ? <Spinner /> : null}
           {isSyncingNews ? "Syncing…" : "Sync news"}
@@ -109,7 +109,7 @@ export function TopBar({
           type="button"
           onClick={onSyncMarkets}
           disabled={isSyncing}
-          className="flex h-[34px] items-center gap-[7px] rounded-[10px] bg-primary px-[15px] text-[12.5px] font-semibold text-primary-foreground transition-[filter] hover:brightness-[1.07] disabled:opacity-70"
+          className="flex h-8.5 items-center gap-1.75 rounded-[10px] bg-primary px-3.75 text-[12.5px] font-semibold text-primary-foreground transition-[filter] hover:brightness-[1.07] disabled:opacity-70"
           style={{ boxShadow: "0 6px 18px -8px rgba(255,171,88,.7)" }}
         >
           {isSyncing ? <Spinner /> : null}

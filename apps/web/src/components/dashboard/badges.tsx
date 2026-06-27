@@ -26,7 +26,7 @@ export function CategoryBadge({ category }: { category: MarketCategory }) {
   const color = CATEGORY_COLORS[category];
   return (
     <span
-      className="inline-flex h-[21px] items-center rounded-md border px-2 text-[11px] font-medium capitalize"
+      className="inline-flex h-5.25 items-center rounded-md border px-2 text-[11px] font-medium capitalize"
       style={{ color, background: withAlpha(color, 0.12), borderColor: withAlpha(color, 0.22) }}
     >
       {category}
@@ -38,11 +38,11 @@ export function StatusBadge({ status }: { status: MarketStatus }) {
   const color = STATUS_COLORS[status];
   return (
     <span
-      className="inline-flex h-[21px] items-center gap-1.5 rounded-md px-2 text-[11px] font-medium capitalize"
+      className="inline-flex h-5.25 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium capitalize"
       style={{ color, background: withAlpha(color, 0.12) }}
     >
       <span
-        className="h-[5px] w-[5px] rounded-full"
+        className="h-1.25 w-1.25 rounded-full"
         style={{ background: color, boxShadow: `0 0 6px ${color}` }}
       />
       {status}
