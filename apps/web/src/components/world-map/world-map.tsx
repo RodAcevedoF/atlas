@@ -17,7 +17,7 @@ import { FILL_REGIONS, REGION_SUBREGIONS, regionForSubregion } from "./region-fo
 
 const BASEMAP_STYLE = "https://tiles.openfreemap.org/styles/dark";
 const COUNTRIES_URL = "/world-countries.geojson";
-const PRIMARY_RGB = "255, 171, 88"; // theme --primary (#ffab58); MapLibre paint can't read CSS vars
+const PRIMARY_RGB = "255, 171, 88";
 const COUNTRY_FILL_LAYER = "country-fills";
 
 type BreakdownIndex = Map<GeoRegion, RegionTopicBreakdownRecord>;
@@ -35,8 +35,6 @@ interface WorldMapProps {
   onSelect: (region: GeoRegion) => void;
 }
 
-// Data-driven choropleth: opacity scales with each region's share of the peak, keyed on the
-// country's UN subregion. Rebuilt whenever the breakdowns change.
 function buildFillColor(byRegion: BreakdownIndex, peak: number): ExpressionSpecification {
   const branches: Array<string | string[]> = [];
   for (const region of FILL_REGIONS) {
@@ -84,21 +82,7 @@ export function WorldMap({ byRegion, peak, selected, onSelect }: WorldMapProps) 
   }, []);
 
   return (
-    <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-[4] flex items-center justify-between bg-gradient-to-b from-card/85 to-transparent px-4 py-3.5">
-        <div className="flex flex-col gap-px">
-          <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-            World Attention Map
-          </span>
-          <span className="text-sm font-semibold tracking-[-0.01em]">
-            Per-region attention intensity
-          </span>
-        </div>
-        <span className="text-[11px] text-muted-foreground">
-          Markets + news signals · click a region
-        </span>
-      </div>
-
+    <div className="relative h-full w-full overflow-hidden bg-card">
       <div className="absolute inset-0">
         <MapGL
           ref={mapRef}
@@ -144,39 +128,37 @@ export function WorldMap({ byRegion, peak, selected, onSelect }: WorldMapProps) 
         </MapGL>
       </div>
 
-      <div className="absolute bottom-4 left-4 z-[5] flex flex-col gap-[7px] rounded-xl border border-border bg-card/60 px-3 py-2.5 backdrop-blur-md">
+      <div className="absolute left-1/2 top-4 z-5 flex -translate-x-1/2 items-center gap-2.5 rounded-xl border border-border bg-card/60 px-3 py-2 backdrop-blur-md">
         <span className="text-[10px] uppercase tracking-[0.13em] text-muted-foreground">
-          Attention intensity
+          Attention
         </span>
+        <span className="font-mono text-[10px] text-muted-foreground">Low</span>
         <div
-          className="h-2 w-[178px] rounded-[5px]"
+          className="h-2 w-35 rounded-[5px]"
           style={{
             background:
               "linear-gradient(90deg, rgba(255,171,88,.1), rgba(255,171,88,.45), var(--primary))",
           }}
         />
-        <div className="flex justify-between font-mono text-[10px] text-muted-foreground">
-          <span>Low</span>
-          <span>High</span>
-        </div>
+        <span className="font-mono text-[10px] text-muted-foreground">High</span>
       </div>
 
-      <div className="absolute bottom-4 right-4 z-[5] flex flex-col overflow-hidden rounded-[11px] border border-border bg-card/60 backdrop-blur-md">
-        <button
-          type="button"
-          aria-label="Zoom in"
-          onClick={() => mapRef.current?.zoomIn()}
-          className="flex h-[33px] w-[34px] items-center justify-center border-b border-border text-[17px] text-foreground hover:bg-white/[0.06]"
-        >
-          +
-        </button>
+      <div className="absolute bottom-4 left-1/2 z-5 flex -translate-x-1/2 overflow-hidden rounded-[11px] border border-border bg-card/60 backdrop-blur-md">
         <button
           type="button"
           aria-label="Zoom out"
           onClick={() => mapRef.current?.zoomOut()}
-          className="flex h-[33px] w-[34px] items-center justify-center text-[19px] text-foreground hover:bg-white/[0.06]"
+          className="flex h-8.5 w-9 items-center justify-center border-r border-border text-[19px] text-foreground hover:bg-white/6"
         >
           −
+        </button>
+        <button
+          type="button"
+          aria-label="Zoom in"
+          onClick={() => mapRef.current?.zoomIn()}
+          className="flex h-8.5 w-9 items-center justify-center text-[17px] text-foreground hover:bg-white/6"
+        >
+          +
         </button>
       </div>
     </div>

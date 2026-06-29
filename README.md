@@ -1,6 +1,6 @@
 # Atlas
 
-AI-powered predictive analytics for prediction markets. Built on Polymarket data.
+AI-powered predictive analytics for prediction markets. Built on multi-sourced data and powered by LLMs.
 
 Three modules, one data layer:
 

@@ -1,13 +1,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
-/* @atlas/ui lives outside this app's source tree, so register it for class scanning. */
 @source '../../../packages/ui/src';
 
 /*
- * shadcn token set, aligned to the Claude Design "World Awareness Dashboard"
- * (dark near-black + amber). Defined once here so shadcn/@atlas/ui components
- * resolve their colors without revisiting the theme.
+ * shadcn token set
  */
 :root {
   --background: #0a0a0a;
@@ -100,6 +97,36 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.18);
   background-clip: padding-box;
+}
+
+.maplibregl-popup-content {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  padding: 6px 10px;
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.7);
+}
+
+.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+  border-bottom-color: var(--popover);
+}
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: var(--popover);
+}
+.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--popover);
+}
+.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--popover);
+}
+.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+  border-bottom-color: var(--popover);
+}
+.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+  border-top-color: var(--popover);
 }
 
 @keyframes atlas-pulse {

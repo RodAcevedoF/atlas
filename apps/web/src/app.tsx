@@ -1,8 +1,6 @@
-import { KpiStrip } from "./components/dashboard/kpi-strip.tsx";
-import { MarketsTable } from "./components/dashboard/markets-table.tsx";
 import { TopBar } from "./components/dashboard/top-bar.tsx";
-import { TopTopics } from "./components/dashboard/top-topics.tsx";
-import { WorldAttentionSection } from "./components/world-map/world-attention-section.tsx";
+import { MapCockpit } from "./components/world-map/map-cockpit.tsx";
+import { usePanelVisibility } from "./components/world-map/use-panel-visibility.ts";
 import { useMarketDashboard } from "./use-market-dashboard.ts";
 
 export function App() {
@@ -21,13 +19,14 @@ export function App() {
     handleSync,
     handleSyncNews,
   } = useMarketDashboard();
+  const { visibility, anyVisible, toggleAll, hidePanel, togglePanel } = usePanelVisibility();
 
   const markets = dashboard?.markets ?? [];
   const worldTopics = dashboard?.worldTopics ?? [];
   const signalsIngested = worldTopics.reduce((sum, region) => sum + region.signalCount, 0);
 
   return (
-    <main className="flex h-screen flex-col gap-[13px] overflow-hidden px-4 pb-4 pt-[15px]">
+    <main className="flex h-screen flex-col gap-3.25 overflow-hidden px-4 pb-4 pt-3.75">
       <TopBar
         source={source}
         onSourceChange={setSource}
@@ -35,6 +34,10 @@ export function App() {
         onSyncNews={() => void handleSyncNews()}
         isSyncing={isSyncing}
         isSyncingNews={isSyncingNews}
+        panelVisibility={visibility}
+        anyPanelVisible={anyVisible}
+        onToggleAllPanels={toggleAll}
+        onTogglePanel={togglePanel}
       />
 
       {error ? (
@@ -43,29 +46,21 @@ export function App() {
         </div>
       ) : null}
 
-      <KpiStrip
-        activeMarkets={dashboard?.activeMarketCount ?? 0}
+      <MapCockpit
+        worldTopics={worldTopics}
+        markets={markets}
+        activeMarketCount={dashboard?.activeMarketCount ?? 0}
         totalVolumeUsd={dashboard?.totalVolumeUsd ?? 0}
         totalLiquidityUsd={dashboard?.totalLiquidityUsd ?? 0}
         signalsIngested={signalsIngested}
         isLoading={isLoading}
+        category={category}
+        status={status}
+        onCategoryChange={setCategory}
+        onStatusChange={setStatus}
+        visibility={visibility}
+        onHidePanel={hidePanel}
       />
-
-      <section className="flex min-h-0 flex-[1.32] gap-[13px]">
-        <WorldAttentionSection breakdowns={worldTopics} />
-      </section>
-
-      <section className="flex min-h-0 flex-[0.92] gap-[13px]">
-        <TopTopics breakdowns={worldTopics} />
-        <MarketsTable
-          markets={markets}
-          category={category}
-          status={status}
-          onCategoryChange={setCategory}
-          onStatusChange={setStatus}
-          isLoading={isLoading}
-        />
-      </section>
     </main>
   );
 }
