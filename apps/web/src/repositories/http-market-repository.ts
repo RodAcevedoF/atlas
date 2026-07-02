@@ -7,11 +7,13 @@ import type {
   ListEventsInput,
   ListMarketsInput,
   ListRegionSummariesInput,
+  ListWorldEventsInput,
   ListWorldTopicsInput,
   MarketRecord,
   MarketRepository,
   RegionSummaryRecord,
   RegionTopicBreakdownRecord,
+  WorldEventRecord,
 } from "./market-repository.ts";
 
 function buildQuery(input?: Record<string, string | number | undefined>): string {
@@ -70,6 +72,18 @@ export class HttpMarketRepository implements MarketRepository {
       })}`,
     );
     return readJson<RegionTopicBreakdownRecord[]>(response);
+  }
+
+  async listWorldEvents(input: ListWorldEventsInput = {}): Promise<WorldEventRecord[]> {
+    const response = await fetch(
+      `/api/world/events${buildQuery({
+        source: input.source,
+        topic: input.topic,
+        region: input.region,
+        limit: input.limit,
+      })}`,
+    );
+    return readJson<WorldEventRecord[]>(response);
   }
 
   async ingestMarkets(input: IngestMarketsInput = {}): Promise<IngestMarketsResult> {

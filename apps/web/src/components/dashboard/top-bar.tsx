@@ -12,7 +12,7 @@ const SOURCE_OPTIONS: Array<{ id: SourceFilter; label: string }> = [
 const PANEL_OPTIONS: Array<{ key: PanelKey; label: string }> = [
   { key: "kpis", label: "KPIs" },
   { key: "region", label: "Region" },
-  { key: "topics", label: "Topics" },
+  { key: "events", label: "Events" },
   { key: "markets", label: "Markets" },
 ];
 

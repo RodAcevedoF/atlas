@@ -21,7 +21,7 @@ import type {
   TopicCount,
   Trade,
 } from "@atlas/domain";
-import { makeEventId, makeMarketId, makeOutcomeId } from "@atlas/domain";
+import { makeEventId, makeMarketId, makeOutcomeId, makeSignalId } from "@atlas/domain";
 import type { Db } from "mongodb";
 import type {
   AnalysisRunDoc,
@@ -38,6 +38,21 @@ const DEFAULT_REGION: GeoRegion = "global";
 function coerceRegions(regions: GeoRegion[] | undefined): GeoRegion[] {
   if (!regions || regions.length === 0) return [DEFAULT_REGION];
   return [...new Set(regions)];
+}
+
+function docToSignal(doc: SignalDoc): Signal {
+  return {
+    id: makeSignalId(doc._id),
+    source: doc.source,
+    topic: doc.topic,
+    primaryRegion: doc.primaryRegion,
+    regions: coerceRegions(doc.regions),
+    weight: doc.weight,
+    title: doc.title,
+    ref: doc.ref,
+    timestamp: doc.timestamp,
+    createdAt: doc.createdAt,
+  };
 }
 
 function docToMarket(doc: MarketDoc): Market {
@@ -274,6 +289,26 @@ export class MongoMarketStore implements MarketStorePort {
     }));
     breakdowns.sort((left, right) => right.signalCount - left.signalCount);
     return typeof filter?.limit === "number" ? breakdowns.slice(0, filter.limit) : breakdowns;
+  }
+
+  async listSignals(filter?: {
+    source?: SignalSource;
+    topic?: Topic;
+    region?: GeoRegion;
+    limit?: number;
+  }): Promise<Signal[]> {
+    const match: Record<string, unknown> = {};
+    if (filter?.source) match.source = filter.source;
+    if (filter?.topic) match.topic = filter.topic;
+    if (filter?.region) match.regions = filter.region;
+
+    const docs = await this.db
+      .collection<SignalDoc>("signals")
+      .find(match)
+      .sort({ timestamp: -1 })
+      .limit(filter?.limit ?? 0)
+      .toArray();
+    return docs.map(docToSignal);
   }
 
   async listRegionSummaries(filter?: {

@@ -2,10 +2,10 @@ import { Card } from "@atlas/ui";
 import { formatCompactCurrency } from "../../common/utils/index.ts";
 
 interface KpiStripProps {
-  activeMarkets: number;
+  worldSignals: number;
+  activeTopics: number;
+  regionsInFocus: number;
   totalVolumeUsd: number;
-  totalLiquidityUsd: number;
-  signalsIngested: number;
   isLoading: boolean;
 }
 
@@ -28,17 +28,17 @@ function KpiCard({ label, value, isLoading }: Kpi & { isLoading: boolean }) {
 }
 
 export function KpiStrip({
-  activeMarkets,
+  worldSignals,
+  activeTopics,
+  regionsInFocus,
   totalVolumeUsd,
-  totalLiquidityUsd,
-  signalsIngested,
   isLoading,
 }: KpiStripProps) {
   const kpis: Kpi[] = [
-    { label: "Active markets", value: String(activeMarkets) },
+    { label: "World signals", value: worldSignals.toLocaleString() },
+    { label: "Active topics", value: String(activeTopics) },
+    { label: "Regions in focus", value: String(regionsInFocus) },
     { label: "Tracked volume", value: formatCompactCurrency(totalVolumeUsd) },
-    { label: "Tracked liquidity", value: formatCompactCurrency(totalLiquidityUsd) },
-    { label: "Signals ingested", value: signalsIngested.toLocaleString() },
   ];
 
   return (

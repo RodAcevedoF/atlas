@@ -70,6 +70,19 @@ export function marketToSignal(market: Market): Signal {
   };
 }
 
+const RELEVANCE_HALF_LIFE_HOURS = 24;
+
+/**
+ * Ranking score for a single signal: its attention `weight` decayed by age, so a
+ * day-old item scores half as high as a fresh one of equal weight. `now` is
+ * injected to keep this pure and testable.
+ */
+export function scoreSignalRelevance(signal: Signal, now: Date): number {
+  const ageHours = Math.max(0, (now.getTime() - signal.timestamp.getTime()) / 3_600_000);
+  const recency = 2 ** (-ageHours / RELEVANCE_HALF_LIFE_HOURS);
+  return signal.weight * recency;
+}
+
 export interface TopicCount {
   topic: Topic;
   signalCount: number;

@@ -9,7 +9,6 @@ interface FloatingPanelProps {
   children: ReactNode;
 }
 
-
 export function FloatingPanel({
   visible,
   onClose,

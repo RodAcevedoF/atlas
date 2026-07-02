@@ -3,6 +3,7 @@ import type {
   ListEventsInput,
   ListMarketsInput,
   ListRegionSummariesInput,
+  ListWorldEventsInput,
   ListWorldTopicsInput,
 } from "@atlas/application";
 import type { GeoRegion, MarketCategory, MarketStatus, SignalSource, Topic } from "@atlas/domain";
@@ -79,6 +80,15 @@ export function parseIngestNewsBody(body: RawQuery): IngestNewsInput {
 }
 
 export function parseWorldTopicsQuery(query: RawQuery): ListWorldTopicsInput {
+  return {
+    source: parseSource(query.source),
+    topic: parseTopic(query.topic),
+    region: parseRegion(query.region),
+    limit: parseLimit(query.limit),
+  };
+}
+
+export function parseWorldEventsQuery(query: RawQuery): ListWorldEventsInput {
   return {
     source: parseSource(query.source),
     topic: parseTopic(query.topic),

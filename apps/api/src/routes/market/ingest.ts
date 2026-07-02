@@ -6,6 +6,7 @@ import {
   parseListEventsQuery,
   parseListMarketsQuery,
   parseRegionSummariesQuery,
+  parseWorldEventsQuery,
   parseWorldTopicsQuery,
 } from "../../modules/market/request.ts";
 
@@ -39,6 +40,12 @@ export async function registerMarketRoutes(app: FastifyInstance, deps: AppDeps):
   app.get("/world/topics", async (req, reply) => {
     const query = (req.query as RawQuery | undefined) ?? {};
     const result = await deps.marketService.listWorldTopics(parseWorldTopicsQuery(query));
+    return reply.send(result);
+  });
+
+  app.get("/world/events", async (req, reply) => {
+    const query = (req.query as RawQuery | undefined) ?? {};
+    const result = await deps.marketService.listWorldEvents(parseWorldEventsQuery(query));
     return reply.send(result);
   });
 

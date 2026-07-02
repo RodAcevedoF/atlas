@@ -5,10 +5,11 @@ import type {
   MarketRecord,
   MarketStatus,
   RegionTopicBreakdownRecord,
+  WorldEventRecord,
 } from "../../repositories/market-repository.ts";
 import { KpiStrip } from "../dashboard/kpi-strip.tsx";
 import { MarketsTable } from "../dashboard/markets-table.tsx";
-import { TopTopics } from "../dashboard/top-topics.tsx";
+import { WhatsHappening } from "../dashboard/whats-happening.tsx";
 import { FloatingPanel } from "./floating-panel.tsx";
 import { RegionDetailPanel } from "./region-detail-panel.tsx";
 import type { PanelKey } from "./use-panel-visibility.ts";
@@ -27,11 +28,12 @@ function leaderRegion(breakdowns: RegionTopicBreakdownRecord[]): GeoRegion | nul
 
 interface MapCockpitProps {
   worldTopics: RegionTopicBreakdownRecord[];
+  worldEvents: WorldEventRecord[];
   markets: MarketRecord[];
-  activeMarketCount: number;
   totalVolumeUsd: number;
-  totalLiquidityUsd: number;
-  signalsIngested: number;
+  worldSignals: number;
+  activeTopics: number;
+  regionsInFocus: number;
   isLoading: boolean;
   category: MarketCategory | "";
   status: MarketStatus | "";
@@ -43,11 +45,12 @@ interface MapCockpitProps {
 
 export function MapCockpit({
   worldTopics,
+  worldEvents,
   markets,
-  activeMarketCount,
   totalVolumeUsd,
-  totalLiquidityUsd,
-  signalsIngested,
+  worldSignals,
+  activeTopics,
+  regionsInFocus,
   isLoading,
   category,
   status,
@@ -77,10 +80,10 @@ export function MapCockpit({
         className="left-4 top-4 w-135"
       >
         <KpiStrip
-          activeMarkets={activeMarketCount}
+          worldSignals={worldSignals}
+          activeTopics={activeTopics}
+          regionsInFocus={regionsInFocus}
           totalVolumeUsd={totalVolumeUsd}
-          totalLiquidityUsd={totalLiquidityUsd}
-          signalsIngested={signalsIngested}
           isLoading={isLoading}
         />
       </FloatingPanel>
@@ -95,19 +98,10 @@ export function MapCockpit({
       </FloatingPanel>
 
       <FloatingPanel
-        visible={visibility.topics}
-        onClose={() => onHidePanel("topics")}
-        label="top topics"
-        className="bottom-4 left-4 flex max-h-[clamp(240px,42vh,520px)]"
-      >
-        <TopTopics breakdowns={worldTopics} />
-      </FloatingPanel>
-
-      <FloatingPanel
         visible={visibility.markets}
         onClose={() => onHidePanel("markets")}
         label="markets"
-        className="bottom-4 right-4 flex h-[clamp(220px,40vh,440px)] w-160"
+        className="bottom-4 left-4 flex h-[clamp(220px,40vh,440px)] w-160"
       >
         <MarketsTable
           markets={markets}
@@ -117,6 +111,15 @@ export function MapCockpit({
           onStatusChange={onStatusChange}
           isLoading={isLoading}
         />
+      </FloatingPanel>
+
+      <FloatingPanel
+        visible={visibility.events}
+        onClose={() => onHidePanel("events")}
+        label="world events"
+        className="bottom-4 right-4 flex h-[clamp(240px,44vh,480px)] w-135"
+      >
+        <WhatsHappening events={worldEvents} />
       </FloatingPanel>
     </div>
   );

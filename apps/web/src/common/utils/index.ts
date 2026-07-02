@@ -2,6 +2,7 @@ export {
   formatCompactCurrency,
   formatDate,
   formatPercent,
+  formatRelativeTime,
   toTitleCase,
 } from "./format.ts";
 export { topOutcomeLabel } from "./market.ts";

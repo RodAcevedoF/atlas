@@ -43,6 +43,7 @@ export {
   makeSignalId,
   marketCategoryToTopic,
   marketToSignal,
+  scoreSignalRelevance,
 } from "./entities/signal.ts";
 export { SIGNAL_SOURCES, TOPICS } from "./entities/signal.ts";
 

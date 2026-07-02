@@ -44,6 +44,12 @@ export interface MarketStorePort {
     region?: GeoRegion;
     limit?: number;
   }): Promise<RegionTopicBreakdown[]>;
+  listSignals(filter?: {
+    source?: SignalSource;
+    topic?: Topic;
+    region?: GeoRegion;
+    limit?: number;
+  }): Promise<Signal[]>;
 
   insertPriceTick(tick: PriceTick): Promise<void>;
   getPriceHistory(marketId: MarketId, from: Date, to: Date): Promise<PriceTick[]>;

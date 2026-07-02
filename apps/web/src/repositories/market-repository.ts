@@ -15,6 +15,17 @@ export interface RegionTopicBreakdownRecord {
   topics: TopicCountRecord[];
 }
 
+export interface WorldEventRecord {
+  id: string;
+  title: string;
+  url: string;
+  topic: Topic;
+  primaryRegion: GeoRegion;
+  source: SignalSource;
+  timestamp: string;
+  weight: number;
+}
+
 export interface RegionSummaryRecord {
   region: GeoRegion;
   marketCount: number;
@@ -87,6 +98,13 @@ export interface ListWorldTopicsInput {
   limit?: number;
 }
 
+export interface ListWorldEventsInput {
+  source?: SignalSource;
+  topic?: Topic;
+  region?: GeoRegion;
+  limit?: number;
+}
+
 export interface IngestMarketsInput {
   categories?: string[];
   maxMarkets?: number;
@@ -111,6 +129,7 @@ export interface MarketRepository {
   listEvents(input?: ListEventsInput): Promise<EventRecord[]>;
   listRegionSummaries(input?: ListRegionSummariesInput): Promise<RegionSummaryRecord[]>;
   listWorldTopics(input?: ListWorldTopicsInput): Promise<RegionTopicBreakdownRecord[]>;
+  listWorldEvents(input?: ListWorldEventsInput): Promise<WorldEventRecord[]>;
   ingestMarkets(input?: IngestMarketsInput): Promise<IngestMarketsResult>;
   ingestNews(input?: IngestNewsInput): Promise<IngestNewsResult>;
 }

@@ -23,7 +23,7 @@ export function App() {
 
   const markets = dashboard?.markets ?? [];
   const worldTopics = dashboard?.worldTopics ?? [];
-  const signalsIngested = worldTopics.reduce((sum, region) => sum + region.signalCount, 0);
+  const worldEvents = dashboard?.worldEvents ?? [];
 
   return (
     <main className="flex h-screen flex-col gap-3.25 overflow-hidden px-4 pb-4 pt-3.75">
@@ -48,11 +48,12 @@ export function App() {
 
       <MapCockpit
         worldTopics={worldTopics}
+        worldEvents={worldEvents}
         markets={markets}
-        activeMarketCount={dashboard?.activeMarketCount ?? 0}
         totalVolumeUsd={dashboard?.totalVolumeUsd ?? 0}
-        totalLiquidityUsd={dashboard?.totalLiquidityUsd ?? 0}
-        signalsIngested={signalsIngested}
+        worldSignals={dashboard?.worldSignals ?? 0}
+        activeTopics={dashboard?.activeTopics ?? 0}
+        regionsInFocus={dashboard?.regionsInFocus ?? 0}
         isLoading={isLoading}
         category={category}
         status={status}
