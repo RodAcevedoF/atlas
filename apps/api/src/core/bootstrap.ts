@@ -1,10 +1,17 @@
 import { PolymarketAdapter } from "@atlas/infra/market-polymarket";
 import { GdeltNewsAdapter } from "@atlas/infra/news-gdelt";
 import { MongoMarketStore, createMongoClient, ensureIndexes } from "@atlas/infra/store-mongodb";
-import { type IMarketService, makeDependencies } from "../modules/market/service.ts";
+import { makeMarketsDependencies } from "../modules/markets/dependencies.ts";
+import type { IMarketsService } from "../modules/markets/service.ts";
+import { makeNewsDependencies } from "../modules/news/dependencies.ts";
+import type { INewsService } from "../modules/news/service.ts";
+import { makeWorldDependencies } from "../modules/world/dependencies.ts";
+import type { IWorldService } from "../modules/world/service.ts";
 
 export interface AppDeps {
-  marketService: IMarketService;
+  marketsService: IMarketsService;
+  newsService: INewsService;
+  worldService: IWorldService;
 }
 
 export async function bootstrap(): Promise<AppDeps> {
@@ -20,7 +27,10 @@ export async function bootstrap(): Promise<AppDeps> {
   const marketData = new PolymarketAdapter();
   const signalSource = new GdeltNewsAdapter();
   const store = new MongoMarketStore(db);
-  const { service: marketService } = makeDependencies({ marketData, signalSource, store });
 
-  return { marketService };
+  const { service: marketsService } = makeMarketsDependencies({ marketData, store });
+  const { service: newsService } = makeNewsDependencies({ signalSource, store });
+  const { service: worldService } = makeWorldDependencies({ store });
+
+  return { marketsService, newsService, worldService };
 }

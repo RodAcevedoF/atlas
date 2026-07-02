@@ -1,6 +1,6 @@
+import { HttpMarketRepository } from "@/features/world-awareness/repositories/http-market-repository.ts";
+import type { MarketRepository } from "@/features/world-awareness/repositories/market-repository.ts";
 import { type PropsWithChildren, createContext, useContext, useState } from "react";
-import { HttpMarketRepository } from "./repositories/http-market-repository.ts";
-import type { MarketRepository } from "./repositories/market-repository.ts";
 
 const MarketRepositoryContext = createContext<MarketRepository | null>(null);
 
