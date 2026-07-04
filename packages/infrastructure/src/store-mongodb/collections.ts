@@ -67,6 +67,14 @@ export interface PriceTickDoc {
   timestamp: Date;
 }
 
+export interface MarketSnapshotDoc {
+  marketId: string;
+  volumeUsd: number;
+  liquidityUsd: number;
+  outcomes: { outcomeId: string; price: number }[];
+  timestamp: Date;
+}
+
 export interface TradeDoc {
   _id: string;
   marketId: string;

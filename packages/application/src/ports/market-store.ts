@@ -7,6 +7,7 @@ import type {
   Market,
   MarketCategory,
   MarketId,
+  MarketSnapshot,
   MarketStatus,
   PredictionEvent,
   PriceTick,
@@ -42,15 +43,18 @@ export interface MarketStorePort {
     source?: SignalSource;
     topic?: Topic;
     region?: GeoRegion;
+    since?: Date;
     limit?: number;
   }): Promise<RegionTopicBreakdown[]>;
   listSignals(filter?: {
     source?: SignalSource;
     topic?: Topic;
     region?: GeoRegion;
+    since?: Date;
     limit?: number;
   }): Promise<Signal[]>;
 
+  insertMarketSnapshots(snapshots: MarketSnapshot[]): Promise<void>;
   insertPriceTick(tick: PriceTick): Promise<void>;
   getPriceHistory(marketId: MarketId, from: Date, to: Date): Promise<PriceTick[]>;
 

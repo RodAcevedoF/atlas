@@ -1,5 +1,5 @@
 import type { Market, MarketCategory, PredictionEvent } from "@atlas/domain";
-import { marketToSignal } from "@atlas/domain";
+import { marketToSignal, marketToSnapshot } from "@atlas/domain";
 import type { MarketDataPort } from "../ports/market-data.ts";
 import type { MarketStorePort } from "../ports/market-store.ts";
 import type { IngestMarkets, IngestMarketsInput, IngestMarketsOutput } from "./ingest-markets.ts";
@@ -26,11 +26,14 @@ export class IngestMarketsUseCase implements IngestMarkets {
     const markets = fetchedMarkets.map((market) =>
       enrichMarketRegions(market, market.eventId ? eventsById.get(market.eventId) : undefined),
     );
+    const now = new Date();
+    const snapshots = markets.map((market) => marketToSnapshot(market, now));
     await Promise.all([
       ...markets.map((market) => this.store.upsertMarket(market)),
       ...events.map((event) => this.store.upsertEvent(event)),
       this.store.upsertSignals(markets.map(marketToSignal)),
+      this.store.insertMarketSnapshots(snapshots),
     ]);
-    return { upserted: markets.length, ticksRecorded: 0 };
+    return { upserted: markets.length, ticksRecorded: snapshots.length };
   }
 }

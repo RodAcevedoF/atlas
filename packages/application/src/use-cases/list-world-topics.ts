@@ -4,6 +4,7 @@ export interface ListWorldTopicsInput {
   source?: SignalSource;
   topic?: Topic;
   region?: GeoRegion;
+  since?: Date;
   limit?: number;
 }
 

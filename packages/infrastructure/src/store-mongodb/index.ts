@@ -11,6 +11,7 @@ import type {
   InsightKind,
   Market,
   MarketId,
+  MarketSnapshot,
   PredictionEvent,
   PriceTick,
   RegionSummary,
@@ -27,6 +28,7 @@ import type {
   AnalysisRunDoc,
   InsightDoc,
   MarketDoc,
+  MarketSnapshotDoc,
   PredictionEventDoc,
   PriceTickDoc,
   SignalDoc,
@@ -239,12 +241,14 @@ export class MongoMarketStore implements MarketStorePort {
     source?: SignalSource;
     topic?: Topic;
     region?: GeoRegion;
+    since?: Date;
     limit?: number;
   }): Promise<RegionTopicBreakdown[]> {
     const match: Record<string, unknown> = {};
     if (filter?.source) match.source = filter.source;
     if (filter?.topic) match.topic = filter.topic;
     if (filter?.region) match.regions = filter.region;
+    if (filter?.since) match.timestamp = { $gte: filter.since };
 
     const rows = await this.db
       .collection<SignalDoc>("signals")
@@ -295,12 +299,14 @@ export class MongoMarketStore implements MarketStorePort {
     source?: SignalSource;
     topic?: Topic;
     region?: GeoRegion;
+    since?: Date;
     limit?: number;
   }): Promise<Signal[]> {
     const match: Record<string, unknown> = {};
     if (filter?.source) match.source = filter.source;
     if (filter?.topic) match.topic = filter.topic;
     if (filter?.region) match.regions = filter.region;
+    if (filter?.since) match.timestamp = { $gte: filter.since };
 
     const docs = await this.db
       .collection<SignalDoc>("signals")
@@ -379,6 +385,21 @@ export class MongoMarketStore implements MarketStorePort {
     }));
     summaries.sort((left, right) => right.totalVolumeUsd - left.totalVolumeUsd);
     return typeof filter?.limit === "number" ? summaries.slice(0, filter.limit) : summaries;
+  }
+
+  async insertMarketSnapshots(snapshots: MarketSnapshot[]): Promise<void> {
+    if (snapshots.length === 0) return;
+    const docs = snapshots.map((snapshot) => ({
+      marketId: snapshot.marketId as string,
+      volumeUsd: snapshot.volumeUsd,
+      liquidityUsd: snapshot.liquidityUsd,
+      outcomes: snapshot.outcomes.map((outcome) => ({
+        outcomeId: outcome.outcomeId as string,
+        price: outcome.price,
+      })),
+      timestamp: snapshot.timestamp,
+    }));
+    await this.db.collection<MarketSnapshotDoc>("market_snapshots").insertMany(docs);
   }
 
   async insertPriceTick(tick: PriceTick): Promise<void> {

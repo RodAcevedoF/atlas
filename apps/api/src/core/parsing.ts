@@ -40,3 +40,11 @@ export function parseSource(value: unknown): SignalSource | undefined {
 export function parseTopic(value: unknown): Topic | undefined {
   return parseEnum(TOPICS, value);
 }
+
+
+export function parseSince(value: unknown): Date | undefined {
+  if (typeof value !== "string" && typeof value !== "number") return undefined;
+  const epoch = Number(value);
+  const date = Number.isFinite(epoch) ? new Date(epoch) : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}

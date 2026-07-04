@@ -9,6 +9,7 @@ export async function ensureIndexes(db: Db): Promise<void> {
     db
       .collection("price_ticks")
       .createIndexes([{ key: { marketId: 1, outcomeId: 1, timestamp: -1 } }]),
+    db.collection("market_snapshots").createIndexes([{ key: { marketId: 1, timestamp: -1 } }]),
     db.collection("trades").createIndexes([{ key: { marketId: 1, timestamp: -1 } }]),
     db
       .collection("signals")

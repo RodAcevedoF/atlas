@@ -24,6 +24,7 @@ export class ListWorldEventsUseCase implements ListWorldEvents {
       source: input.source ?? "news",
       topic: input.topic,
       region: input.region,
+      since: input.since,
       limit: CANDIDATE_WINDOW,
     });
     const now = new Date();

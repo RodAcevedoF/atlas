@@ -17,7 +17,8 @@ export {
   GEO_REGIONS,
 } from "./entities/market.ts";
 
-export type { PriceTick, TradeSide, Trade } from "./entities/activity.ts";
+export type { PriceTick, MarketSnapshot, TradeSide, Trade } from "./entities/activity.ts";
+export { marketToSnapshot } from "./entities/activity.ts";
 
 export type {
   InsightKind,
