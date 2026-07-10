@@ -1,16 +1,15 @@
 import { TopBar } from "./components/dashboard/top-bar.tsx";
+import { TopicRail } from "./components/dashboard/topic-rail.tsx";
 import { MapCockpit } from "./components/world-map/map-cockpit.tsx";
 import { usePanelVisibility } from "./components/world-map/use-panel-visibility.ts";
 import { useMarketDashboard } from "./hooks/use-market-dashboard.ts";
 
 export function WorldAwarenessPage() {
   const {
-    category,
-    setCategory,
-    status,
-    setStatus,
     source,
     setSource,
+    topic,
+    setTopic,
     dashboard,
     isLoading,
     isSyncing,
@@ -19,7 +18,8 @@ export function WorldAwarenessPage() {
     handleSync,
     handleSyncNews,
   } = useMarketDashboard();
-  const { visibility, anyVisible, toggleAll, hidePanel, togglePanel } = usePanelVisibility();
+  const { visibility, anyVisible, toggleAll, hidePanel, showPanel, togglePanel } =
+    usePanelVisibility();
 
   const markets = dashboard?.markets ?? [];
   const worldTopics = dashboard?.worldTopics ?? [];
@@ -40,6 +40,8 @@ export function WorldAwarenessPage() {
         onTogglePanel={togglePanel}
       />
 
+      <TopicRail topic={topic} onTopicChange={setTopic} />
+
       {error ? (
         <div className="flex-none rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2 text-[12.5px] text-destructive-foreground">
           {error}
@@ -50,17 +52,15 @@ export function WorldAwarenessPage() {
         worldTopics={worldTopics}
         worldEvents={worldEvents}
         markets={markets}
+        topic={topic}
         totalVolumeUsd={dashboard?.totalVolumeUsd ?? 0}
         worldSignals={dashboard?.worldSignals ?? 0}
         activeTopics={dashboard?.activeTopics ?? 0}
         regionsInFocus={dashboard?.regionsInFocus ?? 0}
         isLoading={isLoading}
-        category={category}
-        status={status}
-        onCategoryChange={setCategory}
-        onStatusChange={setStatus}
         visibility={visibility}
         onHidePanel={hidePanel}
+        onShowPanel={showPanel}
       />
     </main>
   );

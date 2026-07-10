@@ -4,9 +4,11 @@ import type {
   MarketCategory,
   MarketStatus,
   SignalSource,
+  Topic,
 } from "../repositories/market-repository.ts";
 
 export type SourceFilter = SignalSource | "all";
+export type TopicFilter = Topic | "";
 import {
   type MarketDashboardData,
   loadMarketDashboard,
@@ -21,6 +23,8 @@ export interface UseMarketDashboardResult {
   setStatus: (value: MarketStatus | "") => void;
   source: SourceFilter;
   setSource: (value: SourceFilter) => void;
+  topic: TopicFilter;
+  setTopic: (value: TopicFilter) => void;
   dashboard: MarketDashboardData | null;
   isLoading: boolean;
   isSyncing: boolean;
@@ -36,6 +40,7 @@ export function useMarketDashboard(): UseMarketDashboardResult {
   const [category, setCategory] = useState<MarketCategory | "">("");
   const [status, setStatus] = useState<MarketStatus | "">("active");
   const [source, setSource] = useState<SourceFilter>("all");
+  const [topic, setTopic] = useState<TopicFilter>("");
   const [dashboard, setDashboard] = useState<MarketDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -53,7 +58,7 @@ export function useMarketDashboard(): UseMarketDashboardResult {
           markets: {
             status: status || undefined,
             category: category || undefined,
-            limit: 24,
+            limit: 100,
           },
           events: { limit: 6 },
           regionSummary: {
@@ -61,8 +66,12 @@ export function useMarketDashboard(): UseMarketDashboardResult {
             category: category || undefined,
             limit: 8,
           },
-          worldTopics: { source: source === "all" ? undefined : source, limit: 8 },
-          worldEvents: { source: "news", limit: 12 },
+          worldTopics: {
+            source: source === "all" ? undefined : source,
+            topic: topic || undefined,
+            limit: 8,
+          },
+          worldEvents: { source: "news", topic: topic || undefined, limit: 20 },
         });
         if (!token?.cancelled) setDashboard(result);
       } catch (loadError) {
@@ -73,7 +82,7 @@ export function useMarketDashboard(): UseMarketDashboardResult {
         if (!token?.cancelled) setIsLoading(false);
       }
     },
-    [category, repository, status, source],
+    [category, repository, status, source, topic],
   );
 
   useEffect(() => {
@@ -125,6 +134,8 @@ export function useMarketDashboard(): UseMarketDashboardResult {
     setStatus,
     source,
     setSource,
+    topic,
+    setTopic,
     dashboard,
     isLoading,
     isSyncing,

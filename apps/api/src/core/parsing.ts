@@ -41,7 +41,6 @@ export function parseTopic(value: unknown): Topic | undefined {
   return parseEnum(TOPICS, value);
 }
 
-
 export function parseSince(value: unknown): Date | undefined {
   if (typeof value !== "string" && typeof value !== "number") return undefined;
   const epoch = Number(value);

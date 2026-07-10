@@ -1,3 +1,4 @@
+import type { WorldScanReport } from "@atlas/application";
 import type {
   AnalysisRunStatus,
   GeoRegion,
@@ -123,4 +124,14 @@ export interface AnalysisRunDoc {
   startedAt: Date;
   completedAt: Date | null;
   error: string | null;
+}
+
+export interface WorldScanReportDoc {
+  scope: {
+    topic: Topic | null;
+    region: GeoRegion | null;
+    since: Date | null;
+  };
+  generatedAt: Date;
+  report: WorldScanReport;
 }

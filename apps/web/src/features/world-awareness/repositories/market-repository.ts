@@ -124,6 +124,64 @@ export interface IngestNewsResult {
   upserted: number;
 }
 
+export interface WorldScanInput {
+  topic?: Topic;
+  region?: GeoRegion;
+  since?: number;
+}
+
+export interface WorldScanDevelopmentRecord {
+  title: string;
+  where: string;
+  whyItMatters: string;
+  citations: string[];
+}
+
+export interface WorldScanDivergenceRecord {
+  topic: string;
+  region: string;
+  attention: string;
+  expectation: string;
+  read: string;
+  citations: string[];
+}
+
+export interface WorldScanRegionNoteRecord {
+  region: string;
+  note: string;
+}
+
+export interface WorldScanReportRecord {
+  header: {
+    windowSince: string | null;
+    generatedAt: string;
+    newsSignalCount: number;
+    marketMoverCount: number;
+    topMovers: string[];
+  };
+  developments: WorldScanDevelopmentRecord[];
+  divergences: WorldScanDivergenceRecord[];
+  regionNotes: WorldScanRegionNoteRecord[];
+  coverage: {
+    sourcesUsed: string[];
+    gaps: string[];
+    note: string;
+  };
+}
+
+export interface WorldScanHistoryFilter {
+  topic?: Topic;
+  region?: GeoRegion;
+  limit?: number;
+}
+
+export interface WorldScanHistoryItem {
+  id: string;
+  generatedAt: string;
+  scope: { topic?: Topic; region?: GeoRegion };
+  report: WorldScanReportRecord;
+}
+
 export interface MarketRepository {
   listMarkets(input?: ListMarketsInput): Promise<MarketRecord[]>;
   listEvents(input?: ListEventsInput): Promise<EventRecord[]>;
@@ -132,4 +190,6 @@ export interface MarketRepository {
   listWorldEvents(input?: ListWorldEventsInput): Promise<WorldEventRecord[]>;
   ingestMarkets(input?: IngestMarketsInput): Promise<IngestMarketsResult>;
   ingestNews(input?: IngestNewsInput): Promise<IngestNewsResult>;
+  runWorldScan(input?: WorldScanInput): Promise<WorldScanReportRecord>;
+  listWorldScanReports(filter?: WorldScanHistoryFilter): Promise<WorldScanHistoryItem[]>;
 }

@@ -9,6 +9,9 @@ dependencies = [
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
     "langgraph>=0.2",
+    "langchain-core>=0.3",
+    "langchain-openai>=0.2",
+    "langchain-cerebras>=0.5",
 ]
 
 [dependency-groups]
@@ -32,3 +35,12 @@ select = ["E", "F", "I", "W", "UP", "B", "SIM"]
 python_version = "3.12"
 strict = true
 files = ["app"]
+
+[[tool.mypy.overrides]]
+module = [
+    "langchain_core.*",
+    "langchain_openai.*",
+    "langchain_cerebras.*",
+    "langgraph.*",
+]
+ignore_missing_imports = true

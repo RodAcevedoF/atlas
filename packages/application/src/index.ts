@@ -1,10 +1,4 @@
 export type {
-  LLMMessage,
-  LLMCompletion,
-  LLMOptions,
-  LLMPort,
-} from "./ports/llm.ts";
-export type {
   VectorDoc,
   SearchResult,
   VectorStorePort,
@@ -68,6 +62,23 @@ export type {
   ListWorldEvents,
 } from "./use-cases/list-world-events.ts";
 export { ListWorldEventsUseCase } from "./use-cases/list-world-events-usecase.ts";
+export type {
+  WorldScanInput,
+  WorldScanOutput,
+  WorldScanReport,
+  WorldScanNarrative,
+  WorldScanHeader,
+  WorldScanDevelopment,
+  WorldScanDivergence,
+  WorldScanRegionNote,
+  WorldScanCoverage,
+  WorldScanReportRecord,
+  WorldScanReportFilter,
+  WorldScan,
+  ListWorldScanReports,
+} from "./use-cases/world-scan.ts";
+export { WorldScanUseCase } from "./use-cases/world-scan-usecase.ts";
+export { ListWorldScanReportsUseCase } from "./use-cases/list-world-scan-reports-usecase.ts";
 export type {
   RunMarketIntelligenceInput,
   RunMarketIntelligenceOutput,

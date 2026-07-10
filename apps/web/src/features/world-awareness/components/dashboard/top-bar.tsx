@@ -13,7 +13,7 @@ const PANEL_OPTIONS: Array<{ key: PanelKey; label: string }> = [
   { key: "kpis", label: "KPIs" },
   { key: "region", label: "Region" },
   { key: "events", label: "Events" },
-  { key: "markets", label: "Markets" },
+  { key: "scan", label: "Scan" },
 ];
 
 interface TopBarProps {

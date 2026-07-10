@@ -1,4 +1,9 @@
-import type { ListWorldEventsInput, ListWorldTopicsInput } from "@atlas/application";
+import type {
+  ListWorldEventsInput,
+  ListWorldTopicsInput,
+  WorldScanInput,
+  WorldScanReportFilter,
+} from "@atlas/application";
 import {
   type RawQuery,
   parseLimit,
@@ -24,6 +29,23 @@ export function parseWorldEventsQuery(query: RawQuery): ListWorldEventsInput {
     topic: parseTopic(query.topic),
     region: parseRegion(query.region),
     since: parseSince(query.since),
+    limit: parseLimit(query.limit),
+  };
+}
+
+export function parseWorldScanBody(body: Record<string, unknown> | undefined): WorldScanInput {
+  const source = body ?? {};
+  return {
+    topic: parseTopic(source.topic),
+    region: parseRegion(source.region),
+    since: parseSince(source.since),
+  };
+}
+
+export function parseWorldScanHistoryQuery(query: RawQuery): WorldScanReportFilter {
+  return {
+    topic: parseTopic(query.topic),
+    region: parseRegion(query.region),
     limit: parseLimit(query.limit),
   };
 }

@@ -1,15 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-export type PanelKey = "kpis" | "region" | "markets" | "events";
+export type PanelKey = "kpis" | "region" | "events" | "scan";
 
 type Visibility = Record<PanelKey, boolean>;
 
-const PANEL_KEYS: PanelKey[] = ["kpis", "region", "markets", "events"];
-const ALL_VISIBLE: Visibility = { kpis: true, region: true, markets: true, events: true };
-const ALL_HIDDEN: Visibility = { kpis: false, region: false, markets: false, events: false };
+const PANEL_KEYS: PanelKey[] = ["kpis", "region", "events", "scan"];
+const ALL_VISIBLE: Visibility = {
+  kpis: true,
+  region: true,
+  events: true,
+  scan: true,
+};
+const ALL_HIDDEN: Visibility = {
+  kpis: false,
+  region: false,
+  events: false,
+  scan: false,
+};
 
 export function usePanelVisibility() {
-  const [visibility, setVisibility] = useState<Visibility>(ALL_VISIBLE);
+  const [visibility, setVisibility] = useState<Visibility>({ ...ALL_VISIBLE, scan: false });
 
   const anyVisible = useMemo(() => PANEL_KEYS.some((panel) => visibility[panel]), [visibility]);
 
@@ -21,6 +31,10 @@ export function usePanelVisibility() {
 
   const hidePanel = useCallback((panel: PanelKey) => {
     setVisibility((current) => ({ ...current, [panel]: false }));
+  }, []);
+
+  const showPanel = useCallback((panel: PanelKey) => {
+    setVisibility((current) => ({ ...current, [panel]: true }));
   }, []);
 
   const togglePanel = useCallback((panel: PanelKey) => {
@@ -35,5 +49,5 @@ export function usePanelVisibility() {
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
-  return { visibility, anyVisible, toggleAll, hidePanel, togglePanel };
+  return { visibility, anyVisible, toggleAll, hidePanel, showPanel, togglePanel };
 }

@@ -1,9 +1,14 @@
 import { formatRelativeTime } from "@/shared/utils/index.ts";
 import { Card } from "@atlas/ui";
 import type { WorldEventRecord } from "../../repositories/market-repository.ts";
-import { REGION_LABELS, TOPIC_LABELS } from "../../utils/index.ts";
+import { REGION_LABELS, TOPIC_LABELS, eventCoverageKey } from "../../utils/index.ts";
 
-export function WhatsHappening({ events }: { events: WorldEventRecord[] }) {
+interface WhatsHappeningProps {
+  events: WorldEventRecord[];
+  marketKeys: Set<string>;
+}
+
+export function WhatsHappening({ events, marketKeys }: WhatsHappeningProps) {
   return (
     <Card className="flex min-w-0 flex-1 flex-col overflow-hidden">
       <div className="border-b border-border px-[17px] pb-3 pt-3.5">
@@ -39,6 +44,14 @@ export function WhatsHappening({ events }: { events: WorldEventRecord[] }) {
                   {TOPIC_LABELS[event.topic]}
                 </span>
                 <span>{REGION_LABELS[event.primaryRegion]}</span>
+                {marketKeys.has(eventCoverageKey(event.primaryRegion, event.topic)) ? (
+                  <span
+                    className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                    title="A prediction market tracks this region and topic"
+                  >
+                    market
+                  </span>
+                ) : null}
                 <span aria-hidden="true">·</span>
                 <span className="font-mono">{formatRelativeTime(event.timestamp)}</span>
               </div>

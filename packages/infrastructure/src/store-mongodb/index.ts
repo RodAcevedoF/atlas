@@ -2,7 +2,11 @@ export * from "./client.ts";
 export * from "./collections.ts";
 export * from "./indexes.ts";
 
-import type { MarketStorePort } from "@atlas/application";
+import type {
+  MarketStorePort,
+  WorldScanReportFilter,
+  WorldScanReportRecord,
+} from "@atlas/application";
 import type {
   AnalysisRun,
   EventId,
@@ -23,7 +27,7 @@ import type {
   Trade,
 } from "@atlas/domain";
 import { makeEventId, makeMarketId, makeOutcomeId, makeSignalId } from "@atlas/domain";
-import type { Db } from "mongodb";
+import type { Db, WithId } from "mongodb";
 import type {
   AnalysisRunDoc,
   InsightDoc,
@@ -33,6 +37,7 @@ import type {
   PriceTickDoc,
   SignalDoc,
   TradeDoc,
+  WorldScanReportDoc,
 } from "./collections.ts";
 
 const DEFAULT_REGION: GeoRegion = "global";
@@ -127,6 +132,19 @@ function docToAnalysisRun(doc: AnalysisRunDoc): AnalysisRun {
     startedAt: doc.startedAt,
     completedAt: doc.completedAt,
     error: doc.error,
+  };
+}
+
+function docToWorldScanReportRecord(doc: WithId<WorldScanReportDoc>): WorldScanReportRecord {
+  return {
+    id: doc._id.toHexString(),
+    generatedAt: doc.report.header.generatedAt,
+    scope: {
+      topic: doc.scope.topic ?? undefined,
+      region: doc.scope.region ?? undefined,
+      since: doc.scope.since ?? undefined,
+    },
+    report: doc.report,
   };
 }
 
@@ -402,6 +420,33 @@ export class MongoMarketStore implements MarketStorePort {
     await this.db.collection<MarketSnapshotDoc>("market_snapshots").insertMany(docs);
   }
 
+  async getMarketSnapshots(filter?: {
+    since?: Date;
+    marketId?: MarketId;
+    limit?: number;
+  }): Promise<MarketSnapshot[]> {
+    const match: Record<string, unknown> = {};
+    if (filter?.marketId) match.marketId = filter.marketId as string;
+    if (filter?.since) match.timestamp = { $gte: filter.since };
+
+    const docs = await this.db
+      .collection<MarketSnapshotDoc>("market_snapshots")
+      .find(match)
+      .sort({ marketId: 1, timestamp: -1 })
+      .limit(filter?.limit ?? 0)
+      .toArray();
+    return docs.map((doc) => ({
+      marketId: makeMarketId(doc.marketId),
+      volumeUsd: doc.volumeUsd,
+      liquidityUsd: doc.liquidityUsd,
+      outcomes: doc.outcomes.map((outcome) => ({
+        outcomeId: makeOutcomeId(outcome.outcomeId),
+        price: outcome.price,
+      })),
+      timestamp: doc.timestamp,
+    }));
+  }
+
   async insertPriceTick(tick: PriceTick): Promise<void> {
     await this.db.collection("price_ticks").insertOne({
       marketId: tick.marketId as string,
@@ -527,5 +572,32 @@ export class MongoMarketStore implements MarketStorePort {
   async findAnalysisRun(id: string): Promise<AnalysisRun | null> {
     const doc = await this.db.collection<AnalysisRunDoc>("analysis_runs").findOne({ _id: id });
     return doc ? docToAnalysisRun(doc) : null;
+  }
+
+  async saveWorldScanReport(record: WorldScanReportRecord): Promise<void> {
+    const doc: WorldScanReportDoc = {
+      scope: {
+        topic: record.scope.topic ?? null,
+        region: record.scope.region ?? null,
+        since: record.scope.since ?? null,
+      },
+      generatedAt: new Date(record.generatedAt),
+      report: record.report,
+    };
+    await this.db.collection<WorldScanReportDoc>("world_scan_reports").insertOne(doc);
+  }
+
+  async listWorldScanReports(filter?: WorldScanReportFilter): Promise<WorldScanReportRecord[]> {
+    const match: Record<string, unknown> = {};
+    if (filter?.topic) match["scope.topic"] = filter.topic;
+    if (filter?.region) match["scope.region"] = filter.region;
+
+    const docs = await this.db
+      .collection<WorldScanReportDoc>("world_scan_reports")
+      .find(match)
+      .sort({ generatedAt: -1 })
+      .limit(filter?.limit ?? 20)
+      .toArray();
+    return docs.map(docToWorldScanReportRecord);
   }
 }

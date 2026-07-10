@@ -1,15 +1,17 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useWorldScanHistory } from "../../hooks/use-world-scan-history.ts";
+import { useWorldScan } from "../../hooks/use-world-scan.ts";
 import type {
   GeoRegion,
-  MarketCategory,
   MarketRecord,
-  MarketStatus,
   RegionTopicBreakdownRecord,
+  Topic,
   WorldEventRecord,
 } from "../../repositories/market-repository.ts";
+import { deriveRegionCross, marketCoverageKeys } from "../../utils/index.ts";
 import { KpiStrip } from "../dashboard/kpi-strip.tsx";
-import { MarketsTable } from "../dashboard/markets-table.tsx";
 import { WhatsHappening } from "../dashboard/whats-happening.tsx";
+import { WorldScanPanel } from "../dashboard/world-scan-panel.tsx";
 import { FloatingPanel } from "./floating-panel.tsx";
 import { RegionDetailPanel } from "./region-detail-panel.tsx";
 import type { PanelKey } from "./use-panel-visibility.ts";
@@ -30,34 +32,30 @@ interface MapCockpitProps {
   worldTopics: RegionTopicBreakdownRecord[];
   worldEvents: WorldEventRecord[];
   markets: MarketRecord[];
+  topic: Topic | "";
   totalVolumeUsd: number;
   worldSignals: number;
   activeTopics: number;
   regionsInFocus: number;
   isLoading: boolean;
-  category: MarketCategory | "";
-  status: MarketStatus | "";
-  onCategoryChange: (value: MarketCategory | "") => void;
-  onStatusChange: (value: MarketStatus | "") => void;
   visibility: Record<PanelKey, boolean>;
   onHidePanel: (panel: PanelKey) => void;
+  onShowPanel: (panel: PanelKey) => void;
 }
 
 export function MapCockpit({
   worldTopics,
   worldEvents,
   markets,
+  topic,
   totalVolumeUsd,
   worldSignals,
   activeTopics,
   regionsInFocus,
   isLoading,
-  category,
-  status,
-  onCategoryChange,
-  onStatusChange,
   visibility,
   onHidePanel,
+  onShowPanel,
 }: MapCockpitProps) {
   const byRegion = useMemo(() => indexByRegion(worldTopics), [worldTopics]);
   const peak = useMemo(
@@ -66,6 +64,33 @@ export function MapCockpit({
   );
   const [selectedRegion, setSelectedRegion] = useState<GeoRegion | null>(null);
   const active = selectedRegion ?? leaderRegion(worldTopics);
+
+  const { report, isScanning, error: scanError, runScan } = useWorldScan();
+  const {
+    reports: scanHistory,
+    isLoading: isHistoryLoading,
+    error: historyError,
+    load: loadHistory,
+  } = useWorldScanHistory();
+  const cross = useMemo(
+    () => (active ? deriveRegionCross(active, topic, markets, worldEvents) : null),
+    [active, topic, markets, worldEvents],
+  );
+  const marketKeys = useMemo(() => marketCoverageKeys(markets), [markets]);
+
+  const openScan = useCallback(() => {
+    if (!active) return;
+    onShowPanel("scan");
+    void runScan({ topic: topic || undefined, region: active });
+  }, [active, topic, onShowPanel, runScan]);
+
+  const runScanForTopic = useCallback(() => {
+    void runScan({ topic: topic || undefined });
+  }, [topic, runScan]);
+
+  const loadScanHistory = useCallback(() => {
+    void loadHistory({ topic: topic || undefined });
+  }, [topic, loadHistory]);
 
   return (
     <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-border">
@@ -94,22 +119,12 @@ export function MapCockpit({
         label="region detail"
         className="right-4 top-4 flex max-h-[clamp(260px,48vh,560px)]"
       >
-        <RegionDetailPanel region={active} breakdown={active ? byRegion.get(active) : undefined} />
-      </FloatingPanel>
-
-      <FloatingPanel
-        visible={visibility.markets}
-        onClose={() => onHidePanel("markets")}
-        label="markets"
-        className="bottom-4 left-4 flex h-[clamp(220px,40vh,440px)] w-160"
-      >
-        <MarketsTable
-          markets={markets}
-          category={category}
-          status={status}
-          onCategoryChange={onCategoryChange}
-          onStatusChange={onStatusChange}
-          isLoading={isLoading}
+        <RegionDetailPanel
+          region={active}
+          breakdown={active ? byRegion.get(active) : undefined}
+          cross={cross}
+          isScanning={isScanning}
+          onOpenScan={openScan}
         />
       </FloatingPanel>
 
@@ -119,7 +134,25 @@ export function MapCockpit({
         label="world events"
         className="bottom-4 right-4 flex h-[clamp(240px,44vh,480px)] w-135"
       >
-        <WhatsHappening events={worldEvents} />
+        <WhatsHappening events={worldEvents} marketKeys={marketKeys} />
+      </FloatingPanel>
+
+      <FloatingPanel
+        visible={visibility.scan}
+        onClose={() => onHidePanel("scan")}
+        label="world scan"
+        className="left-1/2 top-1/2 flex h-[clamp(320px,70vh,640px)] w-[clamp(360px,42vw,560px)] -translate-x-1/2 -translate-y-1/2"
+      >
+        <WorldScanPanel
+          report={report}
+          isScanning={isScanning}
+          error={scanError}
+          onRun={runScanForTopic}
+          history={scanHistory}
+          isHistoryLoading={isHistoryLoading}
+          historyError={historyError}
+          onLoadHistory={loadScanHistory}
+        />
       </FloatingPanel>
     </div>
   );

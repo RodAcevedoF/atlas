@@ -14,6 +14,10 @@ import type {
   RegionSummaryRecord,
   RegionTopicBreakdownRecord,
   WorldEventRecord,
+  WorldScanHistoryFilter,
+  WorldScanHistoryItem,
+  WorldScanInput,
+  WorldScanReportRecord,
 } from "./market-repository.ts";
 
 function buildQuery(input?: Record<string, string | number | undefined>): string {
@@ -102,5 +106,25 @@ export class HttpMarketRepository implements MarketRepository {
       body: JSON.stringify(input),
     });
     return readJson<IngestNewsResult>(response);
+  }
+
+  async runWorldScan(input: WorldScanInput = {}): Promise<WorldScanReportRecord> {
+    const response = await fetch("/api/world/scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    return readJson<WorldScanReportRecord>(response);
+  }
+
+  async listWorldScanReports(filter: WorldScanHistoryFilter = {}): Promise<WorldScanHistoryItem[]> {
+    const response = await fetch(
+      `/api/world/scan/history${buildQuery({
+        topic: filter.topic,
+        region: filter.region,
+        limit: filter.limit,
+      })}`,
+    );
+    return readJson<WorldScanHistoryItem[]>(response);
   }
 }
