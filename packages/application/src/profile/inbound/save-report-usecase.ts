@@ -1,5 +1,5 @@
 import type { UserId, UserProfile } from "@atlas/domain";
-import type { UserStorePort } from "../ports/user-store.ts";
+import type { UserStorePort } from "../../auth/outbound/user-store.ts";
 import type { SaveReport } from "./profile.ts";
 import { UserNotFoundError } from "./profile.ts";
 

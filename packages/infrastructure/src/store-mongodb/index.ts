@@ -4,8 +4,10 @@ export * from "./indexes.ts";
 
 import type {
   MarketStorePort,
+  SignalStorePort,
   WorldScanReportFilter,
   WorldScanReportRecord,
+  WorldScanReportStorePort,
 } from "@atlas/application";
 import type {
   AnalysisRun,
@@ -148,7 +150,9 @@ function docToWorldScanReportRecord(doc: WithId<WorldScanReportDoc>): WorldScanR
   };
 }
 
-export class MongoMarketStore implements MarketStorePort {
+export class MongoMarketStore
+  implements MarketStorePort, SignalStorePort, WorldScanReportStorePort
+{
   constructor(private readonly db: Db) {}
 
   async upsertMarket(market: Market): Promise<void> {

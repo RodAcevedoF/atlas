@@ -1,7 +1,8 @@
 import type { Market, MarketCategory, PredictionEvent } from "@atlas/domain";
 import { marketToSignal, marketToSnapshot } from "@atlas/domain";
-import type { MarketDataPort } from "../ports/market-data.ts";
-import type { MarketStorePort } from "../ports/market-store.ts";
+import type { SignalStorePort } from "../../world/outbound/signal-store.ts";
+import type { MarketDataPort } from "../outbound/market-data.ts";
+import type { MarketStorePort } from "../outbound/market-store.ts";
 import { enrichEventRegions, enrichMarketRegions } from "./market-geography.ts";
 
 export interface IngestMarketsInput {
@@ -21,7 +22,7 @@ export interface IngestMarkets {
 export class IngestMarketsUseCase implements IngestMarkets {
   constructor(
     private readonly market: MarketDataPort,
-    private readonly store: MarketStorePort,
+    private readonly store: MarketStorePort & SignalStorePort,
   ) {}
 
   async execute(input: IngestMarketsInput): Promise<IngestMarketsOutput> {

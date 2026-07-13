@@ -12,13 +12,8 @@ import type {
   PredictionEvent,
   PriceTick,
   RegionSummary,
-  RegionTopicBreakdown,
-  Signal,
-  SignalSource,
-  Topic,
   Trade,
 } from "@atlas/domain";
-import type { WorldScanReportFilter, WorldScanReportRecord } from "../world/world-scan.ts";
 
 export interface MarketStorePort {
   upsertMarket(market: Market): Promise<void>;
@@ -38,22 +33,6 @@ export interface MarketStorePort {
     limit?: number;
     region?: GeoRegion;
   }): Promise<RegionSummary[]>;
-
-  upsertSignals(signals: Signal[]): Promise<void>;
-  listRegionTopicBreakdowns(filter?: {
-    source?: SignalSource;
-    topic?: Topic;
-    region?: GeoRegion;
-    since?: Date;
-    limit?: number;
-  }): Promise<RegionTopicBreakdown[]>;
-  listSignals(filter?: {
-    source?: SignalSource;
-    topic?: Topic;
-    region?: GeoRegion;
-    since?: Date;
-    limit?: number;
-  }): Promise<Signal[]>;
 
   insertMarketSnapshots(snapshots: MarketSnapshot[]): Promise<void>;
   getMarketSnapshots(filter?: {
@@ -79,8 +58,4 @@ export interface MarketStorePort {
   saveAnalysisRun(run: AnalysisRun): Promise<void>;
   updateAnalysisRun(id: string, patch: Partial<AnalysisRun>): Promise<void>;
   findAnalysisRun(id: string): Promise<AnalysisRun | null>;
-
-  saveWorldScanReport(record: WorldScanReportRecord): Promise<void>;
-  listWorldScanReports(filter?: WorldScanReportFilter): Promise<WorldScanReportRecord[]>;
-  listWorldScanReportsByIds(ids: string[]): Promise<WorldScanReportRecord[]>;
 }

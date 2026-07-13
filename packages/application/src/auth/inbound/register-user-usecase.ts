@@ -1,8 +1,8 @@
 import type { User } from "@atlas/domain";
 import { emptyProfile, makeUserId, toPublicUser } from "@atlas/domain";
-import type { PasswordHasherPort } from "../ports/password-hasher.ts";
-import type { SessionPort } from "../ports/session-store.ts";
-import type { UserStorePort } from "../ports/user-store.ts";
+import type { PasswordHasherPort } from "../outbound/password-hasher.ts";
+import type { SessionPort } from "../outbound/session-store.ts";
+import type { UserStorePort } from "../outbound/user-store.ts";
 import type { LoginResult, RegisterInput, RegisterUser } from "./auth.ts";
 import { EmailInUseError, normalizeEmail } from "./auth.ts";
 import { issueSession } from "./issue-session.ts";

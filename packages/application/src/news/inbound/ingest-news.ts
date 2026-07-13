@@ -1,5 +1,5 @@
-import type { MarketStorePort } from "../ports/market-store.ts";
-import type { SignalSourcePort } from "../ports/signal-source.ts";
+import type { SignalStorePort } from "../../world/outbound/signal-store.ts";
+import type { SignalSourcePort } from "../outbound/signal-source.ts";
 
 export interface IngestNewsInput {
   query?: string;
@@ -17,7 +17,7 @@ export interface IngestNews {
 export class IngestNewsUseCase implements IngestNews {
   constructor(
     private readonly source: SignalSourcePort,
-    private readonly store: MarketStorePort,
+    private readonly store: SignalStorePort,
   ) {}
 
   async execute(input: IngestNewsInput = {}): Promise<IngestNewsOutput> {

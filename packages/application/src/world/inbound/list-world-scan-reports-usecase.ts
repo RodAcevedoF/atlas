@@ -1,4 +1,4 @@
-import type { MarketStorePort } from "../ports/market-store.ts";
+import type { WorldScanReportStorePort } from "../outbound/world-scan-report-store.ts";
 import type {
   ListWorldScanReports,
   WorldScanReportFilter,
@@ -6,7 +6,7 @@ import type {
 } from "./world-scan.ts";
 
 export class ListWorldScanReportsUseCase implements ListWorldScanReports {
-  constructor(private readonly store: MarketStorePort) {}
+  constructor(private readonly store: WorldScanReportStorePort) {}
 
   execute(filter: WorldScanReportFilter = {}): Promise<WorldScanReportRecord[]> {
     return this.store.listWorldScanReports(filter);

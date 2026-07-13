@@ -1,4 +1,4 @@
-import type { IngestNews, MarketStorePort, SignalSourcePort } from "@atlas/application";
+import type { IngestNews, SignalSourcePort, SignalStorePort } from "@atlas/application";
 import { IngestNewsUseCase } from "@atlas/application";
 
 export interface NewsDeps {
@@ -7,7 +7,7 @@ export interface NewsDeps {
 
 export function makeNewsDependencies(deps: {
   signalSource: SignalSourcePort;
-  store: MarketStorePort;
+  store: SignalStorePort;
 }): NewsDeps {
   return {
     ingestNews: new IngestNewsUseCase(deps.signalSource, deps.store),

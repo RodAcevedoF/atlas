@@ -1,5 +1,5 @@
 import type { GeoRegion, RegionTopicBreakdown, SignalSource, Topic } from "@atlas/domain";
-import type { MarketStorePort } from "../ports/market-store.ts";
+import type { SignalStorePort } from "../outbound/signal-store.ts";
 
 export interface ListWorldTopicsInput {
   source?: SignalSource;
@@ -16,7 +16,7 @@ export interface ListWorldTopics {
 }
 
 export class ListWorldTopicsUseCase implements ListWorldTopics {
-  constructor(private readonly store: MarketStorePort) {}
+  constructor(private readonly store: SignalStorePort) {}
 
   execute(input: ListWorldTopicsInput = {}): Promise<ListWorldTopicsOutput> {
     return this.store.listRegionTopicBreakdowns(input);

@@ -1,6 +1,6 @@
 import type { Session, UserId } from "@atlas/domain";
 import { makeSessionToken } from "@atlas/domain";
-import type { SessionPort } from "../ports/session-store.ts";
+import type { SessionPort } from "../outbound/session-store.ts";
 
 export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 

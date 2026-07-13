@@ -1,7 +1,7 @@
 import type { PublicUser } from "@atlas/domain";
 import { makeSessionToken, toPublicUser } from "@atlas/domain";
-import type { SessionPort } from "../ports/session-store.ts";
-import type { UserStorePort } from "../ports/user-store.ts";
+import type { SessionPort } from "../outbound/session-store.ts";
+import type { UserStorePort } from "../outbound/user-store.ts";
 import type { Authenticate } from "./auth.ts";
 
 export class AuthenticateUseCase implements Authenticate {

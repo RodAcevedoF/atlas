@@ -5,6 +5,7 @@ import type {
   ListRegionSummaries,
   MarketDataPort,
   MarketStorePort,
+  SignalStorePort,
 } from "@atlas/application";
 import {
   IngestMarketsUseCase,
@@ -22,7 +23,7 @@ export interface MarketsDeps {
 
 export function makeMarketsDependencies(deps: {
   marketData: MarketDataPort;
-  store: MarketStorePort;
+  store: MarketStorePort & SignalStorePort;
 }): MarketsDeps {
   return {
     ingestMarkets: new IngestMarketsUseCase(deps.marketData, deps.store),

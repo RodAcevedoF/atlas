@@ -1,14 +1,14 @@
 import type { UserId } from "@atlas/domain";
-import type { MarketStorePort } from "../ports/market-store.ts";
-import type { UserStorePort } from "../ports/user-store.ts";
-import type { WorldScanReportRecord } from "../world/world-scan.ts";
+import type { UserStorePort } from "../../auth/outbound/user-store.ts";
+import type { WorldScanReportRecord } from "../../world/inbound/world-scan.ts";
+import type { WorldScanReportStorePort } from "../../world/outbound/world-scan-report-store.ts";
 import type { ListSavedReports } from "./profile.ts";
 import { UserNotFoundError } from "./profile.ts";
 
 export class ListSavedReportsUseCase implements ListSavedReports {
   constructor(
     private readonly users: UserStorePort,
-    private readonly store: MarketStorePort,
+    private readonly store: WorldScanReportStorePort,
   ) {}
 
   async execute(userId: UserId): Promise<WorldScanReportRecord[]> {

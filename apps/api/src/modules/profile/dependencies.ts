@@ -1,10 +1,10 @@
 import type {
   ListSavedReports,
-  MarketStorePort,
   SaveReport,
   UnsaveReport,
   UpdateProfile,
   UserStorePort,
+  WorldScanReportStorePort,
 } from "@atlas/application";
 import {
   ListSavedReportsUseCase,
@@ -22,7 +22,7 @@ export interface ProfileDeps {
 
 export function makeProfileDependencies(deps: {
   userStore: UserStorePort;
-  store: MarketStorePort;
+  store: WorldScanReportStorePort;
 }): ProfileDeps {
   return {
     updateProfile: new UpdateProfileUseCase(deps.userStore),

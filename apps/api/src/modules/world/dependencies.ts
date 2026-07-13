@@ -4,7 +4,9 @@ import type {
   ListWorldTopics,
   MarketStorePort,
   OrchestrationPort,
+  SignalStorePort,
   WorldScan,
+  WorldScanReportStorePort,
 } from "@atlas/application";
 import {
   ListWorldEventsUseCase,
@@ -21,7 +23,7 @@ export interface WorldDeps {
 }
 
 export function makeWorldDependencies(deps: {
-  store: MarketStorePort;
+  store: MarketStorePort & SignalStorePort & WorldScanReportStorePort;
   orchestration: OrchestrationPort;
 }): WorldDeps {
   return {

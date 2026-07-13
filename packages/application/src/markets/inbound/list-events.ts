@@ -1,5 +1,5 @@
 import type { PredictionEvent } from "@atlas/domain";
-import type { MarketStorePort } from "../ports/market-store.ts";
+import type { MarketStorePort } from "../outbound/market-store.ts";
 
 export interface ListEventsInput {
   limit?: number;

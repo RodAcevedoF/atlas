@@ -1,6 +1,6 @@
 import type { GeoRegion, Signal, SignalSource, Topic } from "@atlas/domain";
 import { scoreSignalRelevance } from "@atlas/domain";
-import type { MarketStorePort } from "../ports/market-store.ts";
+import type { SignalStorePort } from "../outbound/signal-store.ts";
 
 export interface ListWorldEventsInput {
   source?: SignalSource;
@@ -32,12 +32,10 @@ const CANDIDATE_WINDOW = 200;
 const DEFAULT_LIMIT = 12;
 
 /**
- * Ranks recent signals by relevance (attention weight decayed by age) and returns
- * the top individual events. Source defaults to `news` — the feed is news-led, and
- * mixing market signals (whose weight is USD volume) would bury every headline.
+ * Ranks recent signals by relevance (attention weight decayed by age)
  */
 export class ListWorldEventsUseCase implements ListWorldEvents {
-  constructor(private readonly store: MarketStorePort) {}
+  constructor(private readonly store: SignalStorePort) {}
 
   async execute(input: ListWorldEventsInput = {}): Promise<ListWorldEventsOutput> {
     const candidates = await this.store.listSignals({

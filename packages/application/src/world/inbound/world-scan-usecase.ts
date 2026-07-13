@@ -1,6 +1,8 @@
 import { marketCategoryToTopic, topMarketMovers } from "@atlas/domain";
-import type { MarketStorePort } from "../ports/market-store.ts";
-import type { OrchestrationPort } from "../ports/orchestration.ts";
+import type { MarketStorePort } from "../../markets/outbound/market-store.ts";
+import type { OrchestrationPort } from "../outbound/orchestration.ts";
+import type { SignalStorePort } from "../outbound/signal-store.ts";
+import type { WorldScanReportStorePort } from "../outbound/world-scan-report-store.ts";
 import type {
   WorldScan,
   WorldScanInput,
@@ -14,7 +16,7 @@ const MOVER_LIMIT = 8;
 
 export class WorldScanUseCase implements WorldScan {
   constructor(
-    private readonly store: MarketStorePort,
+    private readonly store: MarketStorePort & SignalStorePort & WorldScanReportStorePort,
     private readonly orchestration: OrchestrationPort,
   ) {}
 

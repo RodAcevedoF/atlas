@@ -1,85 +1,86 @@
+// outbound ports
 export type {
   MarketFilter,
   PriceHistoryRange,
   MarketDataPort,
-} from "./ports/market-data.ts";
-export type { MarketStorePort } from "./ports/market-store.ts";
-export type { TopTrader, OnChainPort } from "./ports/onchain.ts";
+} from "./markets/outbound/market-data.ts";
+export type { MarketStorePort } from "./markets/outbound/market-store.ts";
+export type { SignalStorePort } from "./world/outbound/signal-store.ts";
+export type { WorldScanReportStorePort } from "./world/outbound/world-scan-report-store.ts";
 export type {
   GraphRunInput,
   GraphEventType,
   GraphEvent,
   OrchestrationPort,
-} from "./ports/orchestration.ts";
-export type { ClockPort, IdPort } from "./ports/utilities.ts";
-export type { SignalSourceFilter, SignalSourcePort } from "./ports/signal-source.ts";
-export type { UserStorePort } from "./ports/user-store.ts";
-export type { SessionPort } from "./ports/session-store.ts";
-export type { PasswordHasherPort } from "./ports/password-hasher.ts";
+} from "./world/outbound/orchestration.ts";
+export type { SignalSourceFilter, SignalSourcePort } from "./news/outbound/signal-source.ts";
+export type { UserStorePort } from "./auth/outbound/user-store.ts";
+export type { SessionPort } from "./auth/outbound/session-store.ts";
+export type { PasswordHasherPort } from "./auth/outbound/password-hasher.ts";
 
 // markets
 export type {
   IngestMarketsInput,
   IngestMarketsOutput,
   IngestMarkets,
-} from "./markets/ingest-markets.ts";
-export { IngestMarketsUseCase } from "./markets/ingest-markets.ts";
+} from "./markets/inbound/ingest-markets.ts";
+export { IngestMarketsUseCase } from "./markets/inbound/ingest-markets.ts";
 export type {
   ListMarketsInput,
   ListMarketsOutput,
   ListMarkets,
-} from "./markets/list-markets.ts";
-export { ListMarketsUseCase } from "./markets/list-markets.ts";
+} from "./markets/inbound/list-markets.ts";
+export { ListMarketsUseCase } from "./markets/inbound/list-markets.ts";
 export type {
   ListEventsInput,
   ListEventsOutput,
   ListEvents,
-} from "./markets/list-events.ts";
-export { ListEventsUseCase } from "./markets/list-events.ts";
+} from "./markets/inbound/list-events.ts";
+export { ListEventsUseCase } from "./markets/inbound/list-events.ts";
 export type {
   ListRegionSummariesInput,
   ListRegionSummariesOutput,
   ListRegionSummaries,
-} from "./markets/list-region-summaries.ts";
-export { ListRegionSummariesUseCase } from "./markets/list-region-summaries.ts";
+} from "./markets/inbound/list-region-summaries.ts";
+export { ListRegionSummariesUseCase } from "./markets/inbound/list-region-summaries.ts";
 export type {
   RunMarketIntelligenceInput,
   RunMarketIntelligenceOutput,
   RunMarketIntelligence,
-} from "./markets/run-market-intelligence.ts";
+} from "./markets/inbound/run-market-intelligence.ts";
 export type {
   RunEdgeScanInput,
   RunEdgeScanOutput,
   RunEdgeScan,
-} from "./markets/run-edge-scan.ts";
+} from "./markets/inbound/run-edge-scan.ts";
 export type {
   RunDiscrepancyScanInput,
   RunDiscrepancyScanOutput,
   RunDiscrepancyScan,
-} from "./markets/run-discrepancy-scan.ts";
+} from "./markets/inbound/run-discrepancy-scan.ts";
 
 // news
 export type {
   IngestNewsInput,
   IngestNewsOutput,
   IngestNews,
-} from "./news/ingest-news.ts";
-export { IngestNewsUseCase } from "./news/ingest-news.ts";
+} from "./news/inbound/ingest-news.ts";
+export { IngestNewsUseCase } from "./news/inbound/ingest-news.ts";
 
 // world
 export type {
   ListWorldTopicsInput,
   ListWorldTopicsOutput,
   ListWorldTopics,
-} from "./world/list-world-topics.ts";
-export { ListWorldTopicsUseCase } from "./world/list-world-topics.ts";
+} from "./world/inbound/list-world-topics.ts";
+export { ListWorldTopicsUseCase } from "./world/inbound/list-world-topics.ts";
 export type {
   ListWorldEventsInput,
   ListWorldEventsOutput,
   WorldEvent,
   ListWorldEvents,
-} from "./world/list-world-events.ts";
-export { ListWorldEventsUseCase } from "./world/list-world-events.ts";
+} from "./world/inbound/list-world-events.ts";
+export { ListWorldEventsUseCase } from "./world/inbound/list-world-events.ts";
 export type {
   WorldScanInput,
   WorldScanOutput,
@@ -94,9 +95,9 @@ export type {
   WorldScanReportFilter,
   WorldScan,
   ListWorldScanReports,
-} from "./world/world-scan.ts";
-export { WorldScanUseCase } from "./world/world-scan-usecase.ts";
-export { ListWorldScanReportsUseCase } from "./world/list-world-scan-reports-usecase.ts";
+} from "./world/inbound/world-scan.ts";
+export { WorldScanUseCase } from "./world/inbound/world-scan-usecase.ts";
+export { ListWorldScanReportsUseCase } from "./world/inbound/list-world-scan-reports-usecase.ts";
 
 // auth
 export type {
@@ -107,13 +108,13 @@ export type {
   LoginUser,
   LogoutUser,
   Authenticate,
-} from "./auth/auth.ts";
-export { EmailInUseError, InvalidCredentialsError, normalizeEmail } from "./auth/auth.ts";
-export { SESSION_TTL_MS, issueSession } from "./auth/issue-session.ts";
-export { RegisterUserUseCase } from "./auth/register-user-usecase.ts";
-export { LoginUserUseCase } from "./auth/login-user-usecase.ts";
-export { LogoutUserUseCase } from "./auth/logout-user-usecase.ts";
-export { AuthenticateUseCase } from "./auth/authenticate-usecase.ts";
+} from "./auth/inbound/auth.ts";
+export { EmailInUseError, InvalidCredentialsError, normalizeEmail } from "./auth/inbound/auth.ts";
+export { SESSION_TTL_MS, issueSession } from "./auth/inbound/issue-session.ts";
+export { RegisterUserUseCase } from "./auth/inbound/register-user-usecase.ts";
+export { LoginUserUseCase } from "./auth/inbound/login-user-usecase.ts";
+export { LogoutUserUseCase } from "./auth/inbound/logout-user-usecase.ts";
+export { AuthenticateUseCase } from "./auth/inbound/authenticate-usecase.ts";
 
 // profile
 export type {
@@ -122,9 +123,9 @@ export type {
   SaveReport,
   UnsaveReport,
   ListSavedReports,
-} from "./profile/profile.ts";
-export { UserNotFoundError } from "./profile/profile.ts";
-export { UpdateProfileUseCase } from "./profile/update-profile-usecase.ts";
-export { SaveReportUseCase } from "./profile/save-report-usecase.ts";
-export { UnsaveReportUseCase } from "./profile/unsave-report-usecase.ts";
-export { ListSavedReportsUseCase } from "./profile/list-saved-reports-usecase.ts";
+} from "./profile/inbound/profile.ts";
+export { UserNotFoundError } from "./profile/inbound/profile.ts";
+export { UpdateProfileUseCase } from "./profile/inbound/update-profile-usecase.ts";
+export { SaveReportUseCase } from "./profile/inbound/save-report-usecase.ts";
+export { UnsaveReportUseCase } from "./profile/inbound/unsave-report-usecase.ts";
+export { ListSavedReportsUseCase } from "./profile/inbound/list-saved-reports-usecase.ts";
