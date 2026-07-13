@@ -1,23 +1,33 @@
-import type { MarketStorePort, OrchestrationPort } from "@atlas/application";
+import type {
+  ListWorldEvents,
+  ListWorldScanReports,
+  ListWorldTopics,
+  MarketStorePort,
+  OrchestrationPort,
+  WorldScan,
+} from "@atlas/application";
 import {
   ListWorldEventsUseCase,
   ListWorldScanReportsUseCase,
   ListWorldTopicsUseCase,
   WorldScanUseCase,
 } from "@atlas/application";
-import type { IWorldService } from "./service.ts";
-import { WorldService } from "./world-service.ts";
+
+export interface WorldDeps {
+  listWorldTopics: ListWorldTopics;
+  listWorldEvents: ListWorldEvents;
+  runWorldScan: WorldScan;
+  listWorldScanReports: ListWorldScanReports;
+}
 
 export function makeWorldDependencies(deps: {
   store: MarketStorePort;
   orchestration: OrchestrationPort;
-}): { service: IWorldService } {
+}): WorldDeps {
   return {
-    service: new WorldService(
-      new ListWorldTopicsUseCase(deps.store),
-      new ListWorldEventsUseCase(deps.store),
-      new WorldScanUseCase(deps.store, deps.orchestration),
-      new ListWorldScanReportsUseCase(deps.store),
-    ),
+    listWorldTopics: new ListWorldTopicsUseCase(deps.store),
+    listWorldEvents: new ListWorldEventsUseCase(deps.store),
+    runWorldScan: new WorldScanUseCase(deps.store, deps.orchestration),
+    listWorldScanReports: new ListWorldScanReportsUseCase(deps.store),
   };
 }

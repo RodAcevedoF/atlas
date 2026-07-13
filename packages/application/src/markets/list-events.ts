@@ -1,5 +1,15 @@
+import type { PredictionEvent } from "@atlas/domain";
 import type { MarketStorePort } from "../ports/market-store.ts";
-import type { ListEvents, ListEventsInput, ListEventsOutput } from "./list-events.ts";
+
+export interface ListEventsInput {
+  limit?: number;
+}
+
+export type ListEventsOutput = PredictionEvent[];
+
+export interface ListEvents {
+  execute(input?: ListEventsInput): Promise<ListEventsOutput>;
+}
 
 export class ListEventsUseCase implements ListEvents {
   constructor(private readonly store: MarketStorePort) {}

@@ -1,6 +1,6 @@
+import type { Authenticate } from "@atlas/application";
 import type { PublicUser } from "@atlas/domain";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import type { IAuthService } from "../modules/auth/service.ts";
 
 export const SESSION_COOKIE = "atlas_session";
 
@@ -18,13 +18,13 @@ declare module "fastify" {
   }
 }
 
-export function registerAuthGate(app: FastifyInstance, auth: IAuthService): void {
+export function registerAuthGate(app: FastifyInstance, authenticate: Authenticate): void {
   app.decorateRequest("user", null);
 
   app.addHook("onRequest", async (req: FastifyRequest, reply: FastifyReply) => {
     const path = req.url.split("?")[0];
     const token = req.cookies[SESSION_COOKIE];
-    req.user = token ? await auth.authenticate(token) : null;
+    req.user = token ? await authenticate.execute(token) : null;
 
     if (PUBLIC_ROUTES.has(path)) return;
     if (!req.user) {

@@ -1,13 +1,15 @@
-import type { MarketStorePort, SignalSourcePort } from "@atlas/application";
+import type { IngestNews, MarketStorePort, SignalSourcePort } from "@atlas/application";
 import { IngestNewsUseCase } from "@atlas/application";
-import { NewsService } from "./news-service.ts";
-import type { INewsService } from "./service.ts";
+
+export interface NewsDeps {
+  ingestNews: IngestNews;
+}
 
 export function makeNewsDependencies(deps: {
   signalSource: SignalSourcePort;
   store: MarketStorePort;
-}): { service: INewsService } {
+}): NewsDeps {
   return {
-    service: new NewsService(new IngestNewsUseCase(deps.signalSource, deps.store)),
+    ingestNews: new IngestNewsUseCase(deps.signalSource, deps.store),
   };
 }

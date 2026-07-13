@@ -18,7 +18,7 @@ import type {
   Topic,
   Trade,
 } from "@atlas/domain";
-import type { WorldScanReportFilter, WorldScanReportRecord } from "../use-cases/world-scan.ts";
+import type { WorldScanReportFilter, WorldScanReportRecord } from "../world/world-scan.ts";
 
 export interface MarketStorePort {
   upsertMarket(market: Market): Promise<void>;

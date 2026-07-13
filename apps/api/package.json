@@ -9,11 +9,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atlas/domain": "*",
     "@atlas/application": "*",
+    "@atlas/domain": "*",
     "@atlas/infra": "*",
     "@atlas/shared": "*",
     "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.3.0",
+    "@fastify/helmet": "^13.1.0",
+    "@fastify/rate-limit": "^11.1.0",
     "fastify": "^5.2.1"
   }
 }

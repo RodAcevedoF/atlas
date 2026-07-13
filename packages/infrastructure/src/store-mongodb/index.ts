@@ -236,23 +236,23 @@ export class MongoMarketStore implements MarketStorePort {
 
   async upsertSignals(signals: Signal[]): Promise<void> {
     if (signals.length === 0) return;
-    const collection = this.db.collection<SignalDoc>("signals");
-    await Promise.all(
-      signals.map((signal) => {
-        const doc: Omit<SignalDoc, "_id"> = {
-          source: signal.source,
-          topic: signal.topic,
-          primaryRegion: signal.primaryRegion,
-          regions: coerceRegions(signal.regions),
-          weight: signal.weight,
-          title: signal.title,
-          ref: signal.ref,
-          timestamp: signal.timestamp,
-          createdAt: signal.createdAt,
-        };
-        return collection.replaceOne({ _id: signal.id }, doc, { upsert: true });
-      }),
-    );
+    // One bulkWrite round trip instead of N replaceOne calls. Unordered: the ops are
+    // independent (keyed by distinct _id), so the engine can apply them in parallel.
+    const operations = signals.map((signal) => {
+      const doc: Omit<SignalDoc, "_id"> = {
+        source: signal.source,
+        topic: signal.topic,
+        primaryRegion: signal.primaryRegion,
+        regions: coerceRegions(signal.regions),
+        weight: signal.weight,
+        title: signal.title,
+        ref: signal.ref,
+        timestamp: signal.timestamp,
+        createdAt: signal.createdAt,
+      };
+      return { replaceOne: { filter: { _id: signal.id }, replacement: doc, upsert: true } };
+    });
+    await this.db.collection<SignalDoc>("signals").bulkWrite(operations, { ordered: false });
   }
 
   async listRegionTopicBreakdowns(filter?: {

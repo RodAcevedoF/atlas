@@ -1,5 +1,5 @@
 import type { GeoRegion, Topic, UserId, UserProfile } from "@atlas/domain";
-import type { WorldScanReportRecord } from "./world-scan.ts";
+import type { WorldScanReportRecord } from "../world/world-scan.ts";
 
 export interface ProfileUpdateInput {
   preferredRegions: GeoRegion[];

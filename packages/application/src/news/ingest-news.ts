@@ -1,6 +1,18 @@
 import type { MarketStorePort } from "../ports/market-store.ts";
 import type { SignalSourcePort } from "../ports/signal-source.ts";
-import type { IngestNews, IngestNewsInput, IngestNewsOutput } from "./ingest-news.ts";
+
+export interface IngestNewsInput {
+  query?: string;
+  limit?: number;
+}
+
+export interface IngestNewsOutput {
+  upserted: number;
+}
+
+export interface IngestNews {
+  execute(input?: IngestNewsInput): Promise<IngestNewsOutput>;
+}
 
 export class IngestNewsUseCase implements IngestNews {
   constructor(

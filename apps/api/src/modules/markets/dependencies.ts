@@ -1,23 +1,33 @@
-import type { MarketDataPort, MarketStorePort } from "@atlas/application";
+import type {
+  IngestMarkets,
+  ListEvents,
+  ListMarkets,
+  ListRegionSummaries,
+  MarketDataPort,
+  MarketStorePort,
+} from "@atlas/application";
 import {
   IngestMarketsUseCase,
   ListEventsUseCase,
   ListMarketsUseCase,
   ListRegionSummariesUseCase,
 } from "@atlas/application";
-import { MarketsService } from "./markets-service.ts";
-import type { IMarketsService } from "./service.ts";
+
+export interface MarketsDeps {
+  ingestMarkets: IngestMarkets;
+  listMarkets: ListMarkets;
+  listEvents: ListEvents;
+  listRegionSummaries: ListRegionSummaries;
+}
 
 export function makeMarketsDependencies(deps: {
   marketData: MarketDataPort;
   store: MarketStorePort;
-}): { service: IMarketsService } {
+}): MarketsDeps {
   return {
-    service: new MarketsService(
-      new IngestMarketsUseCase(deps.marketData, deps.store),
-      new ListMarketsUseCase(deps.store),
-      new ListEventsUseCase(deps.store),
-      new ListRegionSummariesUseCase(deps.store),
-    ),
+    ingestMarkets: new IngestMarketsUseCase(deps.marketData, deps.store),
+    listMarkets: new ListMarketsUseCase(deps.store),
+    listEvents: new ListEventsUseCase(deps.store),
+    listRegionSummaries: new ListRegionSummariesUseCase(deps.store),
   };
 }

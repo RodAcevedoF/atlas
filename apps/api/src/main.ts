@@ -3,13 +3,14 @@ import Fastify from "fastify";
 import { registerAuthGate } from "./core/auth-hook.ts";
 import { bootstrap } from "./core/bootstrap.ts";
 import { registerErrorHandler } from "./core/error-handler.ts";
+import { loggerRedactPaths, registerSecurity } from "./core/security.ts";
 import { registerAuthRoutes } from "./routes/auth.ts";
 import { registerMarketsRoutes } from "./routes/markets.ts";
 import { registerNewsRoutes } from "./routes/news.ts";
 import { registerProfileRoutes } from "./routes/profile.ts";
 import { registerWorldRoutes } from "./routes/world.ts";
 
-const app = Fastify({ logger: true });
+const app = Fastify({ logger: { redact: loggerRedactPaths } });
 await app.register(cookie);
 
 app.get("/health", async () => {
@@ -17,14 +18,15 @@ app.get("/health", async () => {
 });
 
 const deps = await bootstrap();
+await registerSecurity(app, deps.redis);
 registerErrorHandler(app);
-registerAuthGate(app, deps.authService);
+registerAuthGate(app, deps.auth.authenticate);
 
-await registerAuthRoutes(app, deps.authService);
-await registerProfileRoutes(app, deps.profileService);
-await registerMarketsRoutes(app, deps.marketsService);
-await registerNewsRoutes(app, deps.newsService);
-await registerWorldRoutes(app, deps.worldService);
+await registerAuthRoutes(app, deps.auth);
+await registerProfileRoutes(app, deps.profile);
+await registerMarketsRoutes(app, deps.markets);
+await registerNewsRoutes(app, deps.news);
+await registerWorldRoutes(app, deps.world);
 
 const port = Number(process.env.PORT ?? 3001);
 await app.listen({ port, host: "0.0.0.0" });

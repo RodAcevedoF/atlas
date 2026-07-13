@@ -1,24 +1,35 @@
-import type { PasswordHasherPort, SessionPort, UserStorePort } from "@atlas/application";
+import type {
+  Authenticate,
+  LoginUser,
+  LogoutUser,
+  PasswordHasherPort,
+  RegisterUser,
+  SessionPort,
+  UserStorePort,
+} from "@atlas/application";
 import {
   AuthenticateUseCase,
   LoginUserUseCase,
   LogoutUserUseCase,
   RegisterUserUseCase,
 } from "@atlas/application";
-import { AuthService } from "./auth-service.ts";
-import type { IAuthService } from "./service.ts";
+
+export interface AuthDeps {
+  registerUser: RegisterUser;
+  loginUser: LoginUser;
+  logoutUser: LogoutUser;
+  authenticate: Authenticate;
+}
 
 export function makeAuthDependencies(deps: {
   userStore: UserStorePort;
   sessionStore: SessionPort;
   hasher: PasswordHasherPort;
-}): { service: IAuthService } {
+}): AuthDeps {
   return {
-    service: new AuthService(
-      new RegisterUserUseCase(deps.userStore, deps.sessionStore, deps.hasher),
-      new LoginUserUseCase(deps.userStore, deps.sessionStore, deps.hasher),
-      new LogoutUserUseCase(deps.sessionStore),
-      new AuthenticateUseCase(deps.sessionStore, deps.userStore),
-    ),
+    registerUser: new RegisterUserUseCase(deps.userStore, deps.sessionStore, deps.hasher),
+    loginUser: new LoginUserUseCase(deps.userStore, deps.sessionStore, deps.hasher),
+    logoutUser: new LogoutUserUseCase(deps.sessionStore),
+    authenticate: new AuthenticateUseCase(deps.sessionStore, deps.userStore),
   };
 }

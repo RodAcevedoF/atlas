@@ -1,23 +1,33 @@
-import type { MarketStorePort, UserStorePort } from "@atlas/application";
+import type {
+  ListSavedReports,
+  MarketStorePort,
+  SaveReport,
+  UnsaveReport,
+  UpdateProfile,
+  UserStorePort,
+} from "@atlas/application";
 import {
   ListSavedReportsUseCase,
   SaveReportUseCase,
   UnsaveReportUseCase,
   UpdateProfileUseCase,
 } from "@atlas/application";
-import { ProfileService } from "./profile-service.ts";
-import type { IProfileService } from "./service.ts";
+
+export interface ProfileDeps {
+  updateProfile: UpdateProfile;
+  saveReport: SaveReport;
+  unsaveReport: UnsaveReport;
+  listSavedReports: ListSavedReports;
+}
 
 export function makeProfileDependencies(deps: {
   userStore: UserStorePort;
   store: MarketStorePort;
-}): { service: IProfileService } {
+}): ProfileDeps {
   return {
-    service: new ProfileService(
-      new UpdateProfileUseCase(deps.userStore),
-      new SaveReportUseCase(deps.userStore),
-      new UnsaveReportUseCase(deps.userStore),
-      new ListSavedReportsUseCase(deps.userStore, deps.store),
-    ),
+    updateProfile: new UpdateProfileUseCase(deps.userStore),
+    saveReport: new SaveReportUseCase(deps.userStore),
+    unsaveReport: new UnsaveReportUseCase(deps.userStore),
+    listSavedReports: new ListSavedReportsUseCase(deps.userStore, deps.store),
   };
 }

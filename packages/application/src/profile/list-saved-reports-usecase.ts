@@ -1,9 +1,9 @@
 import type { UserId } from "@atlas/domain";
 import type { MarketStorePort } from "../ports/market-store.ts";
 import type { UserStorePort } from "../ports/user-store.ts";
+import type { WorldScanReportRecord } from "../world/world-scan.ts";
 import type { ListSavedReports } from "./profile.ts";
 import { UserNotFoundError } from "./profile.ts";
-import type { WorldScanReportRecord } from "./world-scan.ts";
 
 export class ListSavedReportsUseCase implements ListSavedReports {
   constructor(

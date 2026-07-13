@@ -5,23 +5,19 @@ import { BunPasswordHasher } from "@atlas/infra/password-bun";
 import { RedisSessionStore, createRedisClient } from "@atlas/infra/session-redis";
 import { MongoMarketStore, createMongoClient, ensureIndexes } from "@atlas/infra/store-mongodb";
 import { MongoUserStore, ensureUserIndexes } from "@atlas/infra/user-store-mongodb";
-import { makeAuthDependencies } from "../modules/auth/dependencies.ts";
-import type { IAuthService } from "../modules/auth/service.ts";
-import { makeMarketsDependencies } from "../modules/markets/dependencies.ts";
-import type { IMarketsService } from "../modules/markets/service.ts";
-import { makeNewsDependencies } from "../modules/news/dependencies.ts";
-import type { INewsService } from "../modules/news/service.ts";
-import { makeProfileDependencies } from "../modules/profile/dependencies.ts";
-import type { IProfileService } from "../modules/profile/service.ts";
-import { makeWorldDependencies } from "../modules/world/dependencies.ts";
-import type { IWorldService } from "../modules/world/service.ts";
+import { type AuthDeps, makeAuthDependencies } from "../modules/auth/dependencies.ts";
+import { type MarketsDeps, makeMarketsDependencies } from "../modules/markets/dependencies.ts";
+import { type NewsDeps, makeNewsDependencies } from "../modules/news/dependencies.ts";
+import { type ProfileDeps, makeProfileDependencies } from "../modules/profile/dependencies.ts";
+import { type WorldDeps, makeWorldDependencies } from "../modules/world/dependencies.ts";
 
 export interface AppDeps {
-  authService: IAuthService;
-  profileService: IProfileService;
-  marketsService: IMarketsService;
-  newsService: INewsService;
-  worldService: IWorldService;
+  auth: AuthDeps;
+  profile: ProfileDeps;
+  markets: MarketsDeps;
+  news: NewsDeps;
+  world: WorldDeps;
+  redis: ReturnType<typeof createRedisClient>;
 }
 
 export async function bootstrap(): Promise<AppDeps> {
@@ -47,11 +43,11 @@ export async function bootstrap(): Promise<AppDeps> {
     process.env.INTELLIGENCE_URL ?? "http://127.0.0.1:8000",
   );
 
-  const { service: authService } = makeAuthDependencies({ userStore, sessionStore, hasher });
-  const { service: profileService } = makeProfileDependencies({ userStore, store });
-  const { service: marketsService } = makeMarketsDependencies({ marketData, store });
-  const { service: newsService } = makeNewsDependencies({ signalSource, store });
-  const { service: worldService } = makeWorldDependencies({ store, orchestration });
+  const auth = makeAuthDependencies({ userStore, sessionStore, hasher });
+  const profile = makeProfileDependencies({ userStore, store });
+  const markets = makeMarketsDependencies({ marketData, store });
+  const news = makeNewsDependencies({ signalSource, store });
+  const world = makeWorldDependencies({ store, orchestration });
 
-  return { authService, profileService, marketsService, newsService, worldService };
+  return { auth, profile, markets, news, world, redis };
 }

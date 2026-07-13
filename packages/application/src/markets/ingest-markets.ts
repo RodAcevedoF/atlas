@@ -2,8 +2,21 @@ import type { Market, MarketCategory, PredictionEvent } from "@atlas/domain";
 import { marketToSignal, marketToSnapshot } from "@atlas/domain";
 import type { MarketDataPort } from "../ports/market-data.ts";
 import type { MarketStorePort } from "../ports/market-store.ts";
-import type { IngestMarkets, IngestMarketsInput, IngestMarketsOutput } from "./ingest-markets.ts";
 import { enrichEventRegions, enrichMarketRegions } from "./market-geography.ts";
+
+export interface IngestMarketsInput {
+  categories?: string[];
+  maxMarkets?: number;
+}
+
+export interface IngestMarketsOutput {
+  upserted: number;
+  ticksRecorded: number;
+}
+
+export interface IngestMarkets {
+  execute(input: IngestMarketsInput): Promise<IngestMarketsOutput>;
+}
 
 export class IngestMarketsUseCase implements IngestMarkets {
   constructor(
