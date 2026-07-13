@@ -18,6 +18,9 @@ export type {
 } from "./ports/orchestration.ts";
 export type { ClockPort, IdPort } from "./ports/utilities.ts";
 export type { SignalSourceFilter, SignalSourcePort } from "./ports/signal-source.ts";
+export type { UserStorePort } from "./ports/user-store.ts";
+export type { SessionPort } from "./ports/session-store.ts";
+export type { PasswordHasherPort } from "./ports/password-hasher.ts";
 
 export type {
   IngestMarketsInput,
@@ -94,3 +97,32 @@ export type {
   RunDiscrepancyScanOutput,
   RunDiscrepancyScan,
 } from "./use-cases/run-discrepancy-scan.ts";
+
+export type {
+  RegisterInput,
+  LoginInput,
+  LoginResult,
+  RegisterUser,
+  LoginUser,
+  LogoutUser,
+  Authenticate,
+} from "./use-cases/auth.ts";
+export { EmailInUseError, InvalidCredentialsError, normalizeEmail } from "./use-cases/auth.ts";
+export { SESSION_TTL_MS, issueSession } from "./use-cases/issue-session.ts";
+export { RegisterUserUseCase } from "./use-cases/register-user-usecase.ts";
+export { LoginUserUseCase } from "./use-cases/login-user-usecase.ts";
+export { LogoutUserUseCase } from "./use-cases/logout-user-usecase.ts";
+export { AuthenticateUseCase } from "./use-cases/authenticate-usecase.ts";
+
+export type {
+  ProfileUpdateInput,
+  UpdateProfile,
+  SaveReport,
+  UnsaveReport,
+  ListSavedReports,
+} from "./use-cases/profile.ts";
+export { UserNotFoundError } from "./use-cases/profile.ts";
+export { UpdateProfileUseCase } from "./use-cases/update-profile-usecase.ts";
+export { SaveReportUseCase } from "./use-cases/save-report-usecase.ts";
+export { UnsaveReportUseCase } from "./use-cases/unsave-report-usecase.ts";
+export { ListSavedReportsUseCase } from "./use-cases/list-saved-reports-usecase.ts";

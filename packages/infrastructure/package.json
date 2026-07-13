@@ -10,6 +10,7 @@
     "@atlas/application": "*",
     "@atlas/domain": "*",
     "@atlas/shared": "*",
+    "ioredis": "^5.4.2",
     "mongodb": "^7.2.0"
   }
 }

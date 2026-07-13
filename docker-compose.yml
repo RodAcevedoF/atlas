@@ -1,0 +1,13 @@
+services:
+  redis:
+    image: redis:8-alpine
+    container_name: atlas-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - atlas-redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  atlas-redis-data:

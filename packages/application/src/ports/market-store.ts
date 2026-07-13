@@ -82,4 +82,5 @@ export interface MarketStorePort {
 
   saveWorldScanReport(record: WorldScanReportRecord): Promise<void>;
   listWorldScanReports(filter?: WorldScanReportFilter): Promise<WorldScanReportRecord[]>;
+  listWorldScanReportsByIds(ids: string[]): Promise<WorldScanReportRecord[]>;
 }

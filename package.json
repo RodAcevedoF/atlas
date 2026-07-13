@@ -4,7 +4,9 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "bun nx run-many -t dev --parallel=4",
+    "dev": "bun run redis:up && bun nx run-many -t dev --parallel=4",
+    "redis:up": "docker compose up -d redis",
+    "redis:down": "docker compose down",
     "typecheck": "bun nx run-many -t typecheck",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",

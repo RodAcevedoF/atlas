@@ -4,6 +4,7 @@ import type {
   WorldScanInput,
   WorldScanReportFilter,
 } from "@atlas/application";
+import type { UserProfile } from "@atlas/domain";
 import {
   type RawQuery,
   parseLimit,
@@ -39,6 +40,15 @@ export function parseWorldScanBody(body: Record<string, unknown> | undefined): W
     topic: parseTopic(source.topic),
     region: parseRegion(source.region),
     since: parseSince(source.since),
+  };
+}
+
+export function applyScanDefaults(input: WorldScanInput, profile?: UserProfile): WorldScanInput {
+  if (!profile) return input;
+  return {
+    ...input,
+    topic: input.topic ?? profile.preferredTopics[0],
+    region: input.region ?? profile.preferredRegions[0],
   };
 }
 

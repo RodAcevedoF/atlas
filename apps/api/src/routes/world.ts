@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { RawQuery } from "../core/parsing.ts";
 import {
+  applyScanDefaults,
   parseWorldEventsQuery,
   parseWorldScanBody,
   parseWorldScanHistoryQuery,
@@ -26,7 +27,8 @@ export async function registerWorldRoutes(
 
   app.post("/world/scan", async (req, reply) => {
     const body = (req.body as Record<string, unknown> | undefined) ?? {};
-    const result = await service.runWorldScan(parseWorldScanBody(body));
+    const input = applyScanDefaults(parseWorldScanBody(body), req.user?.profile);
+    const result = await service.runWorldScan(input);
     return reply.send(result);
   });
 

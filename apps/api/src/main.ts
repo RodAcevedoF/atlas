@@ -1,16 +1,27 @@
+import cookie from "@fastify/cookie";
 import Fastify from "fastify";
+import { registerAuthGate } from "./core/auth-hook.ts";
 import { bootstrap } from "./core/bootstrap.ts";
+import { registerErrorHandler } from "./core/error-handler.ts";
+import { registerAuthRoutes } from "./routes/auth.ts";
 import { registerMarketsRoutes } from "./routes/markets.ts";
 import { registerNewsRoutes } from "./routes/news.ts";
+import { registerProfileRoutes } from "./routes/profile.ts";
 import { registerWorldRoutes } from "./routes/world.ts";
 
 const app = Fastify({ logger: true });
+await app.register(cookie);
 
 app.get("/health", async () => {
   return { status: "ok", service: "atlas-api", timestamp: new Date().toISOString() };
 });
 
 const deps = await bootstrap();
+registerErrorHandler(app);
+registerAuthGate(app, deps.authService);
+
+await registerAuthRoutes(app, deps.authService);
+await registerProfileRoutes(app, deps.profileService);
 await registerMarketsRoutes(app, deps.marketsService);
 await registerNewsRoutes(app, deps.newsService);
 await registerWorldRoutes(app, deps.worldService);

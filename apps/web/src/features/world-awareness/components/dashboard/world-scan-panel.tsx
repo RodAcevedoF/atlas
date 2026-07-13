@@ -224,7 +224,7 @@ function PastReports({
           {isLoading ? (
             <div className="text-[12px] text-muted-foreground">Loading past reports…</div>
           ) : null}
-          {error ? <div className="text-[12px] text-destructive-foreground">{error}</div> : null}
+          {error ? <div className="text-[12px] text-destructive">{error}</div> : null}
           {!isLoading && !error && history.length === 0 ? (
             <div className="text-[12px] text-muted-foreground">No saved reports yet.</div>
           ) : null}
@@ -269,9 +269,7 @@ export function WorldScanPanel({
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4.25">
-        {error ? (
-          <div className="py-3 text-[12.5px] text-destructive-foreground">{error}</div>
-        ) : null}
+        {error ? <div className="py-3 text-[12.5px] text-destructive">{error}</div> : null}
 
         {!report && !isScanning && !error ? (
           <div className="py-3 text-[12.5px] text-muted-foreground">

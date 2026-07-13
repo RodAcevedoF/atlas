@@ -27,7 +27,7 @@ import type {
   Trade,
 } from "@atlas/domain";
 import { makeEventId, makeMarketId, makeOutcomeId, makeSignalId } from "@atlas/domain";
-import type { Db, WithId } from "mongodb";
+import { type Db, ObjectId, type WithId } from "mongodb";
 import type {
   AnalysisRunDoc,
   InsightDoc,
@@ -597,6 +597,17 @@ export class MongoMarketStore implements MarketStorePort {
       .find(match)
       .sort({ generatedAt: -1 })
       .limit(filter?.limit ?? 20)
+      .toArray();
+    return docs.map(docToWorldScanReportRecord);
+  }
+
+  async listWorldScanReportsByIds(ids: string[]): Promise<WorldScanReportRecord[]> {
+    const objectIds = ids.filter((id) => ObjectId.isValid(id)).map((id) => new ObjectId(id));
+    if (objectIds.length === 0) return [];
+    const docs = await this.db
+      .collection<WorldScanReportDoc>("world_scan_reports")
+      .find({ _id: { $in: objectIds } })
+      .sort({ generatedAt: -1 })
       .toArray();
     return docs.map(docToWorldScanReportRecord);
   }

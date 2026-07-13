@@ -55,3 +55,14 @@ export {
 export { SIGNAL_SOURCES, TOPICS } from "./entities/signal.ts";
 
 export { deriveRegionsFromText, deriveTopicFromText } from "./entities/geography.ts";
+
+export type {
+  UserId,
+  UserProfile,
+  User,
+  PublicUser,
+} from "./entities/user.ts";
+export { makeUserId, emptyProfile, toPublicUser } from "./entities/user.ts";
+
+export type { SessionToken, Session } from "./entities/session.ts";
+export { makeSessionToken } from "./entities/session.ts";
