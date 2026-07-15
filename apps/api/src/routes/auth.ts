@@ -42,7 +42,10 @@ export async function registerAuthRoutes(app: FastifyInstance, deps: AuthDeps): 
 
   app.post("/auth/login", { schema: credentialsSchema, ...authRateLimit }, async (req, reply) => {
     const credentials = parseLoginCredentials(req.body as Record<string, unknown> | undefined);
-    const result = await deps.loginUser.execute(credentials);
+    const result = await deps.authenticateWithProvider.execute({
+      provider: "password",
+      payload: credentials,
+    });
     setSessionCookie(reply, result.token);
     return reply.send({ user: result.user });
   });

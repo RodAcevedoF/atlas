@@ -12,10 +12,19 @@ export interface UserProfile {
   savedReportIds: string[];
 }
 
+export type IdentityProvider = "password" | "github" | "google";
+
+export interface UserIdentity {
+  provider: IdentityProvider;
+  providerUserId: string;
+  email: string;
+  secret?: string;
+}
+
 export interface User {
   id: UserId;
   email: string;
-  passwordHash: string;
+  identities: UserIdentity[];
   profile: UserProfile;
   createdAt: Date;
 }
@@ -28,6 +37,10 @@ export interface PublicUser {
 
 export function emptyProfile(): UserProfile {
   return { preferredRegions: [], preferredTopics: [], savedReportIds: [] };
+}
+
+export function findIdentity(user: User, provider: IdentityProvider): UserIdentity | undefined {
+  return user.identities.find((identity) => identity.provider === provider);
 }
 
 export function toPublicUser(user: User): PublicUser {

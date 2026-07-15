@@ -17,6 +17,11 @@ export type { SignalSourceFilter, SignalSourcePort } from "./news/outbound/signa
 export type { UserStorePort } from "./auth/outbound/user-store.ts";
 export type { SessionPort } from "./auth/outbound/session-store.ts";
 export type { PasswordHasherPort } from "./auth/outbound/password-hasher.ts";
+export type {
+  ProviderIdentity,
+  IdentityProviderPort,
+  IdentityProviderRegistry,
+} from "./auth/outbound/identity-provider.ts";
 
 // markets
 export type {
@@ -105,14 +110,20 @@ export type {
   LoginInput,
   LoginResult,
   RegisterUser,
-  LoginUser,
+  AuthenticateWithProvider,
+  AuthenticateWithProviderInput,
   LogoutUser,
   Authenticate,
 } from "./auth/inbound/auth.ts";
-export { EmailInUseError, InvalidCredentialsError, normalizeEmail } from "./auth/inbound/auth.ts";
+export {
+  EmailInUseError,
+  InvalidCredentialsError,
+  UnknownProviderError,
+  normalizeEmail,
+} from "./auth/inbound/auth.ts";
 export { SESSION_TTL_MS, issueSession } from "./auth/inbound/issue-session.ts";
 export { RegisterUserUseCase } from "./auth/inbound/register-user-usecase.ts";
-export { LoginUserUseCase } from "./auth/inbound/login-user-usecase.ts";
+export { AuthenticateWithProviderUseCase } from "./auth/inbound/authenticate-with-provider-usecase.ts";
 export { LogoutUserUseCase } from "./auth/inbound/logout-user-usecase.ts";
 export { AuthenticateUseCase } from "./auth/inbound/authenticate-usecase.ts";
 

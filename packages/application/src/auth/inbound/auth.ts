@@ -1,4 +1,4 @@
-import type { PublicUser } from "@atlas/domain";
+import type { IdentityProvider, PublicUser } from "@atlas/domain";
 
 export interface RegisterInput {
   email: string;
@@ -26,6 +26,13 @@ export class InvalidCredentialsError extends Error {
   }
 }
 
+export class UnknownProviderError extends Error {
+  constructor(provider: string) {
+    super(`Unknown or disabled identity provider: ${provider}`);
+    this.name = "UnknownProviderError";
+  }
+}
+
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
@@ -34,8 +41,13 @@ export interface RegisterUser {
   execute(input: RegisterInput): Promise<LoginResult>;
 }
 
-export interface LoginUser {
-  execute(input: LoginInput): Promise<LoginResult>;
+export interface AuthenticateWithProviderInput {
+  provider: IdentityProvider;
+  payload: unknown;
+}
+
+export interface AuthenticateWithProvider {
+  execute(input: AuthenticateWithProviderInput): Promise<LoginResult>;
 }
 
 export interface LogoutUser {

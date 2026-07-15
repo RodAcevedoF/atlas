@@ -1,21 +1,32 @@
 import type { UserStorePort } from "@atlas/application";
-import type { User, UserId, UserProfile } from "@atlas/domain";
+import type { User, UserId, UserIdentity, UserProfile } from "@atlas/domain";
 import { makeUserId } from "@atlas/domain";
 import type { Db } from "mongodb";
 
 interface UserDoc {
   _id: string;
   email: string;
-  passwordHash: string;
+  identities: UserIdentity[];
   profile: UserProfile;
   createdAt: Date;
+  passwordHash?: string;
+}
+
+function docToIdentities(doc: UserDoc): UserIdentity[] {
+  if (doc.identities?.length) return doc.identities;
+  if (doc.passwordHash) {
+    return [
+      { provider: "password", providerUserId: doc._id, email: doc.email, secret: doc.passwordHash },
+    ];
+  }
+  return [];
 }
 
 function docToUser(doc: UserDoc): User {
   return {
     id: makeUserId(doc._id),
     email: doc.email,
-    passwordHash: doc.passwordHash,
+    identities: docToIdentities(doc),
     profile: doc.profile,
     createdAt: doc.createdAt,
   };
@@ -28,7 +39,7 @@ export class MongoUserStore implements UserStorePort {
     const doc: UserDoc = {
       _id: user.id,
       email: user.email,
-      passwordHash: user.passwordHash,
+      identities: user.identities,
       profile: user.profile,
       createdAt: user.createdAt,
     };

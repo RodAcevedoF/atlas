@@ -59,10 +59,12 @@ export { deriveRegionsFromText, deriveTopicFromText } from "./entities/geography
 export type {
   UserId,
   UserProfile,
+  IdentityProvider,
+  UserIdentity,
   User,
   PublicUser,
 } from "./entities/user.ts";
-export { makeUserId, emptyProfile, toPublicUser } from "./entities/user.ts";
+export { makeUserId, emptyProfile, toPublicUser, findIdentity } from "./entities/user.ts";
 
 export type { SessionToken, Session } from "./entities/session.ts";
 export { makeSessionToken } from "./entities/session.ts";

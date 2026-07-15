@@ -1,3 +1,4 @@
+import { PasswordIdentityProvider } from "@atlas/infra/identity-password";
 import { PolymarketAdapter } from "@atlas/infra/market-polymarket";
 import { GdeltNewsAdapter } from "@atlas/infra/news-gdelt";
 import { HttpOrchestration } from "@atlas/infra/orchestration-http";
@@ -43,7 +44,9 @@ export async function bootstrap(): Promise<AppDeps> {
     process.env.INTELLIGENCE_URL ?? "http://127.0.0.1:8000",
   );
 
-  const auth = makeAuthDependencies({ userStore, sessionStore, hasher });
+  const identityProviders = { password: new PasswordIdentityProvider(userStore, hasher) };
+
+  const auth = makeAuthDependencies({ userStore, sessionStore, hasher, identityProviders });
   const profile = makeProfileDependencies({ userStore, store });
   const markets = makeMarketsDependencies({ marketData, store });
   const news = makeNewsDependencies({ signalSource, store });

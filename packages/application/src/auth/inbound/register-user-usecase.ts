@@ -19,10 +19,18 @@ export class RegisterUserUseCase implements RegisterUser {
     const existing = await this.users.findUserByEmail(email);
     if (existing) throw new EmailInUseError(email);
 
+    const id = makeUserId(crypto.randomUUID());
     const user: User = {
-      id: makeUserId(crypto.randomUUID()),
+      id,
       email,
-      passwordHash: await this.hasher.hash(input.password),
+      identities: [
+        {
+          provider: "password",
+          providerUserId: id,
+          email,
+          secret: await this.hasher.hash(input.password),
+        },
+      ],
       profile: emptyProfile(),
       createdAt: new Date(),
     };

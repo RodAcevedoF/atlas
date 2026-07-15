@@ -1,6 +1,7 @@
 import type {
   Authenticate,
-  LoginUser,
+  AuthenticateWithProvider,
+  IdentityProviderRegistry,
   LogoutUser,
   PasswordHasherPort,
   RegisterUser,
@@ -9,14 +10,14 @@ import type {
 } from "@atlas/application";
 import {
   AuthenticateUseCase,
-  LoginUserUseCase,
+  AuthenticateWithProviderUseCase,
   LogoutUserUseCase,
   RegisterUserUseCase,
 } from "@atlas/application";
 
 export interface AuthDeps {
   registerUser: RegisterUser;
-  loginUser: LoginUser;
+  authenticateWithProvider: AuthenticateWithProvider;
   logoutUser: LogoutUser;
   authenticate: Authenticate;
 }
@@ -25,10 +26,15 @@ export function makeAuthDependencies(deps: {
   userStore: UserStorePort;
   sessionStore: SessionPort;
   hasher: PasswordHasherPort;
+  identityProviders: IdentityProviderRegistry;
 }): AuthDeps {
   return {
     registerUser: new RegisterUserUseCase(deps.userStore, deps.sessionStore, deps.hasher),
-    loginUser: new LoginUserUseCase(deps.userStore, deps.sessionStore, deps.hasher),
+    authenticateWithProvider: new AuthenticateWithProviderUseCase(
+      deps.identityProviders,
+      deps.userStore,
+      deps.sessionStore,
+    ),
     logoutUser: new LogoutUserUseCase(deps.sessionStore),
     authenticate: new AuthenticateUseCase(deps.sessionStore, deps.userStore),
   };
