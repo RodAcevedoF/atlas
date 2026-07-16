@@ -113,26 +113,7 @@ export function TopBar({
     <header className="flex h-11.5 flex-none items-center justify-between gap-4">
       <div className="flex items-center gap-3.5">
         <div className="flex items-center gap-2.5">
-          <div
-            className="flex h-6 w-6 items-center justify-center rounded-[7px]"
-            style={{
-              background: "linear-gradient(140deg, var(--primary), #d98235)",
-              boxShadow: "0 0 0 1px rgba(255,171,88,.25), 0 4px 14px -4px rgba(255,171,88,.5)",
-            }}
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--primary-foreground)"
-              strokeWidth="2.4"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="9" />
-              <path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18" />
-            </svg>
-          </div>
+          <img src="/atlas_emblem.svg" alt="Atlas" className="h-6.5 w-6.5" />
           <div className="flex flex-col leading-[1.05]">
             <span className="text-[15px] font-semibold tracking-[-0.02em]">Atlas</span>
             <span className="text-[9.5px] uppercase tracking-[0.16em] text-muted-foreground">

@@ -2,18 +2,13 @@ import { useAuth } from "@/features/auth/auth-provider.tsx";
 import { AccountMenu } from "@/features/auth/components/account-menu.tsx";
 import { AuthPage } from "@/features/auth/components/auth-page.tsx";
 import { WorldAwarenessPage } from "@/features/world-awareness/world-awareness-page.tsx";
+import { AtlasLoader } from "@/shared/atlas-loader.tsx";
 import { Button } from "@atlas/ui";
 
 export function App() {
   const { status, retry } = useAuth();
 
-  if (status === "loading") {
-    return (
-      <main className="flex h-screen items-center justify-center bg-background text-[13px] text-muted-foreground">
-        Loading…
-      </main>
-    );
-  }
+  if (status === "loading") return <AtlasLoader />;
 
   if (status === "error") {
     return (

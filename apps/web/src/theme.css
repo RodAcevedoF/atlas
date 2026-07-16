@@ -138,3 +138,45 @@ body {
     opacity: 0.35;
   }
 }
+
+@keyframes atlas-breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes atlas-glow {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1.05);
+  }
+}
+
+.atlas-breathe {
+  animation: atlas-breathe 2.2s ease-in-out infinite;
+}
+.atlas-glow {
+  animation: atlas-glow 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-breathe,
+  .atlas-glow {
+    animation: none;
+  }
+  .atlas-breathe {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -16,7 +16,6 @@ function parseAccessToken(payload: unknown): string {
   return token;
 }
 
-
 export class GoogleIdentityProvider implements IdentityProviderPort {
   readonly provider = "google" as const;
 

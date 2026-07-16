@@ -19,7 +19,6 @@ function toUserIdentity(identity: ProviderIdentity): UserIdentity {
   };
 }
 
-
 export class AuthenticateWithProviderUseCase implements AuthenticateWithProvider {
   constructor(
     private readonly providers: IdentityProviderRegistry,
