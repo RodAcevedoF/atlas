@@ -1,6 +1,7 @@
 import { Button, Card } from "@atlas/ui";
 import { useState } from "react";
 import { useAuth } from "../auth-provider.tsx";
+import { OAuthButton } from "./oauth-button.tsx";
 
 type Mode = "login" | "register";
 
@@ -77,6 +78,17 @@ export function AuthPage() {
             {isSubmitting ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
           </Button>
         </form>
+
+        <div className="mt-4 flex items-center gap-3">
+          <span className="h-px flex-1 bg-border" />
+          <span className="text-[9.5px] uppercase tracking-[0.16em] text-muted-foreground">or</span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2">
+          <OAuthButton provider="github" />
+          <OAuthButton provider="google" />
+        </div>
 
         <button
           type="button"

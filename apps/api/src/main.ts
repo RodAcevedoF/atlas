@@ -4,6 +4,7 @@ import { registerAuthGate } from "./core/auth-hook.ts";
 import { bootstrap } from "./core/bootstrap.ts";
 import { registerErrorHandler } from "./core/error-handler.ts";
 import { loggerRedactPaths, registerSecurity } from "./core/security.ts";
+import { oauthPublicRoutes, readOAuthConfigs, registerOAuthRoutes } from "./modules/auth/oauth.ts";
 import { registerAuthRoutes } from "./routes/auth.ts";
 import { registerMarketsRoutes } from "./routes/markets.ts";
 import { registerNewsRoutes } from "./routes/news.ts";
@@ -18,11 +19,13 @@ app.get("/health", async () => {
 });
 
 const deps = await bootstrap();
+const oauthConfigs = readOAuthConfigs();
 await registerSecurity(app, deps.redis);
 registerErrorHandler(app);
-registerAuthGate(app, deps.auth.authenticate);
+registerAuthGate(app, deps.auth.authenticate, oauthPublicRoutes(oauthConfigs));
 
 await registerAuthRoutes(app, deps.auth);
+await registerOAuthRoutes(app, deps.auth, oauthConfigs);
 await registerProfileRoutes(app, deps.profile);
 await registerMarketsRoutes(app, deps.markets);
 await registerNewsRoutes(app, deps.news);

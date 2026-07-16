@@ -18,7 +18,12 @@ declare module "fastify" {
   }
 }
 
-export function registerAuthGate(app: FastifyInstance, authenticate: Authenticate): void {
+export function registerAuthGate(
+  app: FastifyInstance,
+  authenticate: Authenticate,
+  extraPublicRoutes: string[] = [],
+): void {
+  const publicRoutes = new Set([...PUBLIC_ROUTES, ...extraPublicRoutes]);
   app.decorateRequest("user", null);
 
   app.addHook("onRequest", async (req: FastifyRequest, reply: FastifyReply) => {
@@ -26,7 +31,7 @@ export function registerAuthGate(app: FastifyInstance, authenticate: Authenticat
     const token = req.cookies[SESSION_COOKIE];
     req.user = token ? await authenticate.execute(token) : null;
 
-    if (PUBLIC_ROUTES.has(path)) return;
+    if (publicRoutes.has(path)) return;
     if (!req.user) {
       return reply.code(401).send({ error: "Authentication required" });
     }

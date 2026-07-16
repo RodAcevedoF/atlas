@@ -7,6 +7,7 @@ import { RedisSessionStore, createRedisClient } from "@atlas/infra/session-redis
 import { MongoMarketStore, createMongoClient, ensureIndexes } from "@atlas/infra/store-mongodb";
 import { MongoUserStore, ensureUserIndexes } from "@atlas/infra/user-store-mongodb";
 import { type AuthDeps, makeAuthDependencies } from "../modules/auth/dependencies.ts";
+import { makeOAuthStrategies, readOAuthConfigs } from "../modules/auth/oauth.ts";
 import { type MarketsDeps, makeMarketsDependencies } from "../modules/markets/dependencies.ts";
 import { type NewsDeps, makeNewsDependencies } from "../modules/news/dependencies.ts";
 import { type ProfileDeps, makeProfileDependencies } from "../modules/profile/dependencies.ts";
@@ -44,7 +45,10 @@ export async function bootstrap(): Promise<AppDeps> {
     process.env.INTELLIGENCE_URL ?? "http://127.0.0.1:8000",
   );
 
-  const identityProviders = { password: new PasswordIdentityProvider(userStore, hasher) };
+  const identityProviders = {
+    password: new PasswordIdentityProvider(userStore, hasher),
+    ...makeOAuthStrategies(readOAuthConfigs()),
+  };
 
   const auth = makeAuthDependencies({ userStore, sessionStore, hasher, identityProviders });
   const profile = makeProfileDependencies({ userStore, store });

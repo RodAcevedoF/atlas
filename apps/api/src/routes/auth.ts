@@ -18,7 +18,7 @@ const credentialsSchema = {
 
 const authRateLimit = { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } } as const;
 
-function setSessionCookie(reply: FastifyReply, token: string): void {
+export function setSessionCookie(reply: FastifyReply, token: string): void {
   reply.setCookie(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",

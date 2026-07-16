@@ -59,6 +59,12 @@ export class MongoUserStore implements UserStorePort {
   async updateProfile(id: UserId, profile: UserProfile): Promise<void> {
     await this.db.collection<UserDoc>("users").updateOne({ _id: id }, { $set: { profile } });
   }
+
+  async linkIdentity(id: UserId, identity: UserIdentity): Promise<void> {
+    await this.db
+      .collection<UserDoc>("users")
+      .updateOne({ _id: id }, { $push: { identities: identity } });
+  }
 }
 
 export async function ensureUserIndexes(db: Db): Promise<void> {
