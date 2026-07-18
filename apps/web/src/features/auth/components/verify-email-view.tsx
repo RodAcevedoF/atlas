@@ -1,10 +1,11 @@
 import { Button, Card } from "@atlas/ui";
 import { useEffect, useState } from "react";
-import { HttpAuthRepository } from "../repositories/http-auth-repository.ts";
+import { useAuth } from "../auth-provider.tsx";
 
 type VerifyStatus = "verifying" | "success" | "error";
 
 export function VerifyEmailView() {
+  const { verifyEmail } = useAuth();
   const [status, setStatus] = useState<VerifyStatus>("verifying");
   const [message, setMessage] = useState("");
 
@@ -15,14 +16,13 @@ export function VerifyEmailView() {
       setMessage("This verification link is missing its token.");
       return;
     }
-    new HttpAuthRepository()
-      .verifyEmail(token)
+    verifyEmail(token)
       .then(() => setStatus("success"))
       .catch((caught: unknown) => {
         setStatus("error");
         setMessage(caught instanceof Error ? caught.message : "Verification failed.");
       });
-  }, []);
+  }, [verifyEmail]);
 
   return (
     <main className="flex h-screen items-center justify-center bg-background px-4">

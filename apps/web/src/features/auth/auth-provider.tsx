@@ -22,6 +22,7 @@ interface AuthContextValue {
   register: (credentials: Credentials) => Promise<void>;
   logout: () => Promise<void>;
   updatePreferences: (input: PreferencesInput) => Promise<void>;
+  verifyEmail: (token: string) => Promise<void>;
   resendVerification: () => Promise<void>;
   retry: () => void;
 }
@@ -80,6 +81,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [profileRepository],
   );
 
+  const verifyEmail = useCallback(
+    async (token: string) => {
+      await authRepository.verifyEmail(token);
+    },
+    [authRepository],
+  );
+
   const resendVerification = useCallback(async () => {
     if (!user) return;
     await authRepository.resendVerification(user.email);
@@ -93,10 +101,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
       register,
       logout,
       updatePreferences,
+      verifyEmail,
       resendVerification,
       retry: loadSession,
     }),
-    [status, user, login, register, logout, updatePreferences, resendVerification, loadSession],
+    [
+      status,
+      user,
+      login,
+      register,
+      logout,
+      updatePreferences,
+      verifyEmail,
+      resendVerification,
+      loadSession,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
