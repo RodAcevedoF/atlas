@@ -10,4 +10,6 @@ export interface AuthRepository {
   login(credentials: Credentials): Promise<PublicUser>;
   register(credentials: Credentials): Promise<PublicUser>;
   logout(): Promise<void>;
+  verifyEmail(token: string): Promise<void>;
+  resendVerification(email: string): Promise<void>;
 }

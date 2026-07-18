@@ -52,6 +52,7 @@ export class AuthenticateWithProviderUseCase implements AuthenticateWithProvider
     const user: User = {
       id: makeUserId(crypto.randomUUID()),
       email: identity.email,
+      emailVerified: true,
       identities: [toUserIdentity(identity)],
       profile: emptyProfile(),
       createdAt: new Date(),

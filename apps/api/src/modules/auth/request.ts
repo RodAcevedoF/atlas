@@ -25,3 +25,15 @@ export function parseLoginCredentials(body: Record<string, unknown> | undefined)
   if (!email || !password) throw new InvalidInputError("Email and password are required");
   return { email, password };
 }
+
+export function parseVerificationToken(body: Record<string, unknown> | undefined): string {
+  const token = typeof body?.token === "string" ? body.token.trim() : "";
+  if (!token) throw new InvalidInputError("A verification token is required");
+  return token;
+}
+
+export function parseResendEmail(body: Record<string, unknown> | undefined): string {
+  const email = typeof body?.email === "string" ? body.email.trim() : "";
+  if (!EMAIL_PATTERN.test(email)) throw new InvalidInputError("A valid email is required");
+  return email;
+}

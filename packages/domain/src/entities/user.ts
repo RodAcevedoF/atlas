@@ -24,6 +24,7 @@ export interface UserIdentity {
 export interface User {
   id: UserId;
   email: string;
+  emailVerified: boolean;
   identities: UserIdentity[];
   profile: UserProfile;
   createdAt: Date;
@@ -32,6 +33,7 @@ export interface User {
 export interface PublicUser {
   id: UserId;
   email: string;
+  emailVerified: boolean;
   profile: UserProfile;
 }
 
@@ -44,5 +46,10 @@ export function findIdentity(user: User, provider: IdentityProvider): UserIdenti
 }
 
 export function toPublicUser(user: User): PublicUser {
-  return { id: user.id, email: user.email, profile: user.profile };
+  return {
+    id: user.id,
+    email: user.email,
+    emailVerified: user.emailVerified,
+    profile: user.profile,
+  };
 }

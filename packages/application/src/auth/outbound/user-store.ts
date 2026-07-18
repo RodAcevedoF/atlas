@@ -6,4 +6,5 @@ export interface UserStorePort {
   findUserById(id: UserId): Promise<User | null>;
   updateProfile(id: UserId, profile: UserProfile): Promise<void>;
   linkIdentity(id: UserId, identity: UserIdentity): Promise<void>;
+  markEmailVerified(id: UserId): Promise<void>;
 }

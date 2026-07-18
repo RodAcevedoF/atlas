@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { requireUser } from "../core/auth-hook.ts";
 import type { RawQuery } from "../core/parsing.ts";
 import type { WorldDeps } from "../modules/world/dependencies.ts";
 import {
@@ -23,8 +24,12 @@ export async function registerWorldRoutes(app: FastifyInstance, deps: WorldDeps)
   });
 
   app.post("/world/scan", async (req, reply) => {
+    const user = requireUser(req);
+    if (!user.emailVerified) {
+      return reply.code(403).send({ error: "Verify your email to run world scans" });
+    }
     const body = (req.body as Record<string, unknown> | undefined) ?? {};
-    const input = applyScanDefaults(parseWorldScanBody(body), req.user?.profile);
+    const input = applyScanDefaults(parseWorldScanBody(body), user.profile);
     const result = await deps.runWorldScan.execute(input);
     return reply.send(result);
   });

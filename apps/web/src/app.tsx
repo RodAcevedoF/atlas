@@ -1,12 +1,16 @@
 import { useAuth } from "@/features/auth/auth-provider.tsx";
 import { AccountMenu } from "@/features/auth/components/account-menu.tsx";
 import { AuthPage } from "@/features/auth/components/auth-page.tsx";
+import { VerifyBanner } from "@/features/auth/components/verify-banner.tsx";
+import { VerifyEmailView } from "@/features/auth/components/verify-email-view.tsx";
 import { WorldAwarenessPage } from "@/features/world-awareness/world-awareness-page.tsx";
 import { AtlasLoader } from "@/shared/atlas-loader.tsx";
 import { Button } from "@atlas/ui";
 
 export function App() {
   const { status, retry } = useAuth();
+
+  if (window.location.pathname === "/verify-email") return <VerifyEmailView />;
 
   if (status === "loading") return <AtlasLoader />;
 
@@ -25,6 +29,7 @@ export function App() {
 
   return (
     <>
+      <VerifyBanner />
       <WorldAwarenessPage />
       <AccountMenu />
     </>

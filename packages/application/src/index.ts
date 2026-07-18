@@ -22,6 +22,8 @@ export type {
   IdentityProviderPort,
   IdentityProviderRegistry,
 } from "./auth/outbound/identity-provider.ts";
+export type { EmailMessage, EmailPort } from "./auth/outbound/email.ts";
+export type { VerificationTokenStorePort } from "./auth/outbound/verification-token-store.ts";
 
 // markets
 export type {
@@ -114,18 +116,25 @@ export type {
   AuthenticateWithProviderInput,
   LogoutUser,
   Authenticate,
+  VerifyEmail,
+  ResendVerification,
 } from "./auth/inbound/auth.ts";
 export {
   EmailInUseError,
   InvalidCredentialsError,
   UnknownProviderError,
+  InvalidVerificationTokenError,
   normalizeEmail,
 } from "./auth/inbound/auth.ts";
 export { SESSION_TTL_MS, issueSession } from "./auth/inbound/issue-session.ts";
+export type { VerificationConfig } from "./auth/inbound/verification.ts";
+export { VERIFICATION_TTL_MS, issueVerification } from "./auth/inbound/verification.ts";
 export { RegisterUserUseCase } from "./auth/inbound/register-user-usecase.ts";
 export { AuthenticateWithProviderUseCase } from "./auth/inbound/authenticate-with-provider-usecase.ts";
 export { LogoutUserUseCase } from "./auth/inbound/logout-user-usecase.ts";
 export { AuthenticateUseCase } from "./auth/inbound/authenticate-usecase.ts";
+export { VerifyEmailUseCase } from "./auth/inbound/verify-email-usecase.ts";
+export { ResendVerificationUseCase } from "./auth/inbound/resend-verification-usecase.ts";
 
 // profile
 export type {

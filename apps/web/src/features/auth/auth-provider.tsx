@@ -22,6 +22,7 @@ interface AuthContextValue {
   register: (credentials: Credentials) => Promise<void>;
   logout: () => Promise<void>;
   updatePreferences: (input: PreferencesInput) => Promise<void>;
+  resendVerification: () => Promise<void>;
   retry: () => void;
 }
 
@@ -79,9 +80,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [profileRepository],
   );
 
+  const resendVerification = useCallback(async () => {
+    if (!user) return;
+    await authRepository.resendVerification(user.email);
+  }, [authRepository, user]);
+
   const value = useMemo(
-    () => ({ status, user, login, register, logout, updatePreferences, retry: loadSession }),
-    [status, user, login, register, logout, updatePreferences, loadSession],
+    () => ({
+      status,
+      user,
+      login,
+      register,
+      logout,
+      updatePreferences,
+      resendVerification,
+      retry: loadSession,
+    }),
+    [status, user, login, register, logout, updatePreferences, resendVerification, loadSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

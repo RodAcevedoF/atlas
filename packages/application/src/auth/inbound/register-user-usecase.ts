@@ -1,17 +1,23 @@
 import type { User } from "@atlas/domain";
 import { emptyProfile, makeUserId, toPublicUser } from "@atlas/domain";
+import type { EmailPort } from "../outbound/email.ts";
 import type { PasswordHasherPort } from "../outbound/password-hasher.ts";
 import type { SessionPort } from "../outbound/session-store.ts";
 import type { UserStorePort } from "../outbound/user-store.ts";
+import type { VerificationTokenStorePort } from "../outbound/verification-token-store.ts";
 import type { LoginResult, RegisterInput, RegisterUser } from "./auth.ts";
 import { EmailInUseError, normalizeEmail } from "./auth.ts";
 import { issueSession } from "./issue-session.ts";
+import { type VerificationConfig, issueVerification } from "./verification.ts";
 
 export class RegisterUserUseCase implements RegisterUser {
   constructor(
     private readonly users: UserStorePort,
     private readonly sessions: SessionPort,
     private readonly hasher: PasswordHasherPort,
+    private readonly verificationTokens: VerificationTokenStorePort,
+    private readonly email: EmailPort,
+    private readonly verificationConfig: VerificationConfig,
   ) {}
 
   async execute(input: RegisterInput): Promise<LoginResult> {
@@ -23,6 +29,7 @@ export class RegisterUserUseCase implements RegisterUser {
     const user: User = {
       id,
       email,
+      emailVerified: false,
       identities: [
         {
           provider: "password",
@@ -35,6 +42,7 @@ export class RegisterUserUseCase implements RegisterUser {
       createdAt: new Date(),
     };
     await this.users.createUser(user);
+    await issueVerification(this.verificationTokens, this.email, this.verificationConfig, user);
     const session = await issueSession(this.sessions, user.id);
     return { token: session.token, user: toPublicUser(user) };
   }

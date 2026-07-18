@@ -34,6 +34,7 @@ async function seedAdmin(): Promise<void> {
     const user: User = {
       id,
       email: normalized,
+      emailVerified: true,
       identities: [
         {
           provider: "password",

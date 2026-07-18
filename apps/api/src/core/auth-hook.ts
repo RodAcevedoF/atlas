@@ -10,6 +10,8 @@ const PUBLIC_ROUTES = new Set([
   "/auth/login",
   "/auth/logout",
   "/auth/me",
+  "/auth/verify",
+  "/auth/resend-verification",
 ]);
 
 declare module "fastify" {

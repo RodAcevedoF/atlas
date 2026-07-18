@@ -24,6 +24,22 @@ export class HttpAuthRepository implements AuthRepository {
     await fetchJson<{ ok: boolean }>("/api/auth/logout", { method: "POST" });
   }
 
+  async verifyEmail(token: string): Promise<void> {
+    await fetchJson<{ ok: boolean }>("/api/auth/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+  }
+
+  async resendVerification(email: string): Promise<void> {
+    await fetchJson<{ ok: boolean }>("/api/auth/resend-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+  }
+
   private async authenticate(url: string, credentials: Credentials): Promise<PublicUser> {
     const { user } = await fetchJson<UserResponse>(url, {
       method: "POST",

@@ -2,7 +2,12 @@ import { SESSION_TTL_MS } from "@atlas/application";
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { SESSION_COOKIE } from "../core/auth-hook.ts";
 import type { AuthDeps } from "../modules/auth/dependencies.ts";
-import { parseCredentials, parseLoginCredentials } from "../modules/auth/request.ts";
+import {
+  parseCredentials,
+  parseLoginCredentials,
+  parseResendEmail,
+  parseVerificationToken,
+} from "../modules/auth/request.ts";
 
 const credentialsSchema = {
   body: {
@@ -13,6 +18,24 @@ const credentialsSchema = {
       email: { type: "string", maxLength: 254 },
       password: { type: "string", maxLength: 200 },
     },
+  },
+} as const;
+
+const verifySchema = {
+  body: {
+    type: "object",
+    required: ["token"],
+    additionalProperties: false,
+    properties: { token: { type: "string", maxLength: 200 } },
+  },
+} as const;
+
+const resendSchema = {
+  body: {
+    type: "object",
+    required: ["email"],
+    additionalProperties: false,
+    properties: { email: { type: "string", maxLength: 254 } },
   },
 } as const;
 
@@ -56,6 +79,22 @@ export async function registerAuthRoutes(app: FastifyInstance, deps: AuthDeps): 
     reply.clearCookie(SESSION_COOKIE, { path: "/" });
     return reply.send({ ok: true });
   });
+
+  app.post("/auth/verify", { schema: verifySchema, ...authRateLimit }, async (req, reply) => {
+    const token = parseVerificationToken(req.body as Record<string, unknown> | undefined);
+    await deps.verifyEmail.execute(token);
+    return reply.send({ ok: true });
+  });
+
+  app.post(
+    "/auth/resend-verification",
+    { schema: resendSchema, ...authRateLimit },
+    async (req, reply) => {
+      const email = parseResendEmail(req.body as Record<string, unknown> | undefined);
+      await deps.resendVerification.execute(email);
+      return reply.send({ ok: true });
+    },
+  );
 
   app.get("/auth/me", async (req, reply) => {
     return reply.send({ user: req.user });

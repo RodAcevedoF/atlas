@@ -1,6 +1,7 @@
 import {
   EmailInUseError,
   InvalidCredentialsError,
+  InvalidVerificationTokenError,
   UnknownProviderError,
   UserNotFoundError,
 } from "@atlas/application";
@@ -12,6 +13,8 @@ export function registerErrorHandler(app: FastifyInstance): void {
     if (error.validation) return reply.code(400).send({ error: error.message });
     if (error instanceof InvalidInputError) return reply.code(400).send({ error: error.message });
     if (error instanceof UnknownProviderError)
+      return reply.code(400).send({ error: error.message });
+    if (error instanceof InvalidVerificationTokenError)
       return reply.code(400).send({ error: error.message });
     if (error instanceof InvalidCredentialsError) {
       return reply.code(401).send({ error: error.message });

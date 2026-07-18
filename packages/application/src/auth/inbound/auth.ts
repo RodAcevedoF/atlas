@@ -33,6 +33,13 @@ export class UnknownProviderError extends Error {
   }
 }
 
+export class InvalidVerificationTokenError extends Error {
+  constructor() {
+    super("Invalid or expired verification token");
+    this.name = "InvalidVerificationTokenError";
+  }
+}
+
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
@@ -52,6 +59,14 @@ export interface AuthenticateWithProvider {
 
 export interface LogoutUser {
   execute(token: string): Promise<void>;
+}
+
+export interface VerifyEmail {
+  execute(token: string): Promise<void>;
+}
+
+export interface ResendVerification {
+  execute(email: string): Promise<void>;
 }
 
 export interface Authenticate {

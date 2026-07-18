@@ -6,6 +6,7 @@ import type { Db } from "mongodb";
 interface UserDoc {
   _id: string;
   email: string;
+  emailVerified?: boolean;
   identities: UserIdentity[];
   profile: UserProfile;
   createdAt: Date;
@@ -26,6 +27,8 @@ function docToUser(doc: UserDoc): User {
   return {
     id: makeUserId(doc._id),
     email: doc.email,
+    // Legacy docs predate verification → treat as verified so they aren't locked out.
+    emailVerified: doc.emailVerified ?? true,
     identities: docToIdentities(doc),
     profile: doc.profile,
     createdAt: doc.createdAt,
@@ -39,6 +42,7 @@ export class MongoUserStore implements UserStorePort {
     const doc: UserDoc = {
       _id: user.id,
       email: user.email,
+      emailVerified: user.emailVerified,
       identities: user.identities,
       profile: user.profile,
       createdAt: user.createdAt,
@@ -64,6 +68,12 @@ export class MongoUserStore implements UserStorePort {
     await this.db
       .collection<UserDoc>("users")
       .updateOne({ _id: id }, { $push: { identities: identity } });
+  }
+
+  async markEmailVerified(id: UserId): Promise<void> {
+    await this.db
+      .collection<UserDoc>("users")
+      .updateOne({ _id: id }, { $set: { emailVerified: true } });
   }
 }
 

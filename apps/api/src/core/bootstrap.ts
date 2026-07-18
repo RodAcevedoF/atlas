@@ -6,7 +6,9 @@ import { BunPasswordHasher } from "@atlas/infra/password-bun";
 import { RedisSessionStore, createRedisClient } from "@atlas/infra/session-redis";
 import { MongoMarketStore, createMongoClient, ensureIndexes } from "@atlas/infra/store-mongodb";
 import { MongoUserStore, ensureUserIndexes } from "@atlas/infra/user-store-mongodb";
+import { RedisVerificationTokenStore } from "@atlas/infra/verification-redis";
 import { type AuthDeps, makeAuthDependencies } from "../modules/auth/dependencies.ts";
+import { makeEmailPort } from "../modules/auth/email.ts";
 import { makeOAuthStrategies, readOAuthConfigs } from "../modules/auth/oauth.ts";
 import { type MarketsDeps, makeMarketsDependencies } from "../modules/markets/dependencies.ts";
 import { type NewsDeps, makeNewsDependencies } from "../modules/news/dependencies.ts";
@@ -50,7 +52,19 @@ export async function bootstrap(): Promise<AppDeps> {
     ...makeOAuthStrategies(readOAuthConfigs()),
   };
 
-  const auth = makeAuthDependencies({ userStore, sessionStore, hasher, identityProviders });
+  const verificationTokens = new RedisVerificationTokenStore(redis);
+  const emailPort = makeEmailPort();
+  const verificationConfig = { webAppUrl: process.env.WEB_APP_URL ?? "http://localhost:3000" };
+
+  const auth = makeAuthDependencies({
+    userStore,
+    sessionStore,
+    hasher,
+    identityProviders,
+    emailPort,
+    verificationTokens,
+    verificationConfig,
+  });
   const profile = makeProfileDependencies({ userStore, store });
   const markets = makeMarketsDependencies({ marketData, store });
   const news = makeNewsDependencies({ signalSource, store });
