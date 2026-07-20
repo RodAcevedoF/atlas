@@ -204,6 +204,43 @@ const TOPIC_KEYWORDS: Array<{
   },
 ];
 
+const POSITIVE_KEYWORDS: readonly string[] = [
+  "win",
+  "victory",
+  "growth",
+  "recovery",
+  "peace",
+  "agreement",
+  "breakthrough",
+  "record high",
+  "surge",
+  "boost",
+  "rally",
+  "gain",
+  "ceasefire",
+  "deal reached",
+  "approval",
+];
+
+const NEGATIVE_KEYWORDS: readonly string[] = [
+  "crisis",
+  "crash",
+  "collapse",
+  "war",
+  "attack",
+  "recession",
+  "decline",
+  "conflict",
+  "death",
+  "casualties",
+  "outbreak",
+  "disaster",
+  "layoffs",
+  "default",
+  "unrest",
+  "protest",
+];
+
 function buildHaystack(parts: Array<string | null | undefined>): string {
   return parts
     .filter((value): value is string => Boolean(value?.trim()))
@@ -230,4 +267,16 @@ export function deriveTopicFromText(parts: Array<string | null | undefined>): To
     keywords.some((keyword) => haystack.includes(keyword)),
   );
   return match?.topic ?? "other";
+}
+
+export function classifySentimentFromText(parts: Array<string | null | undefined>): number {
+  const haystack = buildHaystack(parts);
+  if (!haystack) return 0;
+
+  const positiveHits = POSITIVE_KEYWORDS.filter((keyword) => haystack.includes(keyword)).length;
+  const negativeHits = NEGATIVE_KEYWORDS.filter((keyword) => haystack.includes(keyword)).length;
+  const totalHits = positiveHits + negativeHits;
+  if (totalHits === 0) return 0;
+
+  return (positiveHits - negativeHits) / totalHits;
 }

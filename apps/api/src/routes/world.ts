@@ -7,6 +7,7 @@ import {
   parseWorldEventsQuery,
   parseWorldScanBody,
   parseWorldScanHistoryQuery,
+  parseWorldSnapshotsQuery,
   parseWorldTopicsQuery,
 } from "../modules/world/request.ts";
 
@@ -20,6 +21,12 @@ export async function registerWorldRoutes(app: FastifyInstance, deps: WorldDeps)
   app.get("/world/events", async (req, reply) => {
     const query = (req.query as RawQuery | undefined) ?? {};
     const result = await deps.listWorldEvents.execute(parseWorldEventsQuery(query));
+    return reply.send(result);
+  });
+
+  app.get("/world/snapshots", async (req, reply) => {
+    const query = (req.query as RawQuery | undefined) ?? {};
+    const result = await deps.listWorldSnapshots.execute(parseWorldSnapshotsQuery(query));
     return reply.send(result);
   });
 

@@ -45,6 +45,7 @@ export type {
   Signal,
   TopicCount,
   RegionTopicBreakdown,
+  TopicSentimentSummary,
 } from "./entities/signal.ts";
 export {
   makeSignalId,
@@ -54,7 +55,11 @@ export {
 } from "./entities/signal.ts";
 export { SIGNAL_SOURCES, TOPICS } from "./entities/signal.ts";
 
-export { deriveRegionsFromText, deriveTopicFromText } from "./entities/geography.ts";
+export {
+  deriveRegionsFromText,
+  deriveTopicFromText,
+  classifySentimentFromText,
+} from "./entities/geography.ts";
 
 export type {
   UserId,

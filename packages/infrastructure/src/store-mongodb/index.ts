@@ -26,6 +26,7 @@ import type {
   SignalSource,
   Topic,
   TopicCount,
+  TopicSentimentSummary,
   Trade,
 } from "@atlas/domain";
 import { makeEventId, makeMarketId, makeOutcomeId, makeSignalId } from "@atlas/domain";
@@ -57,6 +58,7 @@ function docToSignal(doc: SignalDoc): Signal {
     primaryRegion: doc.primaryRegion,
     regions: coerceRegions(doc.regions),
     weight: doc.weight,
+    sentiment: doc.sentiment ?? 0,
     title: doc.title,
     ref: doc.ref,
     timestamp: doc.timestamp,
@@ -249,6 +251,7 @@ export class MongoMarketStore
         primaryRegion: signal.primaryRegion,
         regions: coerceRegions(signal.regions),
         weight: signal.weight,
+        sentiment: signal.sentiment,
         title: signal.title,
         ref: signal.ref,
         timestamp: signal.timestamp,
@@ -278,6 +281,7 @@ export class MongoMarketStore
         _id: GeoRegion;
         signalCount: number;
         totalWeight: number;
+        weightedSentiment: number;
         topics: TopicCount[];
       }>([
         { $match: match },
@@ -288,6 +292,7 @@ export class MongoMarketStore
             _id: { region: "$regions", topic: "$topic" },
             signalCount: { $sum: 1 },
             totalWeight: { $sum: "$weight" },
+            weightedSentiment: { $sum: { $multiply: ["$weight", "$sentiment"] } },
           },
         },
         {
@@ -295,6 +300,7 @@ export class MongoMarketStore
             _id: "$_id.region",
             signalCount: { $sum: "$signalCount" },
             totalWeight: { $sum: "$totalWeight" },
+            weightedSentiment: { $sum: "$weightedSentiment" },
             topics: {
               $push: {
                 topic: "$_id.topic",
@@ -311,10 +317,49 @@ export class MongoMarketStore
       region: row._id,
       signalCount: row.signalCount,
       totalWeight: row.totalWeight,
+      sentiment: row.totalWeight > 0 ? row.weightedSentiment / row.totalWeight : 0,
       topics: [...row.topics].sort((left, right) => right.signalCount - left.signalCount),
     }));
     breakdowns.sort((left, right) => right.signalCount - left.signalCount);
     return typeof filter?.limit === "number" ? breakdowns.slice(0, filter.limit) : breakdowns;
+  }
+
+  async listTopicSentimentSummaries(filter?: {
+    region?: GeoRegion;
+    since?: Date;
+  }): Promise<TopicSentimentSummary[]> {
+    const match: Record<string, unknown> = {};
+    if (filter?.region) match.regions = filter.region;
+    if (filter?.since) match.timestamp = { $gte: filter.since };
+
+    const rows = await this.db
+      .collection<SignalDoc>("signals")
+      .aggregate<{
+        _id: Topic;
+        signalCount: number;
+        totalWeight: number;
+        weightedSentiment: number;
+        sources: SignalSource[];
+      }>([
+        { $match: match },
+        {
+          $group: {
+            _id: "$topic",
+            signalCount: { $sum: 1 },
+            totalWeight: { $sum: "$weight" },
+            weightedSentiment: { $sum: { $multiply: ["$weight", "$sentiment"] } },
+            sources: { $addToSet: "$source" },
+          },
+        },
+      ])
+      .toArray();
+
+    return rows.map((row) => ({
+      topic: row._id,
+      signalCount: row.signalCount,
+      sourceCount: row.sources.length,
+      temperature: row.totalWeight > 0 ? row.weightedSentiment / row.totalWeight : 0,
+    }));
   }
 
   async listSignals(filter?: {

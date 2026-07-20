@@ -37,11 +37,6 @@ export function marketCategoryToTopic(category: MarketCategory): Topic {
   return MARKET_CATEGORY_TO_TOPIC[category];
 }
 
-/**
- * A normalized unit of world attention. Markets, news, and social all reduce to
- * Signals; the world map and `/world/*` APIs read only Signals. `weight` is an
- * attention proxy (markets: USD volume); `ref` points back to the source item.
- */
 export interface Signal {
   id: SignalId;
   source: SignalSource;
@@ -49,6 +44,7 @@ export interface Signal {
   primaryRegion: GeoRegion;
   regions: GeoRegion[];
   weight: number;
+  sentiment: number;
   title: string;
   ref: string;
   timestamp: Date;
@@ -63,6 +59,8 @@ export function marketToSignal(market: Market): Signal {
     primaryRegion: market.primaryRegion,
     regions: market.regions,
     weight: market.volumeUsd,
+    // market signals encode price/volume
+    sentiment: 0,
     title: market.title,
     ref: market.slug,
     timestamp: market.updatedAt,
@@ -72,11 +70,6 @@ export function marketToSignal(market: Market): Signal {
 
 const RELEVANCE_HALF_LIFE_HOURS = 24;
 
-/**
- * Ranking score for a single signal: its attention `weight` decayed by age, so a
- * day-old item scores half as high as a fresh one of equal weight. `now` is
- * injected to keep this pure and testable.
- */
 export function scoreSignalRelevance(signal: Signal, now: Date): number {
   const ageHours = Math.max(0, (now.getTime() - signal.timestamp.getTime()) / 3_600_000);
   const recency = 2 ** (-ageHours / RELEVANCE_HALF_LIFE_HOURS);
@@ -89,13 +82,17 @@ export interface TopicCount {
   totalWeight: number;
 }
 
-/**
- * Per-region topic breakdown — the core world-map metric. `topics` is ranked by
- * `signalCount` descending (one item = one unit of attention, source-agnostic).
- */
 export interface RegionTopicBreakdown {
   region: GeoRegion;
   signalCount: number;
   totalWeight: number;
+  sentiment: number;
   topics: TopicCount[];
+}
+
+export interface TopicSentimentSummary {
+  topic: Topic;
+  signalCount: number;
+  sourceCount: number;
+  temperature: number;
 }

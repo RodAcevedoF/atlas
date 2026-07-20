@@ -55,6 +55,7 @@ export interface SignalDoc {
   primaryRegion: GeoRegion;
   regions: GeoRegion[];
   weight: number;
+  sentiment: number;
   title: string;
   ref: string;
   timestamp: Date;

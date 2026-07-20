@@ -1,6 +1,7 @@
 import type {
   ListWorldEvents,
   ListWorldScanReports,
+  ListWorldSnapshots,
   ListWorldTopics,
   MarketStorePort,
   OrchestrationPort,
@@ -11,6 +12,7 @@ import type {
 import {
   ListWorldEventsUseCase,
   ListWorldScanReportsUseCase,
+  ListWorldSnapshotsUseCase,
   ListWorldTopicsUseCase,
   WorldScanUseCase,
 } from "@atlas/application";
@@ -18,6 +20,7 @@ import {
 export interface WorldDeps {
   listWorldTopics: ListWorldTopics;
   listWorldEvents: ListWorldEvents;
+  listWorldSnapshots: ListWorldSnapshots;
   runWorldScan: WorldScan;
   listWorldScanReports: ListWorldScanReports;
 }
@@ -29,6 +32,7 @@ export function makeWorldDependencies(deps: {
   return {
     listWorldTopics: new ListWorldTopicsUseCase(deps.store),
     listWorldEvents: new ListWorldEventsUseCase(deps.store),
+    listWorldSnapshots: new ListWorldSnapshotsUseCase(deps.store),
     runWorldScan: new WorldScanUseCase(deps.store, deps.orchestration),
     listWorldScanReports: new ListWorldScanReportsUseCase(deps.store),
   };

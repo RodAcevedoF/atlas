@@ -1,6 +1,11 @@
 import type { SignalSourceFilter, SignalSourcePort } from "@atlas/application";
 import type { Signal } from "@atlas/domain";
-import { deriveRegionsFromText, deriveTopicFromText, makeSignalId } from "@atlas/domain";
+import {
+  classifySentimentFromText,
+  deriveRegionsFromText,
+  deriveTopicFromText,
+  makeSignalId,
+} from "@atlas/domain";
 import { fetchGdeltDoc } from "./gdelt-client.ts";
 import type { GdeltArticle } from "./gdelt-types.ts";
 
@@ -46,6 +51,7 @@ function articleToSignal(article: GdeltArticle): Signal | null {
     primaryRegion: regions[0] ?? "global",
     regions,
     weight: 1,
+    sentiment: classifySentimentFromText([article.title]),
     title: article.title,
     ref: article.url,
     timestamp,

@@ -1,19 +1,5 @@
 import type { Topic } from "../../repositories/market-repository.ts";
-import { TOPIC_LABELS } from "../../utils/index.ts";
-
-// The curated, primary topic list — the taxonomy minus the "other" catch-all, which is
-// noise as a navigation target. Order is the reading order of the rail.
-const CURATED_TOPICS: Topic[] = [
-  "politics",
-  "conflict",
-  "economy",
-  "business-finance",
-  "technology",
-  "science-health",
-  "climate-environment",
-  "society-culture",
-  "sports",
-];
+import { CURATED_TOPICS, TOPIC_LABELS } from "../../utils/index.ts";
 
 export type TopicFilter = Topic | "";
 

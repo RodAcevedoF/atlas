@@ -8,11 +8,13 @@ import type {
   ListMarketsInput,
   ListRegionSummariesInput,
   ListWorldEventsInput,
+  ListWorldSnapshotsInput,
   ListWorldTopicsInput,
   MarketRecord,
   MarketRepository,
   RegionSummaryRecord,
   RegionTopicBreakdownRecord,
+  TopicSnapshotRecord,
   WorldEventRecord,
   WorldScanHistoryFilter,
   WorldScanHistoryItem,
@@ -88,6 +90,13 @@ export class HttpMarketRepository implements MarketRepository {
       })}`,
     );
     return readJson<WorldEventRecord[]>(response);
+  }
+
+  async listWorldSnapshots(input: ListWorldSnapshotsInput = {}): Promise<TopicSnapshotRecord[]> {
+    const response = await fetch(
+      `/api/world/snapshots${buildQuery({ region: input.region, limit: input.limit })}`,
+    );
+    return readJson<TopicSnapshotRecord[]>(response);
   }
 
   async ingestMarkets(input: IngestMarketsInput = {}): Promise<IngestMarketsResult> {

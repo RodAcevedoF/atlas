@@ -6,4 +6,4 @@ export {
   eventCoverageKey,
   marketCoverageKeys,
 } from "./region-cross.ts";
-export { REGION_LABELS, TOPIC_LABELS } from "./taxonomy.ts";
+export { REGION_LABELS, TOPIC_LABELS, CURATED_TOPICS } from "./taxonomy.ts";

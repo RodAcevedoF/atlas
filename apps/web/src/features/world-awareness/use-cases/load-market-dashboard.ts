@@ -4,6 +4,7 @@ import type {
   ListMarketsInput,
   ListRegionSummariesInput,
   ListWorldEventsInput,
+  ListWorldSnapshotsInput,
   ListWorldTopicsInput,
   MarketCategory,
   MarketRecord,
@@ -11,6 +12,7 @@ import type {
   RegionSummaryRecord,
   RegionTopicBreakdownRecord,
   Topic,
+  TopicSnapshotRecord,
   WorldEventRecord,
 } from "../repositories/market-repository.ts";
 
@@ -26,6 +28,7 @@ export interface MarketDashboardData {
   regionSummary: RegionSummaryRecord[];
   worldTopics: RegionTopicBreakdownRecord[];
   worldEvents: WorldEventRecord[];
+  topicSnapshots: TopicSnapshotRecord[];
   activeMarketCount: number;
   totalVolumeUsd: number;
   totalLiquidityUsd: number;
@@ -41,6 +44,7 @@ export interface LoadMarketDashboardInput {
   regionSummary?: ListRegionSummariesInput;
   worldTopics?: ListWorldTopicsInput;
   worldEvents?: ListWorldEventsInput;
+  topicSnapshots?: ListWorldSnapshotsInput;
 }
 
 function countActiveTopics(worldTopics: RegionTopicBreakdownRecord[]): number {
@@ -61,13 +65,15 @@ export async function loadMarketDashboard(
   repository: MarketRepository,
   input: LoadMarketDashboardInput = {},
 ): Promise<MarketDashboardData> {
-  const [markets, events, regionSummary, worldTopics, worldEvents] = await Promise.all([
-    repository.listMarkets(input.markets),
-    repository.listEvents(input.events),
-    repository.listRegionSummaries(input.regionSummary),
-    repository.listWorldTopics(input.worldTopics),
-    repository.listWorldEvents(input.worldEvents),
-  ]);
+  const [markets, events, regionSummary, worldTopics, worldEvents, topicSnapshots] =
+    await Promise.all([
+      repository.listMarkets(input.markets),
+      repository.listEvents(input.events),
+      repository.listRegionSummaries(input.regionSummary),
+      repository.listWorldTopics(input.worldTopics),
+      repository.listWorldEvents(input.worldEvents),
+      repository.listWorldSnapshots(input.topicSnapshots),
+    ]);
 
   const categoryBuckets = new Map<MarketCategory, DashboardCategorySummary>();
   for (const market of markets) {
@@ -87,6 +93,7 @@ export async function loadMarketDashboard(
     regionSummary,
     worldTopics,
     worldEvents,
+    topicSnapshots,
     activeMarketCount: markets.filter((market) => market.status === "active").length,
     totalVolumeUsd: markets.reduce((sum, market) => sum + market.volumeUsd, 0),
     totalLiquidityUsd: markets.reduce((sum, market) => sum + market.liquidityUsd, 0),

@@ -11,6 +11,18 @@ export const REGION_LABELS: Record<GeoRegion, string> = {
   global: "Global",
 };
 
+export const CURATED_TOPICS: Topic[] = [
+  "politics",
+  "conflict",
+  "economy",
+  "business-finance",
+  "technology",
+  "science-health",
+  "climate-environment",
+  "society-culture",
+  "sports",
+];
+
 export const TOPIC_LABELS: Record<Topic, string> = {
   politics: "Politics",
   conflict: "Conflict",

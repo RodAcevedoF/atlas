@@ -89,6 +89,14 @@ export type {
 } from "./world/inbound/list-world-events.ts";
 export { ListWorldEventsUseCase } from "./world/inbound/list-world-events.ts";
 export type {
+  ListWorldSnapshotsInput,
+  ListWorldSnapshotsOutput,
+  TopicSnapshot,
+  TopicSnapshotCorroboration,
+  ListWorldSnapshots,
+} from "./world/inbound/list-world-snapshots.ts";
+export { ListWorldSnapshotsUseCase } from "./world/inbound/list-world-snapshots.ts";
+export type {
   WorldScanInput,
   WorldScanOutput,
   WorldScanReport,
