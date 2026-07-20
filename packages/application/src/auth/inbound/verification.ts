@@ -20,7 +20,7 @@ export async function issueVerification(
 }
 
 function buildVerificationEmail(webAppUrl: string, token: string, to: string): EmailMessage {
-  const link = `${webAppUrl}/verify-email?token=${token}`;
+  const link = `${webAppUrl}/verify?token=${token}`;
   return {
     to,
     subject: "Verify your Atlas email",

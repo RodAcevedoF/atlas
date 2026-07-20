@@ -1,22 +1,23 @@
-import { Button } from "@atlas/ui";
+import { Button, useToast } from "@atlas/ui";
 import { useState } from "react";
 import { useAuth } from "../auth-provider.tsx";
 
-type ResendState = "idle" | "sending" | "sent" | "error";
-
 export function VerifyBanner() {
   const { user, resendVerification } = useAuth();
-  const [resendState, setResendState] = useState<ResendState>("idle");
+  const { toast } = useToast();
+  const [isSending, setIsSending] = useState(false);
 
   if (!user || user.emailVerified) return null;
 
   const resend = async () => {
-    setResendState("sending");
+    setIsSending(true);
     try {
       await resendVerification();
-      setResendState("sent");
+      toast("Verification link sent.", "success");
     } catch {
-      setResendState("error");
+      toast("Couldn't send the link — try again.", "error");
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -25,21 +26,9 @@ export function VerifyBanner() {
       <span>
         Verify your email to run world scans. We sent a link to <strong>{user.email}</strong>.
       </span>
-      {resendState === "sent" ? (
-        <span className="text-muted-foreground">Link sent.</span>
-      ) : (
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={resendState === "sending"}
-          onClick={() => void resend()}
-        >
-          {resendState === "sending" ? "Sending…" : "Resend link"}
-        </Button>
-      )}
-      {resendState === "error" ? (
-        <span className="text-destructive">Couldn't send — try again.</span>
-      ) : null}
+      <Button size="sm" variant="outline" disabled={isSending} onClick={() => void resend()}>
+        {isSending ? "Sending…" : "Resend link"}
+      </Button>
     </div>
   );
 }

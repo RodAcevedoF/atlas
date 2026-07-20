@@ -13,7 +13,7 @@ import { HttpAuthRepository } from "./repositories/http-auth-repository.ts";
 import { HttpProfileRepository } from "./repositories/http-profile-repository.ts";
 import type { PreferencesInput } from "./repositories/profile-repository.ts";
 
-type AuthStatus = "loading" | "authenticated" | "anonymous" | "error";
+export type AuthStatus = "loading" | "authenticated" | "anonymous" | "error";
 
 interface AuthContextValue {
   status: AuthStatus;
@@ -24,7 +24,7 @@ interface AuthContextValue {
   updatePreferences: (input: PreferencesInput) => Promise<void>;
   verifyEmail: (token: string) => Promise<void>;
   resendVerification: () => Promise<void>;
-  retry: () => void;
+  retry: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);

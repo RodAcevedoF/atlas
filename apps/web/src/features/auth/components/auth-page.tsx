@@ -1,5 +1,6 @@
-import { Button, Card } from "@atlas/ui";
+import { Button, Card, useToast } from "@atlas/ui";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../auth-provider.tsx";
 import { OAuthButton } from "./oauth-button.tsx";
 
@@ -8,21 +9,19 @@ type Mode = "login" | "register";
 const INPUT_CLASS =
   "h-9 rounded-md border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-primary/60";
 
-export function AuthPage() {
+export function AuthPage({ mode }: { mode: Mode }) {
   const { login, register } = useAuth();
-  const [mode, setMode] = useState<Mode>("login");
+  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submit = async () => {
-    setError(null);
     setIsSubmitting(true);
     try {
       await (mode === "login" ? login : register)({ email, password });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Something went wrong");
+      toast(caught instanceof Error ? caught.message : "Something went wrong", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -72,8 +71,6 @@ export function AuthPage() {
             />
           </label>
 
-          {error ? <p className="text-[12px] text-destructive">{error}</p> : null}
-
           <Button type="submit" disabled={isSubmitting} className="mt-1">
             {isSubmitting ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
           </Button>
@@ -90,16 +87,12 @@ export function AuthPage() {
           <OAuthButton provider="google" />
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setMode(mode === "login" ? "register" : "login");
-            setError(null);
-          }}
-          className="mt-4 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
+        <Link
+          to={mode === "login" ? "/register" : "/login"}
+          className="mt-4 block text-[12px] text-muted-foreground transition-colors hover:text-foreground"
         >
           {mode === "login" ? "Need an account? Register" : "Already have an account? Sign in"}
-        </button>
+        </Link>
       </Card>
     </main>
   );

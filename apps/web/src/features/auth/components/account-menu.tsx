@@ -1,7 +1,8 @@
 import type { GeoRegion, Topic } from "@atlas/domain";
 import { GEO_REGIONS, TOPICS } from "@atlas/domain";
-import { Button, Card } from "@atlas/ui";
+import { Button, Card, useToast } from "@atlas/ui";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../auth-provider.tsx";
 
 function formatLabel(value: string): string {
@@ -39,24 +40,21 @@ function ChipToggle({
 
 export function AccountMenu() {
   const { user, logout, updatePreferences } = useAuth();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [regions, setRegions] = useState<GeoRegion[]>(user?.profile.preferredRegions ?? []);
   const [topics, setTopics] = useState<Topic[]>(user?.profile.preferredTopics ?? []);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [savedNote, setSavedNote] = useState(false);
 
   if (!user) return null;
 
   const save = async () => {
     setIsSaving(true);
-    setError(null);
-    setSavedNote(false);
     try {
       await updatePreferences({ preferredRegions: regions, preferredTopics: topics });
-      setSavedNote(true);
+      toast("Preferences saved.", "success");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not save preferences");
+      toast(caught instanceof Error ? caught.message : "Could not save preferences", "error");
     } finally {
       setIsSaving(false);
     }
@@ -118,18 +116,18 @@ export function AccountMenu() {
               Preferences fill in the world scan when you don't pick a topic or region.
             </p>
 
-            {error ? <p className="text-[11px] text-destructive">{error}</p> : null}
-            {savedNote && !error ? (
-              <p className="text-[11px] text-positive">Preferences saved.</p>
-            ) : null}
-
             <div className="flex items-center justify-between gap-2">
               <Button size="sm" onClick={save} disabled={isSaving}>
                 {isSaving ? "Saving…" : "Save preferences"}
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => void logout()}>
-                Sign out
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button asChild size="sm" variant="ghost">
+                  <Link to="/about">About</Link>
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => void logout()}>
+                  Sign out
+                </Button>
+              </div>
             </div>
           </Card>
         </>
