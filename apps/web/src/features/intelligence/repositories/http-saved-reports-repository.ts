@@ -8,7 +8,9 @@ function reportPath(reportId: string): string {
 
 export class HttpSavedReportsRepository implements SavedReportsRepository {
   async list(): Promise<WorldScanHistoryItem[]> {
-    const { reports } = await fetchJson<{ reports: WorldScanHistoryItem[] }>("/api/profile/reports");
+    const { reports } = await fetchJson<{ reports: WorldScanHistoryItem[] }>(
+      "/api/profile/reports",
+    );
     return reports;
   }
 
