@@ -16,7 +16,6 @@ interface RegionDetailPanelProps {
   region: GeoRegion | null;
   breakdown: RegionTopicBreakdownRecord | undefined;
   cross: RegionCross | null;
-  isScanning: boolean;
   onOpenScan: () => void;
 }
 
@@ -168,7 +167,6 @@ export function RegionDetailPanel({
   region,
   breakdown,
   cross,
-  isScanning,
   onOpenScan,
 }: RegionDetailPanelProps) {
   return (
@@ -209,14 +207,8 @@ export function RegionDetailPanel({
             <TopicBars breakdown={breakdown} />
           </div>
           <div className="flex-none border-t border-border p-3">
-            <Button
-              size="sm"
-              variant="secondary"
-              className="w-full"
-              onClick={onOpenScan}
-              disabled={isScanning}
-            >
-              {isScanning ? "Scanning…" : "Open full scan"}
+            <Button size="sm" variant="secondary" className="w-full" onClick={onOpenScan}>
+              Open full scan
             </Button>
           </div>
         </>

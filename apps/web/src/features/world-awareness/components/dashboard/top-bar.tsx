@@ -1,3 +1,4 @@
+import { AppNavTabs } from "@/shared/app-nav-tabs.tsx";
 import type { SignalSource } from "../../repositories/market-repository.ts";
 import type { PanelKey } from "../world-map/use-panel-visibility.ts";
 
@@ -13,7 +14,6 @@ const PANEL_OPTIONS: Array<{ key: PanelKey; label: string }> = [
   { key: "kpis", label: "KPIs" },
   { key: "region", label: "Region" },
   { key: "events", label: "Events" },
-  { key: "scan", label: "Scan" },
 ];
 
 interface TopBarProps {
@@ -132,6 +132,8 @@ export function TopBar({
           />
           Live
         </div>
+        <div className="h-5.5 w-px bg-border" />
+        <AppNavTabs />
       </div>
 
       <div className="flex items-center gap-2.5">

@@ -5,6 +5,7 @@ import { GuestRoute } from "@/features/auth/components/guest-route.tsx";
 import { ProtectedRoute } from "@/features/auth/components/protected-route.tsx";
 import { VerifyBanner } from "@/features/auth/components/verify-banner.tsx";
 import { VerifyEmailView } from "@/features/auth/components/verify-email-view.tsx";
+import { IntelligencePage } from "@/features/intelligence/intelligence-page.tsx";
 import { LandingPage } from "@/features/marketing/landing-page.tsx";
 import { WorldAwarenessPage } from "@/features/world-awareness/world-awareness-page.tsx";
 import { AtlasLoader } from "@/shared/atlas-loader.tsx";
@@ -30,6 +31,16 @@ function DashboardShell() {
     <>
       <VerifyBanner />
       <WorldAwarenessPage />
+      <AccountMenu />
+    </>
+  );
+}
+
+function IntelligenceShell() {
+  return (
+    <>
+      <VerifyBanner />
+      <IntelligencePage />
       <AccountMenu />
     </>
   );
@@ -62,6 +73,14 @@ export function App() {
         element={
           <ProtectedRoute>
             <DashboardShell />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/intelligence"
+        element={
+          <ProtectedRoute>
+            <IntelligenceShell />
           </ProtectedRoute>
         }
       />

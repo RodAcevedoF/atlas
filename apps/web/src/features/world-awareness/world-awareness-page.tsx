@@ -1,6 +1,5 @@
 import { TopBar } from "./components/dashboard/top-bar.tsx";
 import { TopicRail } from "./components/dashboard/topic-rail.tsx";
-import { TopicSnapshots } from "./components/dashboard/topic-snapshots.tsx";
 import { MapCockpit } from "./components/world-map/map-cockpit.tsx";
 import { usePanelVisibility } from "./components/world-map/use-panel-visibility.ts";
 import { useMarketDashboard } from "./hooks/use-market-dashboard.ts";
@@ -19,8 +18,7 @@ export function WorldAwarenessPage() {
     handleSync,
     handleSyncNews,
   } = useMarketDashboard();
-  const { visibility, anyVisible, toggleAll, hidePanel, showPanel, togglePanel } =
-    usePanelVisibility();
+  const { visibility, anyVisible, toggleAll, hidePanel, togglePanel } = usePanelVisibility();
 
   const markets = dashboard?.markets ?? [];
   const worldTopics = dashboard?.worldTopics ?? [];
@@ -43,8 +41,6 @@ export function WorldAwarenessPage() {
 
       <TopicRail topic={topic} onTopicChange={setTopic} />
 
-      <TopicSnapshots snapshots={dashboard?.topicSnapshots ?? []} isLoading={isLoading} />
-
       {error ? (
         <div className="flex-none rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2 text-[12.5px] text-destructive-foreground">
           {error}
@@ -63,7 +59,6 @@ export function WorldAwarenessPage() {
         isLoading={isLoading}
         visibility={visibility}
         onHidePanel={hidePanel}
-        onShowPanel={showPanel}
       />
     </main>
   );

@@ -1,25 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-export type PanelKey = "kpis" | "region" | "events" | "scan";
+export type PanelKey = "kpis" | "region" | "events";
 
 type Visibility = Record<PanelKey, boolean>;
 
-const PANEL_KEYS: PanelKey[] = ["kpis", "region", "events", "scan"];
+const PANEL_KEYS: PanelKey[] = ["kpis", "region", "events"];
 const ALL_VISIBLE: Visibility = {
   kpis: true,
   region: true,
   events: true,
-  scan: true,
 };
 const ALL_HIDDEN: Visibility = {
   kpis: false,
   region: false,
   events: false,
-  scan: false,
 };
 
 export function usePanelVisibility() {
-  const [visibility, setVisibility] = useState<Visibility>({ ...ALL_VISIBLE, scan: false });
+  const [visibility, setVisibility] = useState<Visibility>(ALL_VISIBLE);
 
   const anyVisible = useMemo(() => PANEL_KEYS.some((panel) => visibility[panel]), [visibility]);
 
