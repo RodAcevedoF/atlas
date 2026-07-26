@@ -1,6 +1,6 @@
 import { Card } from "@atlas/ui";
 import type { TopicSnapshotRecord } from "../../repositories/market-repository.ts";
-import { CURATED_TOPICS, TOPIC_LABELS } from "../../utils/index.ts";
+import { CURATED_TOPICS, TOPIC_COLOR_VAR, TOPIC_LABELS } from "../../utils/index.ts";
 import { TemperatureMeter } from "./temperature-meter.tsx";
 
 const THIN_SOURCE_THRESHOLD = 2;
@@ -31,7 +31,11 @@ function SnapshotCard({ snapshot }: { snapshot: TopicSnapshotRecord }) {
   const isThin = snapshot.corroboration.sourceCount < THIN_SOURCE_THRESHOLD;
   return (
     <Card className="flex w-56 flex-none flex-col gap-2 px-3.5 py-3">
-      <span className="text-[10.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+      <span className="flex items-center gap-1.5 text-[10.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+        <span
+          className="h-2 w-2 flex-none rounded-full"
+          style={{ background: TOPIC_COLOR_VAR[snapshot.topic] }}
+        />
         {TOPIC_LABELS[snapshot.topic]}
       </span>
       <p className="line-clamp-2 min-h-[2.5em] text-[12.5px] leading-snug text-foreground">

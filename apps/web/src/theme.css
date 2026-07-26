@@ -14,8 +14,8 @@
   --card-2: #15171b;
   --popover: #121316;
   --popover-foreground: #ececee;
-  --primary: #ffab58;
-  --primary-foreground: #1c1205;
+  --primary: #7db0ff;
+  --primary-foreground: #081026;
   --secondary: #15171b;
   --secondary-foreground: #ececee;
   --muted: #1a1c20;
@@ -30,10 +30,43 @@
   --border: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.15);
   --input: rgba(255, 255, 255, 0.15);
-  --ring: #ffab58;
+  --ring: #7db0ff;
   --radius: 16px;
   --font-sans: "Geist", system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, monospace;
+
+  /* topic categorical scale — 9 curated topics*/
+
+  --topic-politics: #d94a54;
+  --topic-conflict: #12a39c;
+  --topic-economy: #ad861a;
+  --topic-business-finance: #2f7ad6;
+  --topic-technology: #cf7a26;
+  --topic-science-health: #7d5cd8;
+  --topic-climate-environment: #3a9c39;
+  --topic-society-culture: #c94f92;
+  --topic-sports: #1f9dbe;
+  --topic-other: #8b8e95;
+
+  /* sentiment diverging scale */
+  --sentiment-negative: #ef6f63;
+  --sentiment-neutral: #7c7f86;
+  --sentiment-positive: #22b39f;
+
+  /* market category / status badge */
+  --category-politics: #ff9d8a;
+  --category-economics: #ffab58;
+  --category-crypto: #c79bff;
+  --category-sports: #5fcf80;
+  --category-science: #6ea8fe;
+  --category-culture: #e9a0d8;
+  --category-other: #8b8e95;
+  --status-active: #5fcf80;
+  --status-closed: #ffab58;
+  --status-resolved: #6ea8fe;
+
+  --map-empty-fill: #2a2c31;
+  --map-region-outline: rgba(255, 255, 255, 0.12);
 }
 
 @theme inline {
@@ -55,6 +88,9 @@
   --color-positive: var(--positive);
   --color-negative: var(--negative);
   --color-info: var(--info);
+  --color-sentiment-negative: var(--sentiment-negative);
+  --color-sentiment-neutral: var(--sentiment-neutral);
+  --color-sentiment-positive: var(--sentiment-positive);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);

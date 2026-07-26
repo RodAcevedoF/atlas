@@ -1,33 +1,31 @@
 import type { MarketCategory, MarketStatus } from "../../repositories/market-repository.ts";
 
-// Per-category accent colors (design palette mapped onto the app's MarketCategory taxonomy).
-const CATEGORY_COLORS: Record<MarketCategory, string> = {
-  politics: "#ff9d8a",
-  economics: "#ffab58",
-  crypto: "#c79bff",
-  sports: "#5fcf80",
-  science: "#6ea8fe",
-  culture: "#e9a0d8",
-  other: "#8b8e95",
+const CATEGORY_VAR: Record<MarketCategory, string> = {
+  politics: "var(--category-politics)",
+  economics: "var(--category-economics)",
+  crypto: "var(--category-crypto)",
+  sports: "var(--category-sports)",
+  science: "var(--category-science)",
+  culture: "var(--category-culture)",
+  other: "var(--category-other)",
 };
 
-const STATUS_COLORS: Record<MarketStatus, string> = {
-  active: "#5fcf80",
-  closed: "#ffab58",
-  resolved: "#6ea8fe",
+const STATUS_VAR: Record<MarketStatus, string> = {
+  active: "var(--status-active)",
+  closed: "var(--status-closed)",
+  resolved: "var(--status-resolved)",
 };
 
-function withAlpha(hex: string, alpha: number): string {
-  const value = Number.parseInt(hex.slice(1), 16);
-  return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
+function softMix(color: string, percent: number): string {
+  return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 }
 
 export function CategoryBadge({ category }: { category: MarketCategory }) {
-  const color = CATEGORY_COLORS[category];
+  const color = CATEGORY_VAR[category];
   return (
     <span
       className="inline-flex h-5.25 items-center rounded-md border px-2 text-[11px] font-medium capitalize"
-      style={{ color, background: withAlpha(color, 0.12), borderColor: withAlpha(color, 0.22) }}
+      style={{ color, background: softMix(color, 12), borderColor: softMix(color, 22) }}
     >
       {category}
     </span>
@@ -35,11 +33,11 @@ export function CategoryBadge({ category }: { category: MarketCategory }) {
 }
 
 export function StatusBadge({ status }: { status: MarketStatus }) {
-  const color = STATUS_COLORS[status];
+  const color = STATUS_VAR[status];
   return (
     <span
       className="inline-flex h-5.25 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium capitalize"
-      style={{ color, background: withAlpha(color, 0.12) }}
+      style={{ color, background: softMix(color, 12) }}
     >
       <span
         className="h-1.25 w-1.25 rounded-full"

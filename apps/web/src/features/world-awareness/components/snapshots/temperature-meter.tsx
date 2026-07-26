@@ -1,9 +1,9 @@
 const NEUTRAL_THRESHOLD = 0.15;
 
 function bandClass(value: number): string {
-  if (value > NEUTRAL_THRESHOLD) return "bg-positive";
-  if (value < -NEUTRAL_THRESHOLD) return "bg-negative";
-  return "bg-muted-foreground";
+  if (value > NEUTRAL_THRESHOLD) return "bg-sentiment-positive";
+  if (value < -NEUTRAL_THRESHOLD) return "bg-sentiment-negative";
+  return "bg-sentiment-neutral";
 }
 
 interface TemperatureMeterProps {

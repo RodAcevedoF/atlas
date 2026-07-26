@@ -8,6 +8,7 @@ import {
   type CrossStance,
   REGION_LABELS,
   type RegionCross,
+  TOPIC_COLOR_VAR,
   TOPIC_LABELS,
 } from "../../utils/index.ts";
 import { topOutcomeLabel } from "../../utils/market.ts";
@@ -118,7 +119,13 @@ function TopicBars({ breakdown }: { breakdown: RegionTopicBreakdownRecord | unde
       {topics.map((topic) => (
         <div key={topic.topic} className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-[12.5px]">
-            <span className="font-medium text-foreground">{TOPIC_LABELS[topic.topic]}</span>
+            <span className="flex items-center gap-2 font-medium text-foreground">
+              <span
+                className="h-2 w-2 flex-none rounded-full"
+                style={{ background: TOPIC_COLOR_VAR[topic.topic] }}
+              />
+              {TOPIC_LABELS[topic.topic]}
+            </span>
             <span className="font-mono text-muted-foreground">{topic.signalCount}</span>
           </div>
           <div className="h-[7px] overflow-hidden rounded-[5px] bg-muted">
@@ -126,7 +133,7 @@ function TopicBars({ breakdown }: { breakdown: RegionTopicBreakdownRecord | unde
               className="h-full rounded-[5px]"
               style={{
                 width: `${peak > 0 ? Math.round((topic.signalCount / peak) * 100) : 0}%`,
-                background: "linear-gradient(90deg, rgba(255,171,88,.55), var(--primary))",
+                background: TOPIC_COLOR_VAR[topic.topic],
               }}
             />
           </div>

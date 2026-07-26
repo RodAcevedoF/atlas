@@ -35,3 +35,16 @@ export const TOPIC_LABELS: Record<Topic, string> = {
   sports: "Sports",
   other: "Other",
 };
+
+export const TOPIC_COLOR_VAR: Record<Topic, string> = {
+  politics: "var(--topic-politics)",
+  conflict: "var(--topic-conflict)",
+  economy: "var(--topic-economy)",
+  "business-finance": "var(--topic-business-finance)",
+  technology: "var(--topic-technology)",
+  "science-health": "var(--topic-science-health)",
+  "climate-environment": "var(--topic-climate-environment)",
+  "society-culture": "var(--topic-society-culture)",
+  sports: "var(--topic-sports)",
+  other: "var(--topic-other)",
+};

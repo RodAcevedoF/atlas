@@ -177,7 +177,9 @@ export function TopBar({
           onClick={onSyncMarkets}
           disabled={isSyncing}
           className="flex h-8.5 items-center gap-1.75 rounded-[10px] bg-primary px-3.75 text-[12.5px] font-semibold text-primary-foreground transition-[filter] hover:brightness-[1.07] disabled:opacity-70"
-          style={{ boxShadow: "0 6px 18px -8px rgba(255,171,88,.7)" }}
+          style={{
+            boxShadow: "0 6px 18px -8px color-mix(in srgb, var(--primary) 70%, transparent)",
+          }}
         >
           {isSyncing ? <Spinner /> : null}
           {isSyncing ? "Syncing…" : "Sync markets"}

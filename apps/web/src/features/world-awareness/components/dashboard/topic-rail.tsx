@@ -1,5 +1,5 @@
 import type { Topic } from "../../repositories/market-repository.ts";
-import { CURATED_TOPICS, TOPIC_LABELS } from "../../utils/index.ts";
+import { CURATED_TOPICS, TOPIC_COLOR_VAR, TOPIC_LABELS } from "../../utils/index.ts";
 
 export type TopicFilter = Topic | "";
 
@@ -10,10 +10,12 @@ interface TopicRailProps {
 
 function TopicChip({
   label,
+  color,
   isActive,
   onClick,
 }: {
   label: string;
+  color?: string;
   isActive: boolean;
   onClick: () => void;
 }) {
@@ -22,12 +24,15 @@ function TopicChip({
       type="button"
       onClick={onClick}
       aria-pressed={isActive}
-      className={`h-7 flex-none rounded-lg px-3 text-xs font-medium transition-colors ${
+      className={`flex h-7 flex-none items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors ${
         isActive
           ? "bg-white/8 text-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]"
           : "text-muted-foreground hover:text-foreground"
       }`}
     >
+      {color ? (
+        <span className="h-2 w-2 flex-none rounded-full" style={{ background: color }} />
+      ) : null}
       {label}
     </button>
   );
@@ -42,6 +47,7 @@ export function TopicRail({ topic, onTopicChange }: TopicRailProps) {
         <TopicChip
           key={option}
           label={TOPIC_LABELS[option]}
+          color={TOPIC_COLOR_VAR[option]}
           isActive={topic === option}
           onClick={() => onTopicChange(option)}
         />
