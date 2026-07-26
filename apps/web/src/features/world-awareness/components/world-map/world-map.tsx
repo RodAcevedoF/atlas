@@ -41,6 +41,7 @@ interface WorldMapProps {
   peak: number;
   selected: GeoRegion | null;
   onSelect: (region: GeoRegion) => void;
+  onClearSelection: () => void;
 }
 
 function dominantTopic(record: RegionTopicBreakdownRecord | undefined): Topic | null {
@@ -121,13 +122,14 @@ function ModeToggle({
     { id: "tendency", label: "Tendency" },
   ];
   return (
-    <div className="flex overflow-hidden rounded-lg border border-border">
+    <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-0.75">
       {modes.map(({ id, label }) => (
         <button
           key={id}
           type="button"
           onClick={() => onChange(id)}
-          className={`px-2.5 py-1 text-[10px] font-medium uppercase tracking-widest transition-colors ${
+          aria-pressed={mode === id}
+          className={`rounded-md py-1 text-[10px] font-semibold uppercase tracking-wide transition-colors ${
             mode === id
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:text-foreground"
@@ -142,16 +144,20 @@ function ModeToggle({
 
 function TendencyLegend() {
   return (
-    <div className="flex items-center gap-2.5">
-      <span className="font-mono text-[10px] text-muted-foreground">Neg</span>
+    <div className="flex items-center gap-2">
+      <span className="font-mono text-[9px] uppercase tracking-wide text-muted-foreground">
+        Neg
+      </span>
       <div
-        className="h-2 w-32 rounded-[5px]"
+        className="h-1.5 flex-1 rounded-full"
         style={{
           background:
             "linear-gradient(90deg, var(--sentiment-negative), var(--sentiment-neutral), var(--sentiment-positive))",
         }}
       />
-      <span className="font-mono text-[10px] text-muted-foreground">Pos</span>
+      <span className="font-mono text-[9px] uppercase tracking-wide text-muted-foreground">
+        Pos
+      </span>
     </div>
   );
 }
@@ -161,21 +167,21 @@ function TopicLegend({ topics }: { topics: Topic[] }) {
     return <span className="text-[10px] text-muted-foreground">No topic activity</span>;
   }
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1">
+    <div className="flex flex-col gap-1">
       {topics.map((topic) => (
         <span key={topic} className="flex items-center gap-1.5">
           <span
             className="h-2 w-2 flex-none rounded-full"
             style={{ background: `var(--topic-${topic})` }}
           />
-          <span className="text-[10px] text-muted-foreground">{TOPIC_LABELS[topic]}</span>
+          <span className="truncate text-[10px] text-muted-foreground">{TOPIC_LABELS[topic]}</span>
         </span>
       ))}
     </div>
   );
 }
 
-export function WorldMap({ byRegion, peak, selected, onSelect }: WorldMapProps) {
+export function WorldMap({ byRegion, peak, selected, onSelect, onClearSelection }: WorldMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mode, setMode] = useState<MapFillMode>("tendency");
   const [hover, setHover] = useState<HoverState | null>(null);
@@ -190,9 +196,13 @@ export function WorldMap({ byRegion, peak, selected, onSelect }: WorldMapProps) 
     (event: MapLayerMouseEvent) => {
       const subregion = event.features?.[0]?.properties?.subregion as string | undefined;
       const region = regionForSubregion(subregion);
-      if (region) onSelect(region);
+      if (region) {
+        onSelect(region);
+        return;
+      }
+      onClearSelection();
     },
-    [onSelect],
+    [onSelect, onClearSelection],
   );
 
   const handleHover = useCallback((event: MapLayerMouseEvent) => {
@@ -260,8 +270,9 @@ export function WorldMap({ byRegion, peak, selected, onSelect }: WorldMapProps) 
         </MapGL>
       </div>
 
-      <div className="absolute left-1/2 top-4 z-5 flex -translate-x-1/2 flex-col items-center gap-2 rounded-xl border border-border bg-card/60 px-3 py-2 backdrop-blur-md">
+      <div className="absolute right-4 top-4 z-5 flex w-46 flex-col gap-2.5 rounded-xl border border-border bg-card/70 p-2.5 backdrop-blur-md">
         <ModeToggle mode={mode} onChange={setMode} />
+        <div className="h-px w-full bg-border" />
         {mode === "tendency" ? <TendencyLegend /> : <TopicLegend topics={legendTopics} />}
       </div>
 

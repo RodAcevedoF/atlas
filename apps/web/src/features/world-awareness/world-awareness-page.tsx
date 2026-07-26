@@ -1,7 +1,6 @@
 import { TopBar } from "./components/dashboard/top-bar.tsx";
 import { TopicRail } from "./components/dashboard/topic-rail.tsx";
 import { MapCockpit } from "./components/world-map/map-cockpit.tsx";
-import { usePanelVisibility } from "./components/world-map/use-panel-visibility.ts";
 import { useMarketDashboard } from "./hooks/use-market-dashboard.ts";
 
 export function WorldAwarenessPage() {
@@ -11,14 +10,12 @@ export function WorldAwarenessPage() {
     topic,
     setTopic,
     dashboard,
-    isLoading,
     isSyncing,
     isSyncingNews,
     error,
     handleSync,
     handleSyncNews,
   } = useMarketDashboard();
-  const { visibility, anyVisible, toggleAll, hidePanel, togglePanel } = usePanelVisibility();
 
   const markets = dashboard?.markets ?? [];
   const worldTopics = dashboard?.worldTopics ?? [];
@@ -33,10 +30,6 @@ export function WorldAwarenessPage() {
         onSyncNews={() => void handleSyncNews()}
         isSyncing={isSyncing}
         isSyncingNews={isSyncingNews}
-        panelVisibility={visibility}
-        anyPanelVisible={anyVisible}
-        onToggleAllPanels={toggleAll}
-        onTogglePanel={togglePanel}
       />
 
       <TopicRail topic={topic} onTopicChange={setTopic} />
@@ -52,13 +45,6 @@ export function WorldAwarenessPage() {
         worldEvents={worldEvents}
         markets={markets}
         topic={topic}
-        totalVolumeUsd={dashboard?.totalVolumeUsd ?? 0}
-        worldSignals={dashboard?.worldSignals ?? 0}
-        activeTopics={dashboard?.activeTopics ?? 0}
-        regionsInFocus={dashboard?.regionsInFocus ?? 0}
-        isLoading={isLoading}
-        visibility={visibility}
-        onHidePanel={hidePanel}
       />
     </main>
   );

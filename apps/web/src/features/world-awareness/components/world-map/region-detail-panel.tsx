@@ -114,7 +114,7 @@ function TopicBars({ breakdown }: { breakdown: RegionTopicBreakdownRecord | unde
     );
   }
   return (
-    <div className="flex flex-col gap-[13px]">
+    <div className="flex flex-col gap-3.25">
       <SectionLabel>Topic breakdown</SectionLabel>
       {topics.map((topic) => (
         <div key={topic.topic} className="flex flex-col gap-1.5">
@@ -128,7 +128,7 @@ function TopicBars({ breakdown }: { breakdown: RegionTopicBreakdownRecord | unde
             </span>
             <span className="font-mono text-muted-foreground">{topic.signalCount}</span>
           </div>
-          <div className="h-[7px] overflow-hidden rounded-[5px] bg-muted">
+          <div className="h-1.75 overflow-hidden rounded-[5px] bg-muted">
             <div
               className="h-full rounded-[5px]"
               style={{
@@ -145,8 +145,8 @@ function TopicBars({ breakdown }: { breakdown: RegionTopicBreakdownRecord | unde
 
 function EmptyState() {
   return (
-    <div className="flex min-h-[230px] flex-col items-center justify-center gap-3 p-6 text-center">
-      <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px] border border-border bg-muted">
+    <div className="flex min-h-5.75 flex-col items-center justify-center gap-3 p-6 text-center">
+      <div className="flex h-11.5 w-11.5 items-center justify-center rounded-[13px] border border-border bg-muted">
         <svg
           width="22"
           height="22"
@@ -162,7 +162,7 @@ function EmptyState() {
       </div>
       <div className="flex flex-col gap-1">
         <span className="text-sm font-semibold">Pick a region</span>
-        <span className="max-w-[210px] text-xs text-muted-foreground">
+        <span className="max-w-52.5 text-xs text-muted-foreground">
           Select a highlighted country on the map to see its news and where the market disagrees.
         </span>
       </div>
@@ -177,8 +177,8 @@ export function RegionDetailPanel({
   onOpenScan,
 }: RegionDetailPanelProps) {
   return (
-    <aside className="flex w-[372px] flex-none flex-col overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="border-b border-border px-[17px] pb-3 pt-3.5">
+    <aside className="flex max-h-[70vh] w-93 flex-none flex-col overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="border-b border-border px-4.25 pb-3 pt-3.5">
         <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
           Region detail
         </span>
@@ -186,7 +186,7 @@ export function RegionDetailPanel({
           <div className="mt-2 flex items-end justify-between gap-2.5">
             <div className="flex items-center gap-2.5">
               <span
-                className="h-[9px] w-[9px] rounded-sm bg-primary"
+                className="h-2.25 w-2.25 rounded-sm bg-primary"
                 style={{ boxShadow: "0 0 10px var(--primary)" }}
               />
               <span className="text-[19px] font-semibold tracking-[-0.01em]">
@@ -197,7 +197,7 @@ export function RegionDetailPanel({
               <div className="font-mono text-[20px] font-medium text-primary">
                 {(breakdown?.signalCount ?? 0).toLocaleString()}
               </div>
-              <div className="text-[9.5px] uppercase tracking-[0.1em] text-muted-foreground">
+              <div className="text-[9.5px] uppercase tracking-widest text-muted-foreground">
                 signals
               </div>
             </div>
@@ -209,7 +209,7 @@ export function RegionDetailPanel({
         <EmptyState />
       ) : (
         <>
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-[17px] pb-4 pt-3.5">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4.25 pb-4 pt-3.5">
             {cross ? <CrossSection cross={cross} /> : null}
             <TopicBars breakdown={breakdown} />
           </div>
