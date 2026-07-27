@@ -1,5 +1,5 @@
-import type { Topic } from "../../repositories/market-repository.ts";
-import { TOPIC_COLOR_VAR } from "../../utils/index.ts";
+import type { Topic } from "../../../repositories/market-repository.ts";
+import { TOPIC_COLOR_VAR } from "../../../utils/index.ts";
 const resolved = new Map<string, string>();
 
 function resolveToken(token: string): string {
@@ -20,6 +20,14 @@ export function topicHex(topic: Topic): string {
 
 export function primaryHex(): string {
   return resolveToken("--primary");
+}
+
+export function primaryForegroundHex(): string {
+  return resolveToken("--primary-foreground");
+}
+
+export function pinStrokeHex(): string {
+  return resolveToken("--card");
 }
 
 export function emptyFillHex(): string {

@@ -3,15 +3,15 @@ import { Button } from "@atlas/ui";
 import type {
   GeoRegion,
   RegionTopicBreakdownRecord,
-} from "../../repositories/market-repository.ts";
+} from "../../../repositories/market-repository.ts";
 import {
   type CrossStance,
   REGION_LABELS,
   type RegionCross,
   TOPIC_COLOR_VAR,
   TOPIC_LABELS,
-} from "../../utils/index.ts";
-import { topOutcomeLabel } from "../../utils/market.ts";
+} from "../../../utils/index.ts";
+import { topOutcomeLabel } from "../../../utils/market.ts";
 
 interface RegionDetailPanelProps {
   region: GeoRegion | null;

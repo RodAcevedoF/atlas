@@ -71,7 +71,11 @@ export function useMarketDashboard(): UseMarketDashboardResult {
             topic: topic || undefined,
             limit: 8,
           },
-          worldEvents: { source: "news", topic: topic || undefined, limit: 20 },
+          worldEvents: {
+            source: source === "all" ? undefined : source,
+            topic: topic || undefined,
+            limit: 60,
+          },
         });
         if (!token?.cancelled) setDashboard(result);
       } catch (loadError) {

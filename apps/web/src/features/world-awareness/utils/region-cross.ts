@@ -46,7 +46,12 @@ export function deriveRegionCross(
   events: WorldEventRecord[],
 ): RegionCross {
   const news = events
-    .filter((event) => event.primaryRegion === region && (topic === "" || event.topic === topic))
+    .filter(
+      (event) =>
+        event.source === "news" &&
+        event.primaryRegion === region &&
+        (topic === "" || event.topic === topic),
+    )
     .sort(
       (left, right) => right.weight - left.weight || right.timestamp.localeCompare(left.timestamp),
     )

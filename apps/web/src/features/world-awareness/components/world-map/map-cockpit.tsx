@@ -8,8 +8,9 @@ import type {
   WorldEventRecord,
 } from "../../repositories/market-repository.ts";
 import { deriveRegionCross } from "../../utils/index.ts";
-import { FloatingPanel } from "./floating-panel.tsx";
-import { RegionDetailPanel } from "./region-detail-panel.tsx";
+import { FloatingPanel } from "./panels/floating-panel.tsx";
+import { PinDetail } from "./panels/pin-detail.tsx";
+import { RegionDetailPanel } from "./panels/region-detail-panel.tsx";
 import { WorldMap } from "./world-map.tsx";
 
 type BreakdownIndex = Map<GeoRegion, RegionTopicBreakdownRecord>;
@@ -33,13 +34,38 @@ export function MapCockpit({ worldTopics, worldEvents, markets, topic }: MapCock
     [worldTopics],
   );
   const [selectedRegion, setSelectedRegion] = useState<GeoRegion | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<WorldEventRecord | null>(null);
 
   const cross = useMemo(
     () => (selectedRegion ? deriveRegionCross(selectedRegion, topic, markets, worldEvents) : null),
     [selectedRegion, topic, markets, worldEvents],
   );
 
-  const clearSelection = useCallback(() => setSelectedRegion(null), []);
+  const relatedMarkets = useMemo(
+    () =>
+      selectedEvent
+        ? deriveRegionCross(selectedEvent.primaryRegion, selectedEvent.topic, markets, worldEvents)
+            .markets
+        : [],
+    [selectedEvent, markets, worldEvents],
+  );
+
+  const selectRegion = useCallback((region: GeoRegion) => {
+    setSelectedEvent(null);
+    setSelectedRegion(region);
+  }, []);
+
+  const selectEvent = useCallback((event: WorldEventRecord) => {
+    setSelectedRegion(null);
+    setSelectedEvent(event);
+  }, []);
+
+  const clearRegion = useCallback(() => setSelectedRegion(null), []);
+  const clearEvent = useCallback(() => setSelectedEvent(null), []);
+  const clearSelection = useCallback(() => {
+    setSelectedRegion(null);
+    setSelectedEvent(null);
+  }, []);
 
   const openScan = useCallback(() => {
     const params = new URLSearchParams();
@@ -51,11 +77,11 @@ export function MapCockpit({ worldTopics, worldEvents, markets, topic }: MapCock
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelectedRegion(null);
+      if (event.key === "Escape") clearSelection();
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, []);
+  }, [clearSelection]);
 
   return (
     <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-border">
@@ -64,14 +90,16 @@ export function MapCockpit({ worldTopics, worldEvents, markets, topic }: MapCock
           byRegion={byRegion}
           peak={peak}
           selected={selectedRegion}
-          onSelect={setSelectedRegion}
+          events={worldEvents}
+          onSelect={selectRegion}
+          onSelectEvent={selectEvent}
           onClearSelection={clearSelection}
         />
       </div>
 
       <FloatingPanel
         visible={selectedRegion !== null}
-        onClose={clearSelection}
+        onClose={clearRegion}
         label="region detail"
         className="left-4 top-4"
       >
@@ -81,6 +109,15 @@ export function MapCockpit({ worldTopics, worldEvents, markets, topic }: MapCock
           cross={cross}
           onOpenScan={openScan}
         />
+      </FloatingPanel>
+
+      <FloatingPanel
+        visible={selectedEvent !== null}
+        onClose={clearEvent}
+        label="event detail"
+        className="left-4 top-4"
+      >
+        {selectedEvent ? <PinDetail event={selectedEvent} markets={relatedMarkets} /> : null}
       </FloatingPanel>
     </div>
   );

@@ -1,4 +1,4 @@
-import type { GeoRegion } from "../../repositories/market-repository.ts";
+import type { GeoRegion } from "../../../repositories/market-repository.ts";
 
 // Maps Natural Earth UN SUBREGION values to the app's GeoRegion taxonomy.
 // Region-level for v1; the same lookup is the single swap point for country-level later.
