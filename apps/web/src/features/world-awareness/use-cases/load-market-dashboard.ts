@@ -57,44 +57,53 @@ function countActiveRegions(worldTopics: RegionTopicBreakdownRecord[]): number {
   return worldTopics.filter((region) => region.signalCount > 0).length;
 }
 
-export async function loadMarketDashboard(
-  repository: MarketRepository,
-  input: LoadMarketDashboardInput = {},
-): Promise<MarketDashboardData> {
-  const [markets, events, regionSummary, worldTopics, worldEvents] = await Promise.all([
-    repository.listMarkets(input.markets),
-    repository.listEvents(input.events),
-    repository.listRegionSummaries(input.regionSummary),
-    repository.listWorldTopics(input.worldTopics),
-    repository.listWorldEvents(input.worldEvents),
-  ]);
+export interface LoadMarketDashboardDeps {
+  marketRepository: MarketRepository;
+}
 
-  const categoryBuckets = new Map<MarketCategory, DashboardCategorySummary>();
-  for (const market of markets) {
-    const current = categoryBuckets.get(market.category) ?? {
-      category: market.category,
-      count: 0,
-      volumeUsd: 0,
+export type LoadMarketDashboard = (
+  input?: LoadMarketDashboardInput,
+) => Promise<MarketDashboardData>;
+
+export function makeLoadMarketDashboard({
+  marketRepository,
+}: LoadMarketDashboardDeps): LoadMarketDashboard {
+  return async (input = {}) => {
+    const [markets, events, regionSummary, worldTopics, worldEvents] = await Promise.all([
+      marketRepository.listMarkets(input.markets),
+      marketRepository.listEvents(input.events),
+      marketRepository.listRegionSummaries(input.regionSummary),
+      marketRepository.listWorldTopics(input.worldTopics),
+      marketRepository.listWorldEvents(input.worldEvents),
+    ]);
+
+    const categoryBuckets = new Map<MarketCategory, DashboardCategorySummary>();
+    for (const market of markets) {
+      const current = categoryBuckets.get(market.category) ?? {
+        category: market.category,
+        count: 0,
+        volumeUsd: 0,
+      };
+      current.count += 1;
+      current.volumeUsd += market.volumeUsd;
+      categoryBuckets.set(market.category, current);
+    }
+
+    return {
+      markets,
+      events,
+      regionSummary,
+      worldTopics,
+      worldEvents,
+      activeMarketCount: markets.filter((market) => market.status === "active").length,
+      totalVolumeUsd: markets.reduce((sum, market) => sum + market.volumeUsd, 0),
+      totalLiquidityUsd: markets.reduce((sum, market) => sum + market.liquidityUsd, 0),
+      worldSignals: worldTopics.reduce((sum, region) => sum + region.signalCount, 0),
+      activeTopics: countActiveTopics(worldTopics),
+      regionsInFocus: countActiveRegions(worldTopics),
+      categorySummary: [...categoryBuckets.values()].sort(
+        (left, right) => right.volumeUsd - left.volumeUsd,
+      ),
     };
-    current.count += 1;
-    current.volumeUsd += market.volumeUsd;
-    categoryBuckets.set(market.category, current);
-  }
-
-  return {
-    markets,
-    events,
-    regionSummary,
-    worldTopics,
-    worldEvents,
-    activeMarketCount: markets.filter((market) => market.status === "active").length,
-    totalVolumeUsd: markets.reduce((sum, market) => sum + market.volumeUsd, 0),
-    totalLiquidityUsd: markets.reduce((sum, market) => sum + market.liquidityUsd, 0),
-    worldSignals: worldTopics.reduce((sum, region) => sum + region.signalCount, 0),
-    activeTopics: countActiveTopics(worldTopics),
-    regionsInFocus: countActiveRegions(worldTopics),
-    categorySummary: [...categoryBuckets.values()].sort(
-      (left, right) => right.volumeUsd - left.volumeUsd,
-    ),
   };
 }

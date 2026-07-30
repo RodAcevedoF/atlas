@@ -4,9 +4,14 @@ import type {
   MarketRepository,
 } from "../repositories/market-repository.ts";
 
-export function syncMarketSnapshot(
-  repository: MarketRepository,
-  input: IngestMarketsInput = { maxMarkets: 100 },
-): Promise<IngestMarketsResult> {
-  return repository.ingestMarkets(input);
+export interface SyncMarketSnapshotDeps {
+  marketRepository: MarketRepository;
+}
+
+export type SyncMarketSnapshot = (input?: IngestMarketsInput) => Promise<IngestMarketsResult>;
+
+export function makeSyncMarketSnapshot({
+  marketRepository,
+}: SyncMarketSnapshotDeps): SyncMarketSnapshot {
+  return (input = { maxMarkets: 100 }) => marketRepository.ingestMarkets(input);
 }

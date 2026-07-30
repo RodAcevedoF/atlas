@@ -1,20 +1,26 @@
-import { useMarketRepository } from "@/providers.tsx";
-import { useCallback, useEffect, useState } from "react";
-import type {
-  MarketCategory,
-  MarketStatus,
-  SignalSource,
-  Topic,
-} from "../repositories/market-repository.ts";
-
-export type SourceFilter = SignalSource | "all";
-export type TopicFilter = Topic | "";
+import { useAppDispatch, useAppSelector } from "@/store/hooks.ts";
+import { useEffect } from "react";
 import {
-  type MarketDashboardData,
-  loadMarketDashboard,
-} from "../use-cases/load-market-dashboard.ts";
-import { syncMarketSnapshot } from "../use-cases/sync-market-snapshot.ts";
-import { syncNewsSnapshot } from "../use-cases/sync-news-snapshot.ts";
+  loadDashboard,
+  syncMarketSnapshot,
+  syncNewsSnapshot,
+} from "../infra/store/dashboard.commands.ts";
+import {
+  type SourceFilter,
+  type TopicFilter,
+  toLoadMarketDashboardInput,
+} from "../infra/store/dashboard.filters.ts";
+import {
+  selectDashboard,
+  setCategory,
+  setSource,
+  setStatus,
+  setTopic,
+} from "../infra/store/dashboard.slice.ts";
+import type { MarketCategory, MarketStatus } from "../repositories/market-repository.ts";
+import type { MarketDashboardData } from "../use-cases/load-market-dashboard.ts";
+
+export type { SourceFilter, TopicFilter };
 
 export interface UseMarketDashboardResult {
   category: MarketCategory | "";
@@ -36,117 +42,42 @@ export interface UseMarketDashboardResult {
 }
 
 export function useMarketDashboard(): UseMarketDashboardResult {
-  const repository = useMarketRepository();
-  const [category, setCategory] = useState<MarketCategory | "">("");
-  const [status, setStatus] = useState<MarketStatus | "">("active");
-  const [source, setSource] = useState<SourceFilter>("all");
-  const [topic, setTopic] = useState<TopicFilter>("");
-  const [dashboard, setDashboard] = useState<MarketDashboardData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [isSyncingNews, setIsSyncingNews] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
-
-  const load = useCallback(
-    async (token?: { cancelled: boolean }): Promise<void> => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const result = await loadMarketDashboard(repository, {
-          markets: {
-            status: status || undefined,
-            category: category || undefined,
-            limit: 100,
-          },
-          events: { limit: 6 },
-          regionSummary: {
-            status: status || undefined,
-            category: category || undefined,
-            limit: 8,
-          },
-          worldTopics: {
-            source: source === "all" ? undefined : source,
-            topic: topic || undefined,
-            limit: 8,
-          },
-          worldEvents: {
-            source: source === "all" ? undefined : source,
-            topic: topic || undefined,
-            limit: 60,
-          },
-        });
-        if (!token?.cancelled) setDashboard(result);
-      } catch (loadError) {
-        if (!token?.cancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Failed to load dashboard");
-        }
-      } finally {
-        if (!token?.cancelled) setIsLoading(false);
-      }
-    },
-    [category, repository, status, source, topic],
-  );
+  const dispatch = useAppDispatch();
+  const { filters, data, isLoading, isSyncing, isSyncingNews, error, syncMessage } =
+    useAppSelector(selectDashboard);
 
   useEffect(() => {
-    const token = { cancelled: false };
-    void load(token);
-
-    return () => {
-      token.cancelled = true;
-    };
-  }, [load]);
-
-  async function handleSync(): Promise<void> {
-    setIsSyncing(true);
-    setError(null);
-
-    try {
-      const result = await syncMarketSnapshot(repository, {
-        categories: category ? [category] : undefined,
-        maxMarkets: 100,
-      });
-      setSyncMessage(`Synced ${result.upserted} markets from Polymarket.`);
-      void load();
-    } catch (syncError) {
-      setError(syncError instanceof Error ? syncError.message : "Failed to sync market snapshot");
-    } finally {
-      setIsSyncing(false);
-    }
-  }
-
-  async function handleSyncNews(): Promise<void> {
-    setIsSyncingNews(true);
-    setError(null);
-
-    try {
-      const result = await syncNewsSnapshot(repository, { limit: 75 });
-      setSyncMessage(`Ingested ${result.upserted} news signals from GDELT.`);
-      void load();
-    } catch (syncError) {
-      setError(syncError instanceof Error ? syncError.message : "Failed to sync news snapshot");
-    } finally {
-      setIsSyncingNews(false);
-    }
-  }
+    void dispatch(loadDashboard(toLoadMarketDashboardInput(filters)));
+  }, [dispatch, filters]);
 
   return {
-    category,
-    setCategory,
-    status,
-    setStatus,
-    source,
-    setSource,
-    topic,
-    setTopic,
-    dashboard,
+    category: filters.category,
+    setCategory: (value) => {
+      dispatch(setCategory(value));
+    },
+    status: filters.status,
+    setStatus: (value) => {
+      dispatch(setStatus(value));
+    },
+    source: filters.source,
+    setSource: (value) => {
+      dispatch(setSource(value));
+    },
+    topic: filters.topic,
+    setTopic: (value) => {
+      dispatch(setTopic(value));
+    },
+    dashboard: data,
     isLoading,
     isSyncing,
     isSyncingNews,
     error,
     syncMessage,
-    handleSync,
-    handleSyncNews,
+    handleSync: async () => {
+      await dispatch(syncMarketSnapshot());
+    },
+    handleSyncNews: async () => {
+      await dispatch(syncNewsSnapshot());
+    },
   };
 }

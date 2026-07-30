@@ -4,9 +4,12 @@ import type {
   MarketRepository,
 } from "../repositories/market-repository.ts";
 
-export function syncNewsSnapshot(
-  repository: MarketRepository,
-  input: IngestNewsInput = { limit: 75 },
-): Promise<IngestNewsResult> {
-  return repository.ingestNews(input);
+export interface SyncNewsSnapshotDeps {
+  marketRepository: MarketRepository;
+}
+
+export type SyncNewsSnapshot = (input?: IngestNewsInput) => Promise<IngestNewsResult>;
+
+export function makeSyncNewsSnapshot({ marketRepository }: SyncNewsSnapshotDeps): SyncNewsSnapshot {
+  return (input = { limit: 75 }) => marketRepository.ingestNews(input);
 }
