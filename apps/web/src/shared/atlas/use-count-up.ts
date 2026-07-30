@@ -5,10 +5,6 @@ interface CountUpOptions {
   durationMs?: number;
 }
 
-/**
- * Eases a number from 0 up to `target` on mount via requestAnimationFrame.
- * Honors reduced-motion by snapping straight to the target.
- */
 export function useCountUp(target: number, { durationMs = 1600 }: CountUpOptions = {}): number {
   const reducedMotion = useReducedMotion();
   const [value, setValue] = useState(0);

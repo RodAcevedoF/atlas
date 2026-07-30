@@ -36,6 +36,8 @@ export const TOPIC_LABELS: Record<Topic, string> = {
   other: "Other",
 };
 
+export const CURATED_TOPIC_LABELS: string[] = CURATED_TOPICS.map((topic) => TOPIC_LABELS[topic]);
+
 export const TOPIC_COLOR_VAR: Record<Topic, string> = {
   politics: "var(--topic-politics)",
   conflict: "var(--topic-conflict)",

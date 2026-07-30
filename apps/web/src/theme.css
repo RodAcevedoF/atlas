@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Archivo:wght@400;500;600&family=Martian+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=DM+Mono:wght@400;500&display=swap");
 @import "tailwindcss";
 
 @source '../../../packages/ui/src';
@@ -7,50 +7,42 @@
  * shadcn token set
  */
 :root {
-  /* editorial base (AT-044) — warm newsprint dark; ochre primary reverses AT-006 */
-  --background: #0a0908;
-  --foreground: #ede5d5;
-  --card: #141210;
-  --card-foreground: #ede5d5;
-  --card-2: #1a1713;
-  --popover: #161310;
-  --popover-foreground: #ede5d5;
-  --primary: #c8862b;
-  --primary-foreground: #0a0908;
-  --secondary: #1a1713;
-  --secondary-foreground: #ede5d5;
-  --muted: #201c17;
-  --muted-foreground: #a29a8c;
-  --accent: #201c17;
-  --accent-foreground: #ede5d5;
-  --positive: #6f9c7e;
-  --negative: #c05a4e;
-  --info: #7fa3b8;
-  --destructive: #c05a4e;
-  --destructive-foreground: #faf4ea;
-  --border: rgba(237, 229, 213, 0.13);
-  --border-strong: rgba(237, 229, 213, 0.22);
-  --input: rgba(237, 229, 213, 0.22);
-  --ring: #c8862b;
+  --background: #0e1b3f;
+  --foreground: #eaefff;
+  --card: #0c1638;
+  --card-foreground: #eaefff;
+  --card-2: #060a1c;
+  --card-deep: #040713;
+  --background-deep: #0a1330;
+  --popover: #0c1638;
+  --popover-foreground: #eaefff;
+  --primary: #4fe3c1;
+  --primary-foreground: #05081a;
+  --secondary: #16264f;
+  --secondary-foreground: #eaefff;
+  --muted: #16264f;
+  --muted-foreground: #8f9bc0;
+  --accent: #1a2b57;
+  --accent-foreground: #eaefff;
+  --positive: #4fe3c1;
+  --negative: #ff6e8a;
+  --info: #8aa4ff;
+  --destructive: #ff6e8a;
+  --destructive-foreground: #05081a;
+  --border: rgba(150, 175, 255, 0.13);
+  --border-strong: rgba(150, 175, 255, 0.24);
+  --input: rgba(150, 175, 255, 0.16);
+  --ring: #4fe3c1;
   --radius: 16px;
-  --font-serif: "Bodoni Moda", Georgia, serif;
-  --font-sans: "Archivo", system-ui, sans-serif;
-  --font-mono: "Martian Mono", ui-monospace, monospace;
+  --font-serif: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-sans: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, monospace;
 
-  /* editorial semantics (AT-044) — coverage×conviction + faint labels */
-  --faint: #6e675c;
-  --coverage: #7fa3b8;
-  --conviction: #c8862b;
-
-  /* editorial parchment surfaces (landing/auth light sections) */
-  --paper: #ece4d3;
-  --paper-2: #f3ecdd;
-  --paper-ink: #12100d;
-  --paper-ink-muted: #4a443a;
-  --paper-faint: #6b6355;
-  --paper-coverage: #3c5a6e;
-  --paper-conviction: #a5641a;
-  --paper-gap: #a83e30;
+  /* v4 semantics (AT-047) — coverage×conviction axis + divergence + faint labels */
+  --faint: rgba(234, 239, 255, 0.45);
+  --coverage: #8aa4ff;
+  --conviction: #4fe3c1;
+  --gap-negative: #ff6e8a;
 
   /* topic categorical scale — 9 curated topics*/
 
@@ -117,14 +109,7 @@
   --color-faint: var(--faint);
   --color-coverage: var(--coverage);
   --color-conviction: var(--conviction);
-  --color-paper: var(--paper);
-  --color-paper-2: var(--paper-2);
-  --color-paper-ink: var(--paper-ink);
-  --color-paper-ink-muted: var(--paper-ink-muted);
-  --color-paper-faint: var(--paper-faint);
-  --color-paper-coverage: var(--paper-coverage);
-  --color-paper-conviction: var(--paper-conviction);
-  --color-paper-gap: var(--paper-gap);
+  --color-gap-negative: var(--gap-negative);
   --font-serif: var(--font-serif);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
@@ -235,41 +220,206 @@ body {
   animation: atlas-glow 2.2s ease-in-out infinite;
 }
 
-/* editorial motion (AT-044) — breathe bars, masthead ticker, live-dot blink */
-@keyframes atlas2-breathe {
+@keyframes atlas4-marquee {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes atlas4-fade {
   0%,
   100% {
-    transform: scaleY(0.34);
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes atlas4-scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+@keyframes atlas4-wave {
+  0%,
+  100% {
+    transform: scaleY(0.3);
   }
   50% {
     transform: scaleY(1);
   }
 }
 
-@keyframes atlas2-ticker {
+@keyframes atlas4-reveal {
   0% {
-    transform: translateX(0);
+    opacity: 0;
+    transform: translateY(16px);
+    filter: blur(7px);
   }
   100% {
-    transform: translateX(-50%);
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
   }
 }
 
-@keyframes atlas2-blink {
+@keyframes atlas4-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  80%,
+  100% {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+}
+
+@keyframes atlas4-sweep {
+  0% {
+    transform: translateY(-10%);
+  }
+  100% {
+    transform: translateY(1100%);
+  }
+}
+
+@keyframes atlas4-caret {
   0%,
   100% {
     opacity: 1;
   }
   50% {
-    opacity: 0.2;
+    opacity: 0;
   }
 }
 
-.atlas2-ticker {
-  animation: atlas2-ticker 42s linear infinite;
+@keyframes atlas4-grow-x {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
 }
-.atlas2-blink {
-  animation: atlas2-blink 2.4s ease-in-out infinite;
+
+.atlas4-marquee {
+  animation: atlas4-marquee var(--marquee-dur, 68s) linear infinite;
+  will-change: transform;
+}
+.atlas4-marquee-word {
+  padding-left: 3vw;
+  font-size: 9.4vw;
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1.5px color-mix(in srgb, var(--coverage) 46%, transparent);
+}
+.atlas4-page {
+  background: linear-gradient(
+    172deg,
+    var(--secondary) 0%,
+    var(--background) 46%,
+    var(--background-deep) 100%
+  );
+}
+.atlas4-panel {
+  background: linear-gradient(168deg, var(--card) 0%, var(--card-2) 54%, var(--card-deep) 100%);
+  box-shadow: 0 46px 100px -34px rgba(2, 6, 24, 0.85), inset 0 0 0 1px
+    color-mix(in srgb, var(--coverage) 13%, transparent);
+}
+.atlas4-scan-line {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--conviction) 75%, transparent),
+    transparent
+  );
+}
+.atlas4-auth-glow {
+  background: radial-gradient(
+      80% 70% at 20% 30%,
+      color-mix(in srgb, var(--info) 34%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      60% 60% at 90% 96%,
+      color-mix(in srgb, var(--conviction) 16%, transparent),
+      transparent 70%
+    );
+}
+.atlas4-vignette {
+  background: radial-gradient(
+    64% 56% at 50% 50%,
+    color-mix(in srgb, var(--background) 52%, transparent),
+    color-mix(in srgb, var(--background) 12%, transparent)
+  );
+}
+.atlas4-fade-top {
+  background: linear-gradient(180deg, var(--background) 24%, transparent);
+}
+.atlas4-fade-bottom {
+  background: linear-gradient(0deg, var(--background) 30%, transparent);
+}
+.atlas4-fade {
+  animation: atlas4-fade 3s ease-in-out infinite;
+}
+.atlas4-scan {
+  animation: atlas4-scan 7s linear infinite;
+}
+.atlas4-wave {
+  transform-origin: var(--wave-origin, bottom);
+  animation: atlas4-wave var(--wave-dur, 3s) ease-in-out var(--wave-delay, 0s) infinite;
+}
+.atlas4-wave-coverage {
+  --wave-origin: bottom;
+  background: linear-gradient(
+    180deg,
+    var(--coverage),
+    color-mix(in srgb, var(--coverage) 32%, transparent)
+  );
+}
+.atlas4-wave-conviction {
+  --wave-origin: top;
+  background: linear-gradient(
+    0deg,
+    var(--conviction),
+    color-mix(in srgb, var(--conviction) 28%, transparent)
+  );
+}
+.atlas4-reveal {
+  animation: atlas4-reveal 0.85s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.atlas4-ping {
+  animation: atlas4-ping 1.6s ease-out infinite;
+}
+.atlas4-sweep {
+  animation: atlas4-sweep 4.6s ease-in-out infinite;
+}
+.atlas4-sweep-fill {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--conviction) 18%, transparent),
+    transparent
+  );
+}
+.atlas4-caret {
+  animation: atlas4-caret 1s step-end infinite;
+}
+.atlas4-grow-x {
+  transform-origin: var(--grow-origin, left);
+  animation: atlas4-grow-x 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) var(--grow-delay, 0s) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -281,8 +431,21 @@ body {
     opacity: 1;
     transform: none;
   }
-  .atlas2-ticker,
-  .atlas2-blink {
+  .atlas4-marquee,
+  .atlas4-fade,
+  .atlas4-scan,
+  .atlas4-wave,
+  .atlas4-reveal,
+  .atlas4-ping,
+  .atlas4-sweep,
+  .atlas4-caret,
+  .atlas4-grow-x {
     animation: none;
+  }
+  .atlas4-wave {
+    transform: none;
+  }
+  .atlas4-grow-x {
+    transform: none;
   }
 }
