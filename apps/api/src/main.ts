@@ -31,5 +31,5 @@ await registerMarketsRoutes(app, deps.markets);
 await registerNewsRoutes(app, deps.news);
 await registerWorldRoutes(app, deps.world);
 
-const port = Number(process.env.PORT ?? 3001);
+const port = Number(process.env.PORT ?? 3100);
 await app.listen({ port, host: "0.0.0.0" });

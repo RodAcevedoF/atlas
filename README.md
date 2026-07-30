@@ -44,7 +44,7 @@ bun nx run @atlas/web:dev
 bun nx run @atlas/worker:dev
 ```
 
-Web: http://localhost:3000 · API: http://localhost:3001 · Health: http://localhost:3001/health
+Web: http://localhost:3000 · API: http://localhost:3100 · Health: http://localhost:3100/health
 
 ## Documentation
 
