@@ -12,7 +12,7 @@ import { CategoryBadge, StatusBadge } from "./badges.tsx";
 const COLUMNS = "grid-cols-[minmax(0,1fr)_96px_88px_116px_92px_104px]";
 
 const SELECT_CLASS =
-  "h-[31px] cursor-pointer appearance-none rounded-[9px] border border-border-strong bg-card-2 pl-[11px] pr-7 text-xs text-foreground";
+  "h-7.75 cursor-pointer appearance-none rounded-[9px] border border-border-strong bg-card-2 pl-2.75 pr-7 text-xs text-foreground";
 const SELECT_ARROW =
   "bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 fill=%22none%22 stroke=%22%238b8e95%22 stroke-width=%222%22><path d=%22M3 5l3 3 3-3%22/></svg>')] bg-[length:12px] bg-[right_9px_center] bg-no-repeat";
 
@@ -40,7 +40,7 @@ export function MarketsTable({
           <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
             Signals
           </span>
-          <div className="mt-[3px] text-sm font-semibold tracking-[-0.01em]">
+          <div className="mt-0.75 text-sm font-semibold tracking-[-0.01em]">
             Markets{" "}
             <span className="font-mono text-xs font-normal text-muted-foreground">
               · {markets.length}
@@ -76,7 +76,7 @@ export function MarketsTable({
       </div>
 
       <div
-        className={`grid flex-none ${COLUMNS} gap-2.5 border-b border-border px-4 py-[9px] text-[10px] uppercase tracking-[0.1em] text-muted-foreground`}
+        className={`grid flex-none ${COLUMNS} gap-2.5 border-b border-border px-4 py-2.25 text-[10px] uppercase tracking-[0.1em] text-muted-foreground`}
       >
         <span>Market</span>
         <span>Category</span>
@@ -95,7 +95,7 @@ export function MarketsTable({
           markets.map((market) => (
             <div
               key={market.id}
-              className={`grid ${COLUMNS} items-center gap-2.5 border-b border-white/[0.045] px-4 py-[11px] transition-colors hover:bg-white/[0.025]`}
+              className={`grid ${COLUMNS} items-center gap-2.5 border-b border-white/[0.045] px-4 py-2.75 transition-colors hover:bg-white/[0.025]`}
             >
               <span className="line-clamp-2 text-[12.5px] font-medium leading-[1.3]">
                 {market.title}

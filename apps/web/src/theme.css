@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Archivo:wght@400;500;600&family=Martian+Mono:wght@400;500&display=swap");
 @import "tailwindcss";
 
 @source '../../../packages/ui/src';
@@ -7,33 +7,50 @@
  * shadcn token set
  */
 :root {
-  --background: #0a0a0a;
-  --foreground: #ececee;
-  --card: #101114;
-  --card-foreground: #ececee;
-  --card-2: #15171b;
-  --popover: #121316;
-  --popover-foreground: #ececee;
-  --primary: #7db0ff;
-  --primary-foreground: #081026;
-  --secondary: #15171b;
-  --secondary-foreground: #ececee;
-  --muted: #1a1c20;
-  --muted-foreground: #8b8e95;
-  --accent: #1a1c20;
-  --accent-foreground: #ececee;
-  --positive: #5fcf80;
-  --negative: #f0766a;
-  --info: #6ea8fe;
-  --destructive: #f0766a;
-  --destructive-foreground: #fff7f5;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.15);
-  --input: rgba(255, 255, 255, 0.15);
-  --ring: #7db0ff;
+  /* editorial base (AT-044) — warm newsprint dark; ochre primary reverses AT-006 */
+  --background: #0a0908;
+  --foreground: #ede5d5;
+  --card: #141210;
+  --card-foreground: #ede5d5;
+  --card-2: #1a1713;
+  --popover: #161310;
+  --popover-foreground: #ede5d5;
+  --primary: #c8862b;
+  --primary-foreground: #0a0908;
+  --secondary: #1a1713;
+  --secondary-foreground: #ede5d5;
+  --muted: #201c17;
+  --muted-foreground: #a29a8c;
+  --accent: #201c17;
+  --accent-foreground: #ede5d5;
+  --positive: #6f9c7e;
+  --negative: #c05a4e;
+  --info: #7fa3b8;
+  --destructive: #c05a4e;
+  --destructive-foreground: #faf4ea;
+  --border: rgba(237, 229, 213, 0.13);
+  --border-strong: rgba(237, 229, 213, 0.22);
+  --input: rgba(237, 229, 213, 0.22);
+  --ring: #c8862b;
   --radius: 16px;
-  --font-sans: "Geist", system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-serif: "Bodoni Moda", Georgia, serif;
+  --font-sans: "Archivo", system-ui, sans-serif;
+  --font-mono: "Martian Mono", ui-monospace, monospace;
+
+  /* editorial semantics (AT-044) — coverage×conviction + faint labels */
+  --faint: #6e675c;
+  --coverage: #7fa3b8;
+  --conviction: #c8862b;
+
+  /* editorial parchment surfaces (landing/auth light sections) */
+  --paper: #ece4d3;
+  --paper-2: #f3ecdd;
+  --paper-ink: #12100d;
+  --paper-ink-muted: #4a443a;
+  --paper-faint: #6b6355;
+  --paper-coverage: #3c5a6e;
+  --paper-conviction: #a5641a;
+  --paper-gap: #a83e30;
 
   /* topic categorical scale — 9 curated topics*/
 
@@ -97,6 +114,18 @@
   --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-faint: var(--faint);
+  --color-coverage: var(--coverage);
+  --color-conviction: var(--conviction);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-paper-ink: var(--paper-ink);
+  --color-paper-ink-muted: var(--paper-ink-muted);
+  --color-paper-faint: var(--paper-faint);
+  --color-paper-coverage: var(--paper-coverage);
+  --color-paper-conviction: var(--paper-conviction);
+  --color-paper-gap: var(--paper-gap);
+  --font-serif: var(--font-serif);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 }
@@ -206,6 +235,43 @@ body {
   animation: atlas-glow 2.2s ease-in-out infinite;
 }
 
+/* editorial motion (AT-044) — breathe bars, masthead ticker, live-dot blink */
+@keyframes atlas2-breathe {
+  0%,
+  100% {
+    transform: scaleY(0.34);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes atlas2-ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes atlas2-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.atlas2-ticker {
+  animation: atlas2-ticker 42s linear infinite;
+}
+.atlas2-blink {
+  animation: atlas2-blink 2.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .atlas-breathe,
   .atlas-glow {
@@ -214,5 +280,9 @@ body {
   .atlas-breathe {
     opacity: 1;
     transform: none;
+  }
+  .atlas2-ticker,
+  .atlas2-blink {
+    animation: none;
   }
 }
