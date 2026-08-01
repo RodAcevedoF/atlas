@@ -1,7 +1,8 @@
-import { useMarketRepository } from "@/providers.tsx";
-import { useCallback, useState } from "react";
+import { useAppDispatch, useAppSelector } from "@/store/hooks.ts";
+import { useCallback } from "react";
+import { runWorldScan } from "../infra/store/intelligence.commands.ts";
+import { selectIntelligence } from "../infra/store/intelligence.slice.ts";
 import type { WorldScanInput, WorldScanReportRecord } from "../repositories/market-repository.ts";
-import { runWorldScan } from "../use-cases/run-world-scan.ts";
 
 export interface UseWorldScanResult {
   report: WorldScanReportRecord | null;
@@ -11,26 +12,15 @@ export interface UseWorldScanResult {
 }
 
 export function useWorldScan(): UseWorldScanResult {
-  const repository = useMarketRepository();
-  const [report, setReport] = useState<WorldScanReportRecord | null>(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const { report, isScanning, scanError } = useAppSelector(selectIntelligence);
 
   const runScan = useCallback(
     async (scope: WorldScanInput = {}): Promise<void> => {
-      setIsScanning(true);
-      setError(null);
-      try {
-        const result = await runWorldScan(repository, scope);
-        setReport(result);
-      } catch (scanError) {
-        setError(scanError instanceof Error ? scanError.message : "Failed to run scan");
-      } finally {
-        setIsScanning(false);
-      }
+      await dispatch(runWorldScan(scope));
     },
-    [repository],
+    [dispatch],
   );
 
-  return { report, isScanning, error, runScan };
+  return { report, isScanning, error: scanError, runScan };
 }

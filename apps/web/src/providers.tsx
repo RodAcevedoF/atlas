@@ -8,7 +8,6 @@ import { ToastProvider } from "@atlas/ui";
 import { type PropsWithChildren, createContext, useContext, useState } from "react";
 import { Provider as ReduxProvider } from "react-redux";
 
-const MarketRepositoryContext = createContext<MarketRepository | null>(null);
 const SavedReportsRepositoryContext = createContext<SavedReportsRepository | null>(null);
 
 export function AppProviders({ children }: PropsWithChildren) {
@@ -22,21 +21,13 @@ export function AppProviders({ children }: PropsWithChildren) {
     <ReduxProvider store={store}>
       <ToastProvider>
         <AuthProvider>
-          <MarketRepositoryContext.Provider value={marketRepository}>
-            <SavedReportsRepositoryContext.Provider value={savedReportsRepository}>
-              {children}
-            </SavedReportsRepositoryContext.Provider>
-          </MarketRepositoryContext.Provider>
+          <SavedReportsRepositoryContext.Provider value={savedReportsRepository}>
+            {children}
+          </SavedReportsRepositoryContext.Provider>
         </AuthProvider>
       </ToastProvider>
     </ReduxProvider>
   );
-}
-
-export function useMarketRepository(): MarketRepository {
-  const repository = useContext(MarketRepositoryContext);
-  if (!repository) throw new Error("MarketRepositoryContext is not available");
-  return repository;
 }
 
 export function useSavedReportsRepository(): SavedReportsRepository {

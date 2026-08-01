@@ -4,9 +4,16 @@ import type {
   WorldScanHistoryItem,
 } from "../repositories/market-repository.ts";
 
-export function listWorldScanReports(
-  repository: MarketRepository,
-  filter: WorldScanHistoryFilter = {},
-): Promise<WorldScanHistoryItem[]> {
-  return repository.listWorldScanReports(filter);
+export interface ListWorldScanReportsDeps {
+  marketRepository: MarketRepository;
+}
+
+export type ListWorldScanReports = (
+  filter?: WorldScanHistoryFilter,
+) => Promise<WorldScanHistoryItem[]>;
+
+export function makeListWorldScanReports({
+  marketRepository,
+}: ListWorldScanReportsDeps): ListWorldScanReports {
+  return (filter = {}) => marketRepository.listWorldScanReports(filter);
 }

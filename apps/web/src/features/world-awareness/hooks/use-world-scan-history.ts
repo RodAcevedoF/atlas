@@ -1,10 +1,11 @@
-import { useMarketRepository } from "@/providers.tsx";
-import { useCallback, useState } from "react";
+import { useAppDispatch, useAppSelector } from "@/store/hooks.ts";
+import { useCallback } from "react";
+import { loadScanHistory } from "../infra/store/intelligence.commands.ts";
+import { selectIntelligence } from "../infra/store/intelligence.slice.ts";
 import type {
   WorldScanHistoryFilter,
   WorldScanHistoryItem,
 } from "../repositories/market-repository.ts";
-import { listWorldScanReports } from "../use-cases/list-world-scan-reports.ts";
 
 export interface UseWorldScanHistoryResult {
   reports: WorldScanHistoryItem[];
@@ -14,26 +15,15 @@ export interface UseWorldScanHistoryResult {
 }
 
 export function useWorldScanHistory(): UseWorldScanHistoryResult {
-  const repository = useMarketRepository();
-  const [reports, setReports] = useState<WorldScanHistoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const { history, historyLoading, historyError } = useAppSelector(selectIntelligence);
 
   const load = useCallback(
     async (filter: WorldScanHistoryFilter = {}): Promise<void> => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const result = await listWorldScanReports(repository, filter);
-        setReports(result);
-      } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : "Failed to load history");
-      } finally {
-        setIsLoading(false);
-      }
+      await dispatch(loadScanHistory(filter));
     },
-    [repository],
+    [dispatch],
   );
 
-  return { reports, isLoading, error, load };
+  return { reports: history, isLoading: historyLoading, error: historyError, load };
 }

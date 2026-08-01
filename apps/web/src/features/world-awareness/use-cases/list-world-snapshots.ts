@@ -4,9 +4,16 @@ import type {
   TopicSnapshotRecord,
 } from "../repositories/market-repository.ts";
 
-export function listWorldSnapshots(
-  repository: MarketRepository,
-  input: ListWorldSnapshotsInput = {},
-): Promise<TopicSnapshotRecord[]> {
-  return repository.listWorldSnapshots(input);
+export interface ListWorldSnapshotsDeps {
+  marketRepository: MarketRepository;
+}
+
+export type ListWorldSnapshots = (
+  input?: ListWorldSnapshotsInput,
+) => Promise<TopicSnapshotRecord[]>;
+
+export function makeListWorldSnapshots({
+  marketRepository,
+}: ListWorldSnapshotsDeps): ListWorldSnapshots {
+  return (input = {}) => marketRepository.listWorldSnapshots(input);
 }

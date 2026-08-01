@@ -4,9 +4,12 @@ import type {
   WorldScanReportRecord,
 } from "../repositories/market-repository.ts";
 
-export function runWorldScan(
-  repository: MarketRepository,
-  input: WorldScanInput = {},
-): Promise<WorldScanReportRecord> {
-  return repository.runWorldScan(input);
+export interface RunWorldScanDeps {
+  marketRepository: MarketRepository;
+}
+
+export type RunWorldScan = (input?: WorldScanInput) => Promise<WorldScanReportRecord>;
+
+export function makeRunWorldScan({ marketRepository }: RunWorldScanDeps): RunWorldScan {
+  return (input = {}) => marketRepository.runWorldScan(input);
 }
