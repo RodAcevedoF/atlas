@@ -1,3 +1,5 @@
+import { fetchWithRetry } from "@atlas/shared";
+
 const BASE_URL = "https://gamma-api.polymarket.com";
 
 function buildGammaUrl(
@@ -18,7 +20,7 @@ export async function fetchGammaJson<T>(options: {
   allow404?: boolean;
   errorLabel: string;
 }): Promise<T | null> {
-  const res = await fetch(buildGammaUrl(options.path, options.searchParams));
+  const res = await fetchWithRetry(buildGammaUrl(options.path, options.searchParams));
   if (options.allow404 && res.status === 404) return null;
   if (!res.ok) {
     throw new Error(`${options.errorLabel} ${res.status} ${res.statusText}`);

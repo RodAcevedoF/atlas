@@ -8,6 +8,7 @@
     "redis:up": "docker compose up -d redis",
     "redis:down": "docker compose down",
     "typecheck": "bun nx run-many -t typecheck",
+    "test": "bun nx run-many -t test",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "build": "bun nx run-many -t build"

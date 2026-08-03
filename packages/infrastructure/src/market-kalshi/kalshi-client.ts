@@ -1,3 +1,4 @@
+import { fetchWithRetry } from "@atlas/shared";
 
 const BASE_URL = "https://api.elections.kalshi.com/trade-api/v2";
 
@@ -19,7 +20,7 @@ export async function fetchKalshiJson<T>(options: {
   allow404?: boolean;
   errorLabel: string;
 }): Promise<T | null> {
-  const res = await fetch(buildKalshiUrl(options.path, options.searchParams));
+  const res = await fetchWithRetry(buildKalshiUrl(options.path, options.searchParams));
   if (options.allow404 && res.status === 404) return null;
   if (!res.ok) {
     throw new Error(`${options.errorLabel} ${res.status} ${res.statusText}`);

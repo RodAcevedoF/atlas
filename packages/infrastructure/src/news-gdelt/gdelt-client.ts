@@ -1,3 +1,4 @@
+import { fetchWithRetry } from "@atlas/shared";
 import type { GdeltDocResponse } from "./gdelt-types.ts";
 
 const BASE_URL = "https://api.gdeltproject.org/api/v2/doc/doc";
@@ -14,7 +15,7 @@ function buildDocUrl(searchParams: Record<string, string | number | undefined>):
 export async function fetchGdeltDoc(
   searchParams: Record<string, string | number | undefined>,
 ): Promise<GdeltDocResponse> {
-  const response = await fetch(buildDocUrl(searchParams));
+  const response = await fetchWithRetry(buildDocUrl(searchParams));
   if (!response.ok) {
     throw new Error(`GDELT DOC ${response.status} ${response.statusText}`);
   }
