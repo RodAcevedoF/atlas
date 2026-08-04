@@ -34,6 +34,14 @@ export function emptyFillHex(): string {
   return resolveToken("--map-empty-fill");
 }
 
+export function mapWaterHex(): string {
+  return resolveToken("--map-water");
+}
+
+export function mapLandHex(): string {
+  return resolveToken("--map-land");
+}
+
 export function regionOutlineColor(): string {
   return resolveToken("--map-region-outline");
 }

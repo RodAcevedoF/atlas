@@ -3,6 +3,11 @@ import type { ExpressionSpecification, FilterSpecification } from "maplibre-gl";
 export const BASEMAP_STYLE = "https://tiles.openfreemap.org/styles/dark";
 export const COUNTRIES_URL = "/world-countries.geojson";
 export const INITIAL_VIEW_STATE = { longitude: 10, latitude: 25, zoom: 1.3 };
+// Same home view in the shape maplibre's camera methods take (easeTo/flyTo).
+export const RESET_CAMERA = {
+  center: [INITIAL_VIEW_STATE.longitude, INITIAL_VIEW_STATE.latitude] as [number, number],
+  zoom: INITIAL_VIEW_STATE.zoom,
+};
 
 export const COUNTRIES_SOURCE = "countries";
 export const COUNTRY_FILL_LAYER = "country-fills";
@@ -14,9 +19,17 @@ export const PIN_CLUSTER_COUNT_LAYER = "pin-cluster-count";
 export const PIN_POINT_LAYER = "pin-unclustered";
 export const CLUSTER_MAX_ZOOM = 4;
 export const CLUSTER_RADIUS_PX = 40;
-
-// Layers the map treats as interactive for click/hover dispatch.
 export const INTERACTIVE_LAYERS = [COUNTRY_FILL_LAYER, PIN_CLUSTER_LAYER, PIN_POINT_LAYER];
+
+export const BASEMAP_LAND_LAYERS = [
+  "background",
+  "landcover_ice_shelf",
+  "landcover_glacier",
+  "landuse_residential",
+  "landcover_wood",
+  "landuse_park",
+];
+export const BASEMAP_WATER_LAYERS = ["water", "waterway"];
 
 export const CLUSTER_FILTER = ["has", "point_count"] as FilterSpecification;
 export const POINT_FILTER = ["!", ["has", "point_count"]] as FilterSpecification;

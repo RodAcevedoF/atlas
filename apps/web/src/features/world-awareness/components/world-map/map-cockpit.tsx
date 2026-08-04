@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import type { TopicFilter } from "../../infra/store/dashboard.filters.ts";
 import type {
   GeoRegion,
   MarketRecord,
   RegionTopicBreakdownRecord,
-  Topic,
   WorldEventRecord,
 } from "../../repositories/market-repository.ts";
 import { deriveRegionCross } from "../../utils/index.ts";
+import { MapStats, type MapStatsValues } from "./overlays/map-stats.tsx";
+import { TopicPicker } from "./overlays/topic-picker.tsx";
 import { FloatingPanel } from "./panels/floating-panel.tsx";
 import { PinDetail } from "./panels/pin-detail.tsx";
 import { RegionDetailPanel } from "./panels/region-detail-panel.tsx";
+import { countTopicSignals } from "./utils/topic-counts.ts";
 import { WorldMap } from "./world-map.tsx";
 
 type BreakdownIndex = Map<GeoRegion, RegionTopicBreakdownRecord>;
@@ -23,12 +26,22 @@ interface MapCockpitProps {
   worldTopics: RegionTopicBreakdownRecord[];
   worldEvents: WorldEventRecord[];
   markets: MarketRecord[];
-  topic: Topic | "";
+  topic: TopicFilter;
+  onTopicChange: (topic: TopicFilter) => void;
+  stats: MapStatsValues;
 }
 
-export function MapCockpit({ worldTopics, worldEvents, markets, topic }: MapCockpitProps) {
+export function MapCockpit({
+  worldTopics,
+  worldEvents,
+  markets,
+  topic,
+  onTopicChange,
+  stats,
+}: MapCockpitProps) {
   const navigate = useNavigate();
   const byRegion = useMemo(() => indexByRegion(worldTopics), [worldTopics]);
+  const topicCounts = useMemo(() => countTopicSignals(worldTopics), [worldTopics]);
   const peak = useMemo(
     () => worldTopics.reduce((max, breakdown) => Math.max(max, breakdown.signalCount), 0),
     [worldTopics],
@@ -84,7 +97,7 @@ export function MapCockpit({ worldTopics, worldEvents, markets, topic }: MapCock
   }, [clearSelection]);
 
   return (
-    <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-border">
+    <div className="relative min-h-0 flex-1 overflow-hidden">
       <div className="absolute inset-0">
         <WorldMap
           byRegion={byRegion}
@@ -96,6 +109,9 @@ export function MapCockpit({ worldTopics, worldEvents, markets, topic }: MapCock
           onClearSelection={clearSelection}
         />
       </div>
+
+      <TopicPicker topic={topic} counts={topicCounts} onTopicChange={onTopicChange} />
+      <MapStats {...stats} />
 
       <FloatingPanel
         visible={selectedRegion !== null}

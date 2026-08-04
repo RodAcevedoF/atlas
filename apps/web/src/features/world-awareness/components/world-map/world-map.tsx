@@ -1,7 +1,7 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { GeoJSONSource } from "maplibre-gl";
 import { useCallback, useMemo, useRef, useState } from "react";
-import MapGL, { type MapLayerMouseEvent, type MapRef } from "react-map-gl/maplibre";
+import MapGL, { type MapEvent, type MapLayerMouseEvent, type MapRef } from "react-map-gl/maplibre";
 import type { GeoRegion, WorldEventRecord } from "../../repositories/market-repository.ts";
 import {
   BASEMAP_STYLE,
@@ -10,6 +10,7 @@ import {
   PIN_CLUSTER_LAYER,
   PIN_POINT_LAYER,
   PIN_SOURCE,
+  RESET_CAMERA,
 } from "./constants.ts";
 import { CountryFillLayers } from "./overlays/country-fill-layers.tsx";
 import { EventPinLayers } from "./overlays/event-pin-layers.tsx";
@@ -17,6 +18,7 @@ import { LegendPanel } from "./overlays/legend-panel.tsx";
 import { RegionHoverPopup } from "./overlays/region-hover-popup.tsx";
 import { ZoomControl } from "./overlays/zoom-control.tsx";
 import type { BreakdownIndex, HoverState, MapFillMode } from "./types.ts";
+import { applyBasemapTheme } from "./utils/basemap-theme.ts";
 import { topicsPresent } from "./utils/fill-expressions.ts";
 import { buildPinFeatures } from "./utils/pins.ts";
 import { regionForSubregion } from "./utils/region-for-country.ts";
@@ -108,6 +110,18 @@ export function WorldMap({
     setPinHover(false);
   }, []);
 
+  const handleLoad = useCallback((event: MapEvent) => {
+    applyBasemapTheme(event.target);
+  }, []);
+
+  const resetView = useCallback(() => {
+    mapRef.current?.easeTo(RESET_CAMERA);
+    onClearSelection();
+  }, [onClearSelection]);
+
+  const zoomIn = useCallback(() => mapRef.current?.zoomIn(), []);
+  const zoomOut = useCallback(() => mapRef.current?.zoomOut(), []);
+
   const hoverRecord = hover ? byRegion.get(hover.region) : undefined;
 
   return (
@@ -119,6 +133,7 @@ export function WorldMap({
           mapStyle={BASEMAP_STYLE}
           interactiveLayerIds={INTERACTIVE_LAYERS}
           cursor={hover || pinHover ? "pointer" : "grab"}
+          onLoad={handleLoad}
           onClick={handleClick}
           onMouseMove={handleHover}
           onMouseLeave={clearHover}
@@ -130,11 +145,10 @@ export function WorldMap({
         </MapGL>
       </div>
 
+      <div className="atlas-map-vignette pointer-events-none absolute inset-0" aria-hidden="true" />
+
       <LegendPanel mode={mode} onModeChange={setMode} topics={legendTopics} />
-      <ZoomControl
-        onZoomIn={() => mapRef.current?.zoomIn()}
-        onZoomOut={() => mapRef.current?.zoomOut()}
-      />
+      <ZoomControl onZoomIn={zoomIn} onZoomOut={zoomOut} onReset={resetView} />
     </div>
   );
 }

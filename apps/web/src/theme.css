@@ -3,9 +3,6 @@
 
 @source '../../../packages/ui/src';
 
-/*
- * shadcn token set
- */
 :root {
   --background: #0e1b3f;
   --foreground: #eaefff;
@@ -38,7 +35,6 @@
   --font-sans: "Bricolage Grotesque", system-ui, sans-serif;
   --font-mono: "DM Mono", ui-monospace, monospace;
 
-  /* v4 semantics (AT-047) — coverage×conviction axis + divergence + faint labels */
   --faint: rgba(234, 239, 255, 0.45);
   --coverage: #8aa4ff;
   --conviction: #4fe3c1;
@@ -74,8 +70,11 @@
   --status-closed: #ffab58;
   --status-resolved: #6ea8fe;
 
-  --map-empty-fill: #2a2c31;
+  --map-water: #151c26;
+  --map-land: #212a36;
+  --map-empty-fill: #2b3543;
   --map-region-outline: rgba(255, 255, 255, 0.12);
+  --map-vignette: rgba(6, 10, 28, 0.72);
 }
 
 @theme inline {
@@ -358,6 +357,9 @@ body {
       color-mix(in srgb, var(--conviction) 16%, transparent),
       transparent 70%
     );
+}
+.atlas-map-vignette {
+  background: radial-gradient(120% 90% at 50% 40%, transparent 45%, var(--map-vignette) 100%);
 }
 .atlas4-vignette {
   background: radial-gradient(
