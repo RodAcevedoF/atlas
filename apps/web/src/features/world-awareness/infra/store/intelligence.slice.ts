@@ -68,6 +68,10 @@ const intelligenceSlice = createSlice({
       .addCase(loadScanHistory.fulfilled, (state, action) => {
         state.history = action.payload;
         state.historyLoading = false;
+        // History arrives newest first => the most recent scan rehydrates the view,
+        // but never over a scan already in flight (both fire on mount).
+        const [latest] = action.payload;
+        if (latest && state.report === null && !state.isScanning) state.report = latest.report;
       })
       .addCase(loadScanHistory.rejected, (state, action) => {
         state.historyLoading = false;

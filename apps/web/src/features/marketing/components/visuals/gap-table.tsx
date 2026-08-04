@@ -1,4 +1,4 @@
-import { useReducedMotion } from "@/shared/atlas";
+import { useReducedMotion } from "@/shared/brand";
 import { cn } from "@atlas/ui";
 import type { CSSProperties } from "react";
 import { GAP_ROWS, type GapRow } from "../../data/landing-content.ts";

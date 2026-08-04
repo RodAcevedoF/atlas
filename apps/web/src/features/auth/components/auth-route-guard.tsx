@@ -1,4 +1,4 @@
-import { AtlasLoader } from "@/shared/atlas-loader.tsx";
+import { AtlasLoader } from "@/shared/ui";
 import { Button } from "@atlas/ui";
 import type { PropsWithChildren } from "react";
 import { Navigate } from "react-router-dom";

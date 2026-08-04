@@ -36,6 +36,7 @@
   --font-mono: "DM Mono", ui-monospace, monospace;
 
   --faint: rgba(234, 239, 255, 0.45);
+  --segment-active: rgba(255, 255, 255, 0.08);
   --coverage: #8aa4ff;
   --conviction: #4fe3c1;
   --gap-negative: #ff6e8a;
@@ -357,6 +358,27 @@ body {
       color-mix(in srgb, var(--conviction) 16%, transparent),
       transparent 70%
     );
+}
+.atlas-popover-shadow {
+  box-shadow: 0 24px 60px rgba(2, 6, 18, 0.6);
+}
+.atlas-segment-active {
+  background: var(--segment-active);
+  box-shadow: inset 0 0 0 1px var(--segment-active);
+}
+.atlas-rail-fade-left {
+  background: linear-gradient(90deg, var(--background) 12%, transparent);
+}
+.atlas-rail-fade-right {
+  background: linear-gradient(270deg, var(--background) 12%, transparent);
+}
+.atlas-scan-hero {
+  background: linear-gradient(
+    140deg,
+    var(--card) 0%,
+    var(--background-deep) 58%,
+    color-mix(in srgb, var(--conviction) 14%, var(--card-deep)) 100%
+  );
 }
 .atlas-map-vignette {
   background: radial-gradient(120% 90% at 50% 40%, transparent 45%, var(--map-vignette) 100%);

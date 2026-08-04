@@ -1,40 +1,71 @@
+import { CHIP_BASE } from "@/shared/ui";
+import { cn } from "@atlas/ui";
 import type {
   WorldScanHistoryItem,
   WorldScanReportRecord,
 } from "../../repositories/market-repository.ts";
 import { REGION_LABELS, TOPIC_LABELS } from "../../utils/index.ts";
 
-export function SectionLabel({ children }: { children: string }) {
+function SectionLabel({ children }: { children: string }) {
   return (
     <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{children}</div>
   );
 }
 
-function Citations({ refs }: { refs: string[] }) {
+const HTTP_REF = /^https?:\/\/[^/?#\s]+/;
+const CITATION_CHIP = cn(CHIP_BASE, "rounded bg-muted px-1.5 py-0.5");
+
+function refHost(ref: string): string {
+  return new URL(ref).hostname.replace(/^www\./, "");
+}
+
+function Citation({ refValue }: { refValue: string }) {
+  if (!HTTP_REF.test(refValue)) {
+    return (
+      <span className={cn(CITATION_CHIP, "text-muted-foreground")} title={refValue}>
+        {refValue}
+      </span>
+    );
+  }
+
+  return (
+    <a
+      href={refValue}
+      target="_blank"
+      rel="noreferrer"
+      className={cn(
+        CITATION_CHIP,
+        "text-coverage transition-colors hover:bg-secondary hover:text-primary hover:underline",
+      )}
+      title={refValue}
+    >
+      {refHost(refValue)}
+    </a>
+  );
+}
+
+export function Citations({ refs }: { refs: string[] }) {
   if (refs.length === 0) return null;
   return (
     <div className="flex flex-wrap gap-1">
       {refs.map((ref) => (
-        <span
-          key={ref}
-          className="max-w-55 truncate rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
-          title={ref}
-        >
-          {ref}
-        </span>
+        <Citation key={ref} refValue={ref} />
       ))}
     </div>
   );
 }
 
+export function scopeLabels(scope: WorldScanHistoryItem["scope"]): string[] {
+  const labels: string[] = [];
+  if (scope.topic) labels.push(TOPIC_LABELS[scope.topic]);
+  if (scope.region) labels.push(REGION_LABELS[scope.region]);
+  return labels.length > 0 ? labels : ["All topics · all regions"];
+}
+
 export function ScopeChips({ scope }: { scope: WorldScanHistoryItem["scope"] }) {
-  const chips: string[] = [];
-  if (scope.topic) chips.push(TOPIC_LABELS[scope.topic]);
-  if (scope.region) chips.push(REGION_LABELS[scope.region]);
-  if (chips.length === 0) chips.push("All topics · all regions");
   return (
     <div className="flex flex-wrap gap-1">
-      {chips.map((chip) => (
+      {scopeLabels(scope).map((chip) => (
         <span
           key={chip}
           className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"

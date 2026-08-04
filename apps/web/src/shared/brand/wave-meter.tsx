@@ -41,7 +41,7 @@ export function WaveMeter({ label, value, bars, variant, trackClassName }: WaveM
         <span>{label}</span>
         <span className={cn("tabular-nums", styles.value)}>{value}</span>
       </div>
-      <div className={cn("mt-3 flex gap-[3px] border-border", styles.track, trackClassName)}>
+      <div className={cn("mt-3 flex gap-0.75 border-border", styles.track, trackClassName)}>
         {bars.map((bar) => (
           <span
             key={bar.id}

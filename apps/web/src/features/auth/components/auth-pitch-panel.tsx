@@ -4,7 +4,7 @@ import {
   WaveMeter,
   buildWave,
   useReducedMotion,
-} from "@/shared/atlas";
+} from "@/shared/brand";
 import { useMemo } from "react";
 
 type Mode = "login" | "register";
@@ -56,7 +56,7 @@ export function AuthPitchPanel({ mode, pulse }: AuthPitchPanelProps) {
 
       <div className="relative flex h-full flex-col justify-between gap-10">
         <div>
-          <div className="inline-flex items-center gap-2.25 rounded-full border border-border bg-coverage/[0.06] px-3.5 py-1.75 font-mono text-[11px] uppercase tracking-[0.1em] text-foreground/[0.78]">
+          <div className="inline-flex items-center gap-2.25 rounded-full border border-border bg-coverage/6 px-3.5 py-1.75 font-mono text-[11px] uppercase tracking-widest text-foreground/78">
             <span className="h-1.25 w-1.25 rounded-full bg-conviction" />
             Coverage × Conviction
           </div>

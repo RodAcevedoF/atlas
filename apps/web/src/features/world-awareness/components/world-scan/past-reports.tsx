@@ -1,11 +1,9 @@
+import { Eyebrow } from "@/shared/ui";
 import { formatRelativeTime } from "@/shared/utils/index.ts";
-import { Button, Card } from "@atlas/ui";
+import { Button, Card, cn } from "@atlas/ui";
 import { useState } from "react";
-import type {
-  WorldScanHistoryItem,
-  WorldScanReportRecord,
-} from "../../repositories/market-repository.ts";
-import { ReportBody, ScopeChips, SectionLabel } from "./report-body.tsx";
+import type { WorldScanHistoryItem } from "../../repositories/market-repository.ts";
+import { ReportBody, ScopeChips } from "./report-body.tsx";
 
 export interface ReportSaveControls {
   isSaved: (id: string) => boolean;
@@ -13,16 +11,13 @@ export interface ReportSaveControls {
   pendingId: string | null;
 }
 
-interface WorldScanPanelProps {
-  report: WorldScanReportRecord | null;
-  isScanning: boolean;
-  error: string | null;
-  onRun: () => void;
+interface PastReportsProps {
   history: WorldScanHistoryItem[];
-  isHistoryLoading: boolean;
-  historyError: string | null;
-  onLoadHistory: () => void;
+  isLoading: boolean;
+  error: string | null;
+  onLoad: () => void;
   saveControls?: ReportSaveControls;
+  className?: string;
 }
 
 function SaveButton({ id, controls }: { id: string; controls: ReportSaveControls }) {
@@ -82,19 +77,14 @@ function HistoryRow({
   );
 }
 
-function PastReports({
+export function PastReports({
   history,
   isLoading,
   error,
   onLoad,
   saveControls,
-}: {
-  history: WorldScanHistoryItem[];
-  isLoading: boolean;
-  error: string | null;
-  onLoad: () => void;
-  saveControls?: ReportSaveControls;
-}) {
+  className,
+}: PastReportsProps) {
   const [open, setOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -105,18 +95,14 @@ function PastReports({
   };
 
   return (
-    <div className="border-t border-border py-3">
-      <button
-        type="button"
-        onClick={toggleOpen}
-        className="flex w-full items-center justify-between"
-      >
-        <SectionLabel>Past reports</SectionLabel>
+    <Card className={cn("flex flex-col gap-3 p-5", className)}>
+      <button type="button" onClick={toggleOpen} className="flex items-center justify-between">
+        <Eyebrow>Past reports</Eyebrow>
         <span className="text-[11px] text-muted-foreground">{open ? "Hide" : "Show"}</span>
       </button>
 
       {open ? (
-        <div className="mt-2 flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5">
           {isLoading ? (
             <div className="text-[12px] text-muted-foreground">Loading past reports…</div>
           ) : null}
@@ -135,62 +121,6 @@ function PastReports({
           ))}
         </div>
       ) : null}
-    </div>
-  );
-}
-
-export function WorldScanPanel({
-  report,
-  isScanning,
-  error,
-  onRun,
-  history,
-  isHistoryLoading,
-  historyError,
-  onLoadHistory,
-  saveControls,
-}: WorldScanPanelProps) {
-  return (
-    <Card className="flex min-w-0 flex-1 flex-col overflow-hidden">
-      <div className="flex items-center justify-between gap-3 border-b border-border px-4.25 pb-3 pt-3.5">
-        <div>
-          <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-            World scan
-          </span>
-          <div className="mt-0.75 text-sm font-semibold tracking-[-0.01em]">
-            Attention vs. expectation
-          </div>
-        </div>
-        <Button size="sm" onClick={onRun} disabled={isScanning}>
-          {isScanning ? "Scanning…" : "Run scan"}
-        </Button>
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4.25">
-        {error ? <div className="py-3 text-[12.5px] text-destructive">{error}</div> : null}
-
-        {!report && !isScanning && !error ? (
-          <div className="py-3 text-[12.5px] text-muted-foreground">
-            Run a scan to surface what changed and where the money disagrees with the headlines.
-          </div>
-        ) : null}
-
-        {isScanning && !report ? (
-          <div className="py-3 text-[12.5px] text-muted-foreground">
-            Reading the window — fusing news attention and market movement…
-          </div>
-        ) : null}
-
-        {report ? <ReportBody report={report} /> : null}
-
-        <PastReports
-          history={history}
-          isLoading={isHistoryLoading}
-          error={historyError}
-          onLoad={onLoadHistory}
-          saveControls={saveControls}
-        />
-      </div>
     </Card>
   );
 }

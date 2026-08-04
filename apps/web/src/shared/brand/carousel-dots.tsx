@@ -20,7 +20,7 @@ export function CarouselDots({ ids, activeIndex, onSelect, className }: Carousel
             aria-current={isActive}
             onClick={() => onSelect(index)}
             className={cn(
-              "h-[3px] rounded-full transition-all duration-300",
+              "h-0.75 rounded-full transition-all duration-300",
               isActive ? "w-6.5 bg-conviction" : "w-3 bg-foreground/25 hover:bg-foreground/40",
             )}
           />

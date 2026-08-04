@@ -16,7 +16,7 @@ export const AtlasHeader = memo(function AtlasHeader({ actions, className }: Atl
   return (
     <header
       className={cn(
-        "relative z-[3] flex items-center justify-between gap-4 px-8.5 py-6.5",
+        "relative z-3 flex items-center justify-between gap-4 px-8.5 py-6.5",
         className,
       )}
     >

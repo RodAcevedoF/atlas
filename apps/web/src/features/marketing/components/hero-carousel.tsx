@@ -1,4 +1,4 @@
-import { type Carousel, CarouselDots, type LivePulse } from "@/shared/atlas";
+import { type Carousel, CarouselDots, type LivePulse } from "@/shared/brand";
 import type { CSSProperties } from "react";
 import { SLIDES, type SlideKind } from "../data/landing-content.ts";
 import { SlideCopy } from "./slide-copy.tsx";
@@ -44,10 +44,10 @@ export function HeroCarousel({ carousel, pulse, primary, secondary }: HeroCarous
     <div
       onMouseEnter={hoverProps.onMouseEnter}
       onMouseLeave={hoverProps.onMouseLeave}
-      className="group atlas4-panel relative h-[74vh] min-h-[560px] w-full max-w-[1120px] overflow-hidden rounded-[22px]"
+      className="group atlas4-panel relative h-[74vh] min-h-140 w-full max-w-280 overflow-hidden rounded-[22px]"
     >
       <div
-        className="absolute inset-0 transition-[background] duration-[1100ms] ease-out"
+        className="absolute inset-0 transition-[background] duration-1100 ease-out"
         style={{ background: slide.glow } as CSSProperties}
       />
       <div className="pointer-events-none absolute inset-0 overflow-hidden">

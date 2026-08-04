@@ -1,4 +1,4 @@
-import { WaveMeter, buildWave, useReducedMotion } from "@/shared/atlas";
+import { WaveMeter, buildWave, useReducedMotion } from "@/shared/brand";
 import { useMemo } from "react";
 
 interface PremiseWavesProps {

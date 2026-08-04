@@ -1,4 +1,4 @@
-import { useTypewriter } from "@/shared/atlas";
+import { useTypewriter } from "@/shared/brand";
 import { cn } from "@atlas/ui";
 import { ARTIFACT } from "../../data/landing-content.ts";
 

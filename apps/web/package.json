@@ -13,6 +13,8 @@
     "@atlas/shared": "*",
     "@atlas/ui": "*",
     "@reduxjs/toolkit": "^2.12.0",
+    "embla-carousel-autoplay": "^8.6.0",
+    "embla-carousel-react": "^8.6.0",
     "maplibre-gl": "^5.24.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

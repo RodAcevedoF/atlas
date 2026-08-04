@@ -1,4 +1,3 @@
-/** Full-screen brand splash shown while the session loads: the Atlas mark breathing over a soft glow. */
 export function AtlasLoader() {
   return (
     <main className="flex h-screen items-center justify-center bg-background">

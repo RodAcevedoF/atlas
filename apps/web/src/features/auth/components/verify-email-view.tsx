@@ -1,4 +1,4 @@
-import { AtlasLoader } from "@/shared/atlas-loader.tsx";
+import { AtlasLoader } from "@/shared/ui";
 import { useToast } from "@atlas/ui";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";

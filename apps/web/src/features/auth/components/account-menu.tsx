@@ -1,6 +1,7 @@
+import { Avatar, Eyebrow } from "@/shared/ui";
 import type { GeoRegion, Topic } from "@atlas/domain";
 import { GEO_REGIONS, TOPICS } from "@atlas/domain";
-import { Button, Card, useToast } from "@atlas/ui";
+import { Button, Card, cn, useToast } from "@atlas/ui";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth-provider.tsx";
@@ -27,11 +28,12 @@ function ChipToggle({
       type="button"
       aria-pressed={active}
       onClick={onToggle}
-      className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+      className={cn(
+        "rounded-lg border px-2.75 py-1.5 text-xs transition-colors",
         active
-          ? "bg-primary text-primary-foreground"
-          : "bg-muted text-muted-foreground hover:text-foreground"
-      }`}
+          ? "border-primary/40 bg-primary/15 text-primary"
+          : "border-border-strong bg-secondary text-muted-foreground hover:text-foreground",
+      )}
     >
       {label}
     </button>
@@ -61,7 +63,17 @@ export function AccountMenu() {
   };
 
   return (
-    <div className="fixed bottom-3 right-3 z-50">
+    <div className="relative">
+      <button
+        type="button"
+        aria-label="Account menu"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex rounded-full transition-[filter] hover:brightness-110"
+      >
+        <Avatar name={user.email} isActive={open} />
+      </button>
+
       {open ? (
         <>
           <button
@@ -70,20 +82,16 @@ export function AccountMenu() {
             className="fixed inset-0 z-40 cursor-default"
             onClick={() => setOpen(false)}
           />
-          <Card className="absolute bottom-11 right-0 z-50 flex w-72 flex-col gap-3 p-4">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                Signed in
-              </span>
-              <span className="truncate text-[13px] font-medium" title={user.email}>
+          <Card className="atlas-popover-shadow absolute right-0 top-11 z-50 flex max-h-[calc(100vh-5rem)] w-74 flex-col gap-4 overflow-y-auto border-border-strong p-4.5">
+            <div className="flex flex-col gap-1.5">
+              <Eyebrow>Signed in</Eyebrow>
+              <span className="truncate text-sm font-medium" title={user.email}>
                 {user.email}
               </span>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                Preferred topics
-              </span>
+            <div className="flex flex-col gap-2.25">
+              <Eyebrow>Preferred topics</Eyebrow>
               <div className="flex flex-wrap gap-1.5">
                 {TOPICS.map((topic) => (
                   <ChipToggle
@@ -96,10 +104,8 @@ export function AccountMenu() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                Preferred regions
-              </span>
+            <div className="flex flex-col gap-2.25">
+              <Eyebrow>Preferred regions</Eyebrow>
               <div className="flex flex-wrap gap-1.5">
                 {GEO_REGIONS.map((region) => (
                   <ChipToggle
@@ -112,35 +118,24 @@ export function AccountMenu() {
               </div>
             </div>
 
-            <p className="text-[11px] leading-snug text-muted-foreground">
+            <p className="text-xs leading-normal text-muted-foreground">
               Preferences fill in the world scan when you don't pick a topic or region.
             </p>
 
-            <div className="flex items-center justify-between gap-2">
-              <Button size="sm" onClick={save} disabled={isSaving}>
+            <div className="flex items-center gap-3.5">
+              <Button size="sm" className="flex-1" onClick={save} disabled={isSaving}>
                 {isSaving ? "Saving…" : "Save preferences"}
               </Button>
-              <div className="flex items-center gap-1">
-                <Button asChild size="sm" variant="ghost">
-                  <Link to="/about">About</Link>
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => void logout()}>
-                  Sign out
-                </Button>
-              </div>
+              <Button asChild size="sm" variant="ghost" className="px-0">
+                <Link to="/about">About</Link>
+              </Button>
+              <Button size="sm" variant="ghost" className="px-0" onClick={() => void logout()}>
+                Sign out
+              </Button>
             </div>
           </Card>
         </>
       ) : null}
-
-      <button
-        type="button"
-        aria-label="Account menu"
-        onClick={() => setOpen((value) => !value)}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-[13px] font-semibold uppercase text-primary-foreground shadow-lg transition-[filter] hover:brightness-[1.07]"
-      >
-        {user.email.charAt(0)}
-      </button>
     </div>
   );
 }
