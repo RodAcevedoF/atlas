@@ -1,14 +1,6 @@
 import { useAuth } from "@/features/auth/auth-provider.tsx";
 import { CURATED_TOPIC_LABELS } from "@/features/world-awareness/utils/taxonomy.ts";
-import {
-  ATLAS_STATS,
-  AtlasHeader,
-  HeaderCta,
-  MarqueeBackdrop,
-  SourceStrip,
-  useCarousel,
-  useLivePulse,
-} from "@/shared/brand";
+import { ATLAS_STATS, HeaderCta, PublicPage, useCarousel, useLivePulse } from "@/shared/brand";
 import { useMemo } from "react";
 import { HeroCarousel } from "./components/hero-carousel.tsx";
 import { SLIDES } from "./data/landing-content.ts";
@@ -44,18 +36,14 @@ export function LandingPage() {
   );
 
   return (
-    <div className="atlas4-page relative flex min-h-screen flex-col overflow-hidden text-foreground">
-      <MarqueeBackdrop words={CURATED_TOPIC_LABELS} />
-      <AtlasHeader actions={headerActions} />
-
+    <PublicPage
+      backdropWords={CURATED_TOPIC_LABELS}
+      headerActions={headerActions}
+      sourceStripTrailing={`+${ATLAS_STATS.sources.toLocaleString()} sources`}
+    >
       <div className="relative z-3 flex flex-1 items-center justify-center px-8.5 pb-6.5">
         <HeroCarousel carousel={carousel} pulse={pulse} primary={primary} secondary={secondary} />
       </div>
-
-      <SourceStrip
-        trailing={`+${ATLAS_STATS.sources.toLocaleString()} sources`}
-        className="relative z-3 px-8.5 pb-7.5"
-      />
-    </div>
+    </PublicPage>
   );
 }
