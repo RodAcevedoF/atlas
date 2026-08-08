@@ -12,14 +12,14 @@ export function LandingPage() {
   const pulse = useLivePulse();
 
   const primary = isAuthed
-    ? { label: "Open snapshot", href: "/app" }
+    ? { label: "Open snapshot", href: "/world" }
     : { label: "Create account", href: "/register" };
   const secondary = isAuthed ? undefined : { label: "Log in", href: "/login" };
 
   const headerActions = useMemo(
     () =>
       isAuthed ? (
-        <HeaderCta to="/app" variant="solid">
+        <HeaderCta to="/world" variant="solid">
           Open snapshot
         </HeaderCta>
       ) : (

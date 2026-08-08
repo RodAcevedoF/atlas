@@ -3,7 +3,7 @@ import { AuthRouteGuard } from "./auth-route-guard.tsx";
 
 export function GuestRoute({ children }: PropsWithChildren) {
   return (
-    <AuthRouteGuard allow="anonymous" redirectTo="/app">
+    <AuthRouteGuard allow="anonymous" redirectTo="/world">
       {children}
     </AuthRouteGuard>
   );

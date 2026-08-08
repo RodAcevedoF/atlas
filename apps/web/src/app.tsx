@@ -21,7 +21,7 @@ function RootIndex() {
   }, [status, toast]);
 
   if (status === "loading") return <AtlasLoader />;
-  if (status === "authenticated") return <Navigate to="/app" replace />;
+  if (status === "authenticated") return <Navigate to="/world" replace />;
   return <LandingPage />;
 }
 
@@ -66,7 +66,7 @@ export function App() {
       />
       <Route path="/verify" element={<VerifyEmailView />} />
       <Route
-        path="/app"
+        path="/world"
         element={
           <ProtectedRoute>
             <DashboardShell />

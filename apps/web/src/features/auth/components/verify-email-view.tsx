@@ -37,7 +37,7 @@ export function VerifyEmailView() {
 
   useEffect(() => {
     if (!verified || status === "loading") return;
-    navigate(status === "authenticated" ? "/app" : "/login", { replace: true });
+    navigate(status === "authenticated" ? "/world" : "/login", { replace: true });
   }, [verified, status, navigate]);
 
   return <AtlasLoader />;
