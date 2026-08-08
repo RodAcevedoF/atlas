@@ -1,3 +1,4 @@
+import { CTA_OUTLINE, CTA_SOLID } from "@/shared/ui/index.ts";
 import { Button, cn } from "@atlas/ui";
 import { type ReactNode, memo } from "react";
 import { Link } from "react-router-dom";
@@ -39,17 +40,9 @@ export const AtlasHeader = memo(function AtlasHeader({ actions, className }: Atl
   );
 });
 
-const HEADER_CTA_BASE = "h-auto rounded-full px-4.5 py-2 text-[13px] font-medium";
-
-const HEADER_CTA_VARIANT = {
-  solid: "bg-foreground text-primary-foreground hover:bg-conviction",
-  ghost:
-    "border border-border-strong bg-coverage/[0.06] text-foreground hover:border-foreground/50 hover:bg-coverage/[0.12] hover:text-foreground",
-} as const;
-
 interface HeaderCtaProps {
   to: string;
-  variant: keyof typeof HEADER_CTA_VARIANT;
+  variant: "solid" | "ghost";
   children: ReactNode;
 }
 
@@ -57,8 +50,9 @@ export function HeaderCta({ to, variant, children }: HeaderCtaProps) {
   return (
     <Button
       asChild
-      variant={variant === "ghost" ? "outline" : "default"}
-      className={cn(HEADER_CTA_BASE, HEADER_CTA_VARIANT[variant])}
+      variant={null}
+      size="pillSm"
+      className={variant === "ghost" ? CTA_OUTLINE : CTA_SOLID}
     >
       <Link to={to}>{children}</Link>
     </Button>

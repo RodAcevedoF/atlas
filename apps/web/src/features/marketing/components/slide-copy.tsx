@@ -1,4 +1,5 @@
-import { Button, cn } from "@atlas/ui";
+import { CTA_OUTLINE, CTA_SOLID } from "@/shared/ui/index.ts";
+import { Button } from "@atlas/ui";
 import { Link } from "react-router-dom";
 
 interface Cta {
@@ -14,8 +15,6 @@ interface SlideCopyProps {
   primary: Cta;
   secondary?: Cta;
 }
-
-const CTA_BASE = "h-auto rounded-full px-6 py-3.25 text-[13.5px] font-medium";
 
 export function SlideCopy({
   kicker,
@@ -41,21 +40,11 @@ export function SlideCopy({
       </p>
 
       <div className="mt-7.5 flex translate-y-2.5 gap-2.5 opacity-0 transition-all duration-[450ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
-        <Button
-          asChild
-          className={cn(CTA_BASE, "bg-foreground text-primary-foreground hover:bg-conviction")}
-        >
+        <Button asChild variant={null} size="pill" className={CTA_SOLID}>
           <Link to={primary.href}>{primary.label}</Link>
         </Button>
         {secondary ? (
-          <Button
-            asChild
-            variant="outline"
-            className={cn(
-              CTA_BASE,
-              "border-border-strong bg-coverage/[0.07] text-foreground hover:border-foreground/50 hover:bg-coverage/[0.12] hover:text-foreground",
-            )}
-          >
+          <Button asChild variant={null} size="pill" className={CTA_OUTLINE}>
             <Link to={secondary.href}>{secondary.label}</Link>
           </Button>
         ) : null}

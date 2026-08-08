@@ -1,3 +1,4 @@
+import { eyebrowVariants } from "@/shared/ui/index.ts";
 import { cn } from "@atlas/ui";
 import { SCAN_GRID } from "../../data/landing-content.ts";
 
@@ -6,7 +7,7 @@ interface ScanGridProps {
   hotCells: number[];
 }
 
-const META_CLASS = "font-mono text-[10.5px] uppercase tracking-[0.14em]";
+const META_CLASS = eyebrowVariants({ variant: "meta", tone: "faint" });
 
 function cellFill(isHot: boolean, isLit: boolean): string {
   if (isHot) return "bg-conviction";
@@ -23,7 +24,7 @@ export function ScanGrid({ scanCount, hotCells }: ScanGridProps) {
   return (
     <div className="w-full">
       <div className="flex items-baseline justify-between">
-        <span className={cn(META_CLASS, "text-faint")}>Live scan</span>
+        <span className={META_CLASS}>Live scan</span>
         <span className="font-mono text-[30px] tabular-nums tracking-[-0.02em]">
           {scanCount.toLocaleString()}
         </span>
@@ -45,7 +46,7 @@ export function ScanGrid({ scanCount, hotCells }: ScanGridProps) {
         ))}
       </div>
 
-      <div className={cn("mt-3.5 flex justify-between text-faint", META_CLASS)}>
+      <div className={cn("mt-3.5 flex justify-between", META_CLASS)}>
         <span>194 regions</span>
         <span>9 topics</span>
         <span>refreshing</span>

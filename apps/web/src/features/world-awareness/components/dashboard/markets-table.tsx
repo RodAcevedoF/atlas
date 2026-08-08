@@ -1,3 +1,4 @@
+import { Eyebrow } from "@/shared/ui/index.ts";
 import { formatCompactCurrency, formatDate, toTitleCase } from "@/shared/utils/index.ts";
 import { MARKET_CATEGORIES, MARKET_STATUSES } from "@atlas/domain";
 import { Card } from "@atlas/ui";
@@ -37,9 +38,7 @@ export function MarketsTable({
     <Card className="flex min-w-0 flex-1 flex-col overflow-hidden">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 pb-3 pt-3.5">
         <div>
-          <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-            Signals
-          </span>
+          <Eyebrow variant="header">Signals</Eyebrow>
           <div className="mt-0.75 text-sm font-semibold tracking-[-0.01em]">
             Markets{" "}
             <span className="font-mono text-xs font-normal text-muted-foreground">

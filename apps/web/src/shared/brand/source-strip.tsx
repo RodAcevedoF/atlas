@@ -1,3 +1,4 @@
+import { eyebrowVariants } from "@/shared/ui/index.ts";
 import { cn } from "@atlas/ui";
 import { memo } from "react";
 import { WIRE_SOURCES } from "./atlas-facts.ts";
@@ -11,7 +12,8 @@ export const SourceStrip = memo(function SourceStrip({ trailing, className }: So
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-center gap-x-9 gap-y-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint",
+        "flex flex-wrap items-center justify-center gap-x-9 gap-y-2",
+        eyebrowVariants({ variant: "meta", tone: "faint" }),
         className,
       )}
     >

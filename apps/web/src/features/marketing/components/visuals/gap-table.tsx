@@ -1,9 +1,10 @@
 import { useReducedMotion } from "@/shared/brand";
+import { eyebrowVariants } from "@/shared/ui/index.ts";
 import { cn } from "@atlas/ui";
 import type { CSSProperties } from "react";
 import { GAP_ROWS, type GapRow } from "../../data/landing-content.ts";
 
-const HEAD_CLASS = "font-mono text-[10.5px] uppercase tracking-[0.14em] text-faint";
+const HEAD_CLASS = eyebrowVariants({ variant: "meta", tone: "faint" });
 const BAR_TRACK = "flex h-2 bg-foreground/[0.06]";
 
 interface GapView extends GapRow {
