@@ -59,7 +59,6 @@ function mapStatus(market: KalshiMarket): MarketStatus {
   return STATUS_MAP[market.status] ?? "active";
 }
 
-
 function yesProbability(market: KalshiMarket): number {
   const last = parseNumber(market.last_price_dollars);
   if (last > 0) return last;

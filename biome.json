@@ -23,5 +23,13 @@
   },
   "files": {
     "ignore": ["node_modules", "dist", ".nx", ".turbo", ".venv", ".vault", "*.min.js"]
-  }
+  },
+  "overrides": [
+    {
+      "include": ["nx.json"],
+      "formatter": {
+        "enabled": false
+      }
+    }
+  ]
 }

@@ -1,4 +1,3 @@
-
 export interface KalshiMarket {
   ticker: string;
   event_ticker: string;
