@@ -1,7 +1,10 @@
-import { formatCompactCurrency, formatRelativeTime } from "@/shared/utils/index.ts";
+import { Eyebrow } from "@/shared/ui/index.ts";
+import { formatRelativeTime } from "@/shared/utils/index.ts";
 import type { MarketRecord, WorldEventRecord } from "../../../repositories/market-repository.ts";
-import { TOPIC_COLOR_VAR, TOPIC_LABELS } from "../../../utils/index.ts";
-import { topOutcomeLabel } from "../../../utils/market.ts";
+import { TOPIC_LABELS } from "../../../utils/index.ts";
+import { TopicDot } from "../../topic-dot.tsx";
+import { DetailPanel, DetailPanelBody, DetailPanelHeader } from "./detail-panel.tsx";
+import { MarketMiniRow } from "./market-mini-row.tsx";
 
 const SOURCE_LABELS: Record<string, string> = {
   news: "News",
@@ -19,16 +22,13 @@ interface PinDetailProps {
 
 export function PinDetail({ event, markets }: PinDetailProps) {
   return (
-    <aside className="flex max-h-[70vh] w-93 flex-none flex-col overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="border-b border-border px-4.25 pb-3 pt-3.5">
+    <DetailPanel>
+      <DetailPanelHeader>
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-2 text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-            <span
-              className="h-2 w-2 flex-none rounded-full"
-              style={{ background: TOPIC_COLOR_VAR[event.topic] }}
-            />
+          <Eyebrow variant="header" className="flex items-center gap-2">
+            <TopicDot topic={event.topic} />
             {TOPIC_LABELS[event.topic]}
-          </span>
+          </Eyebrow>
           <span className="font-mono text-[10px] text-muted-foreground">
             {formatRelativeTime(event.timestamp)}
           </span>
@@ -41,32 +41,21 @@ export function PinDetail({ event, markets }: PinDetailProps) {
         >
           {event.title}
         </a>
-        <div className="mt-1.5 text-[10.5px] uppercase tracking-wide text-muted-foreground">
+        <Eyebrow variant="header" className="mt-1.5 block">
           {sourceLabel(event.source)}
-        </div>
-      </div>
+        </Eyebrow>
+      </DetailPanelHeader>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-4.25 pb-4 pt-3.5">
-        <div className="text-[10px] uppercase tracking-[0.13em] text-muted-foreground">
-          Related markets
-        </div>
+      <DetailPanelBody className="gap-2.5">
+        <Eyebrow variant="section">Related markets</Eyebrow>
         {markets.length === 0 ? (
           <div className="text-[12px] text-muted-foreground">
             No related prediction markets for this topic and region.
           </div>
         ) : (
-          markets.map((market) => (
-            <div key={market.id} className="flex flex-col gap-0.5">
-              <span className="text-[12px] leading-snug text-foreground/90">{market.title}</span>
-              <div className="flex items-center gap-2 text-[10.5px] text-muted-foreground">
-                <span>{topOutcomeLabel(market)}</span>
-                <span aria-hidden="true">·</span>
-                <span className="font-mono">{formatCompactCurrency(market.volumeUsd)}</span>
-              </div>
-            </div>
-          ))
+          markets.map((market) => <MarketMiniRow key={market.id} market={market} />)
         )}
-      </div>
-    </aside>
+      </DetailPanelBody>
+    </DetailPanel>
   );
 }

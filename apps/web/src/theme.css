@@ -107,6 +107,7 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-faint: var(--faint);
+  --color-segment-active: var(--segment-active);
   --color-coverage: var(--coverage);
   --color-conviction: var(--conviction);
   --color-gap-negative: var(--gap-negative);

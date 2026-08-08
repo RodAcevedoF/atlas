@@ -1,26 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { TopicFilter } from "../../../infra/store/dashboard.filters.ts";
-import { CURATED_TOPICS, TOPIC_COLOR_VAR, TOPIC_LABELS } from "../../../utils/index.ts";
+import { CURATED_TOPICS, TOPIC_LABELS } from "../../../utils/index.ts";
+import { TopicDot } from "../../topic-dot.tsx";
 import type { TopicSignalCounts } from "../utils/topic-counts.ts";
 
 const ALL_TOPICS_LABEL = "All topics";
 
 function labelFor(topic: TopicFilter): string {
   return topic === "" ? ALL_TOPICS_LABEL : TOPIC_LABELS[topic];
-}
-
-function colorFor(topic: TopicFilter): string {
-  return topic === "" ? "var(--primary)" : TOPIC_COLOR_VAR[topic];
-}
-
-function TopicDot({ topic }: { topic: TopicFilter }) {
-  return (
-    <span
-      className="h-2 w-2 flex-none rounded-full"
-      style={{ background: colorFor(topic) }}
-      aria-hidden="true"
-    />
-  );
 }
 
 function TopicRow({
@@ -40,7 +27,9 @@ function TopicRow({
       onClick={() => onPick(topic)}
       aria-pressed={isActive}
       className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] transition-colors ${
-        isActive ? "bg-white/8 text-foreground" : "text-muted-foreground hover:text-foreground"
+        isActive
+          ? "bg-segment-active text-foreground"
+          : "text-muted-foreground hover:text-foreground"
       }`}
     >
       <TopicDot topic={topic} />

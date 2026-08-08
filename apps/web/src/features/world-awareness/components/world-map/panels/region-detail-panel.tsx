@@ -1,4 +1,5 @@
-import { formatCompactCurrency, formatRelativeTime } from "@/shared/utils/index.ts";
+import { Eyebrow } from "@/shared/ui/index.ts";
+import { formatRelativeTime } from "@/shared/utils/index.ts";
 import { Button } from "@atlas/ui";
 import type {
   GeoRegion,
@@ -11,7 +12,14 @@ import {
   TOPIC_COLOR_VAR,
   TOPIC_LABELS,
 } from "../../../utils/index.ts";
-import { topOutcomeLabel } from "../../../utils/market.ts";
+import { TopicDot } from "../../topic-dot.tsx";
+import {
+  DetailPanel,
+  DetailPanelBody,
+  DetailPanelFooter,
+  DetailPanelHeader,
+} from "./detail-panel.tsx";
+import { MarketMiniRow } from "./market-mini-row.tsx";
 
 interface RegionDetailPanelProps {
   region: GeoRegion | null;
@@ -27,18 +35,12 @@ const STANCE_LABELS: Record<CrossStance, string> = {
   quiet: "Quiet",
 };
 
-function SectionLabel({ children }: { children: string }) {
-  return (
-    <div className="text-[10px] uppercase tracking-[0.13em] text-muted-foreground">{children}</div>
-  );
-}
-
 function CrossSection({ cross }: { cross: RegionCross }) {
   const isBoth = cross.stance === "both";
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex items-center justify-between">
-        <SectionLabel>Attention vs. expectation</SectionLabel>
+        <Eyebrow variant="section">Attention vs. expectation</Eyebrow>
         <span
           className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
             isBoth ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
@@ -85,18 +87,7 @@ function CrossSection({ cross }: { cross: RegionCross }) {
             {cross.markets.length === 0 ? (
               <div className="text-[11.5px] text-muted-foreground">No markets.</div>
             ) : (
-              cross.markets.map((market) => (
-                <div key={market.id} className="flex flex-col gap-0.5">
-                  <span className="text-[12px] leading-snug text-foreground/90">
-                    {market.title}
-                  </span>
-                  <div className="flex items-center gap-2 text-[10.5px] text-muted-foreground">
-                    <span>{topOutcomeLabel(market)}</span>
-                    <span aria-hidden="true">·</span>
-                    <span className="font-mono">{formatCompactCurrency(market.volumeUsd)}</span>
-                  </div>
-                </div>
-              ))
+              cross.markets.map((market) => <MarketMiniRow key={market.id} market={market} />)
             )}
           </div>
         </div>
@@ -115,15 +106,12 @@ function TopicBars({ breakdown }: { breakdown: RegionTopicBreakdownRecord | unde
   }
   return (
     <div className="flex flex-col gap-3.25">
-      <SectionLabel>Topic breakdown</SectionLabel>
+      <Eyebrow variant="section">Topic breakdown</Eyebrow>
       {topics.map((topic) => (
         <div key={topic.topic} className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-[12.5px]">
             <span className="flex items-center gap-2 font-medium text-foreground">
-              <span
-                className="h-2 w-2 flex-none rounded-full"
-                style={{ background: TOPIC_COLOR_VAR[topic.topic] }}
-              />
+              <TopicDot topic={topic.topic} />
               {TOPIC_LABELS[topic.topic]}
             </span>
             <span className="font-mono text-muted-foreground">{topic.signalCount}</span>
@@ -177,11 +165,9 @@ export function RegionDetailPanel({
   onOpenScan,
 }: RegionDetailPanelProps) {
   return (
-    <aside className="flex max-h-[70vh] w-93 flex-none flex-col overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="border-b border-border px-4.25 pb-3 pt-3.5">
-        <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-          Region detail
-        </span>
+    <DetailPanel>
+      <DetailPanelHeader>
+        <Eyebrow variant="header">Region detail</Eyebrow>
         {region ? (
           <div className="mt-2 flex items-end justify-between gap-2.5">
             <div className="flex items-center gap-2.5">
@@ -203,23 +189,23 @@ export function RegionDetailPanel({
             </div>
           </div>
         ) : null}
-      </div>
+      </DetailPanelHeader>
 
       {!region ? (
         <EmptyState />
       ) : (
         <>
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4.25 pb-4 pt-3.5">
+          <DetailPanelBody className="gap-4">
             {cross ? <CrossSection cross={cross} /> : null}
             <TopicBars breakdown={breakdown} />
-          </div>
-          <div className="flex-none border-t border-border p-3">
+          </DetailPanelBody>
+          <DetailPanelFooter>
             <Button size="sm" variant="secondary" className="w-full" onClick={onOpenScan}>
               Open full scan
             </Button>
-          </div>
+          </DetailPanelFooter>
         </>
       )}
-    </aside>
+    </DetailPanel>
   );
 }

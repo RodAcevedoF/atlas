@@ -1,5 +1,6 @@
 import type { Topic } from "../../../repositories/market-repository.ts";
 import { TOPIC_LABELS } from "../../../utils/index.ts";
+import { TopicDot } from "../../topic-dot.tsx";
 import type { MapFillMode } from "../types.ts";
 
 function ModeToggle({
@@ -59,10 +60,7 @@ function TopicLegend({ topics }: { topics: Topic[] }) {
     <div className="flex flex-col gap-1">
       {topics.map((topic) => (
         <span key={topic} className="flex items-center gap-1.5">
-          <span
-            className="h-2 w-2 flex-none rounded-full"
-            style={{ background: `var(--topic-${topic})` }}
-          />
+          <TopicDot topic={topic} />
           <span className="truncate text-[10px] text-muted-foreground">{TOPIC_LABELS[topic]}</span>
         </span>
       ))}

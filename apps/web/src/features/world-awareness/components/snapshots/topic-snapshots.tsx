@@ -3,7 +3,8 @@ import Autoplay from "embla-carousel-autoplay";
 import useEmblaCarousel from "embla-carousel-react";
 import { useCallback } from "react";
 import type { TopicSnapshotRecord } from "../../repositories/market-repository.ts";
-import { CURATED_TOPICS, TOPIC_COLOR_VAR, TOPIC_LABELS } from "../../utils/index.ts";
+import { CURATED_TOPICS, TOPIC_LABELS } from "../../utils/index.ts";
+import { TopicDot } from "../topic-dot.tsx";
 import { TemperatureMeter } from "./temperature-meter.tsx";
 
 const THIN_SOURCE_THRESHOLD = 2;
@@ -50,10 +51,7 @@ function SnapshotCard({ snapshot }: { snapshot: TopicSnapshotRecord }) {
   return (
     <Card className="flex w-64.5 flex-none flex-col gap-2.25 p-3.5">
       <span className="flex items-center gap-1.75 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
-        <span
-          className="h-2 w-2 flex-none rounded-full"
-          style={{ background: TOPIC_COLOR_VAR[snapshot.topic] }}
-        />
+        <TopicDot topic={snapshot.topic} />
         {TOPIC_LABELS[snapshot.topic]}
       </span>
       <p className="line-clamp-2 min-h-[2.5em] text-[13px] leading-[1.4] text-foreground">
