@@ -5,6 +5,7 @@ import {
   buildWave,
   useReducedMotion,
 } from "@/shared/brand";
+import { eyebrowVariants } from "@/shared/ui";
 import { useMemo } from "react";
 
 type Mode = "login" | "register";
@@ -28,7 +29,7 @@ const PITCH: Record<Mode, PitchCopy> = {
   },
 };
 
-const STAT_ROW = "font-mono text-[10.5px] uppercase tracking-[0.12em] text-faint";
+const STAT_ROW = eyebrowVariants({ variant: "meta" });
 
 interface AuthPitchPanelProps {
   mode: Mode;

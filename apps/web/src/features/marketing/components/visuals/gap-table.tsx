@@ -4,7 +4,7 @@ import { cn } from "@atlas/ui";
 import type { CSSProperties } from "react";
 import { GAP_ROWS, type GapRow } from "../../data/landing-content.ts";
 
-const HEAD_CLASS = eyebrowVariants({ variant: "meta", tone: "faint" });
+const HEAD_CLASS = eyebrowVariants({ variant: "meta" });
 const BAR_TRACK = "flex h-2 bg-foreground/[0.06]";
 
 interface GapView extends GapRow {

@@ -1,3 +1,4 @@
+import { Eyebrow } from "@/shared/ui";
 import { Button, cn, useToast } from "@atlas/ui";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -40,7 +41,6 @@ const FORM: Record<Mode, FormCopy> = {
   },
 };
 
-const LABEL_CLASS = "font-mono text-[10px] uppercase tracking-[0.16em] text-faint";
 const INPUT_CLASS =
   "w-full rounded-[10px] border border-border bg-coverage/[0.05] px-3.5 py-3 text-[15px] text-foreground outline-none transition-colors placeholder:text-foreground/30 focus:border-conviction focus:bg-conviction/[0.06]";
 const OAUTH_CLASS =
@@ -94,7 +94,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         className="flex flex-col gap-4"
       >
         <label htmlFor="auth-email" className="flex flex-col gap-2">
-          <span className={LABEL_CLASS}>Work email</span>
+          <Eyebrow variant="meta">Work email</Eyebrow>
           <input
             id="auth-email"
             type="email"
@@ -108,7 +108,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         </label>
 
         <label htmlFor="auth-password" className="flex flex-col gap-2">
-          <span className={LABEL_CLASS}>Password</span>
+          <Eyebrow variant="meta">Password</Eyebrow>
           <input
             id="auth-password"
             type="password"

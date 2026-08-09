@@ -7,7 +7,7 @@ interface ScanGridProps {
   hotCells: number[];
 }
 
-const META_CLASS = eyebrowVariants({ variant: "meta", tone: "faint" });
+const META_CLASS = eyebrowVariants({ variant: "meta" });
 
 function cellFill(isHot: boolean, isLit: boolean): string {
   if (isHot) return "bg-conviction";

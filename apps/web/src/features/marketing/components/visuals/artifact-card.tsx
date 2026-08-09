@@ -3,8 +3,8 @@ import { eyebrowVariants } from "@/shared/ui/index.ts";
 import { cn } from "@atlas/ui";
 import { ARTIFACT } from "../../data/landing-content.ts";
 
-const META_CLASS = eyebrowVariants({ variant: "meta", tone: "faint" });
-const STAT_LABEL = "text-[9.5px] uppercase tracking-[0.14em] text-faint";
+const META_CLASS = eyebrowVariants({ variant: "meta" });
+const STAT_LABEL = cn(eyebrowVariants({ variant: "header" }), "text-faint");
 const STAT_VALUE = "mt-1.5 font-mono text-[23px] tracking-[-0.02em]";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

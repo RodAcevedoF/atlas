@@ -13,7 +13,7 @@ export const SourceStrip = memo(function SourceStrip({ trailing, className }: So
     <div
       className={cn(
         "flex flex-wrap items-center justify-center gap-x-9 gap-y-2",
-        eyebrowVariants({ variant: "meta", tone: "faint" }),
+        eyebrowVariants({ variant: "meta" }),
         className,
       )}
     >

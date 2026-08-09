@@ -1,3 +1,4 @@
+import { Eyebrow } from "@/shared/ui";
 import type { Topic } from "../../../repositories/market-repository.ts";
 import { TOPIC_LABELS } from "../../../utils/index.ts";
 import { TopicDot } from "../../topic-dot.tsx";
@@ -35,9 +36,7 @@ function ModeToggle({
 function TendencyLegend() {
   return (
     <div className="flex items-center gap-2">
-      <span className="font-mono text-[9px] uppercase tracking-wide text-muted-foreground">
-        Neg
-      </span>
+      <Eyebrow>Neg</Eyebrow>
       <div
         className="h-1.5 flex-1 rounded-full"
         style={{
@@ -45,9 +44,7 @@ function TendencyLegend() {
             "linear-gradient(90deg, var(--sentiment-negative), var(--sentiment-neutral), var(--sentiment-positive))",
         }}
       />
-      <span className="font-mono text-[9px] uppercase tracking-wide text-muted-foreground">
-        Pos
-      </span>
+      <Eyebrow>Pos</Eyebrow>
     </div>
   );
 }

@@ -40,7 +40,7 @@ function CrossSection({ cross }: { cross: RegionCross }) {
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex items-center justify-between">
-        <Eyebrow variant="section">Attention vs. expectation</Eyebrow>
+        <Eyebrow variant="header">Attention vs. expectation</Eyebrow>
         <span
           className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
             isBoth ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
@@ -106,7 +106,7 @@ function TopicBars({ breakdown }: { breakdown: RegionTopicBreakdownRecord | unde
   }
   return (
     <div className="flex flex-col gap-3.25">
-      <Eyebrow variant="section">Topic breakdown</Eyebrow>
+      <Eyebrow variant="header">Topic breakdown</Eyebrow>
       {topics.map((topic) => (
         <div key={topic.topic} className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-[12.5px]">

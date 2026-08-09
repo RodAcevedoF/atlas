@@ -41,13 +41,13 @@ export function PinDetail({ event, markets }: PinDetailProps) {
         >
           {event.title}
         </a>
-        <Eyebrow variant="header" className="mt-1.5 block">
+        <Eyebrow variant="meta" className="mt-1.5 block">
           {sourceLabel(event.source)}
         </Eyebrow>
       </DetailPanelHeader>
 
       <DetailPanelBody className="gap-2.5">
-        <Eyebrow variant="section">Related markets</Eyebrow>
+        <Eyebrow variant="header">Related markets</Eyebrow>
         {markets.length === 0 ? (
           <div className="text-[12px] text-muted-foreground">
             No related prediction markets for this topic and region.
