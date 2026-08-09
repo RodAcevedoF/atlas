@@ -1,3 +1,11 @@
+import { eyebrowVariants } from "@/shared/ui";
+import { cn } from "@atlas/ui";
+
+const RESET_CLASS = cn(
+  eyebrowVariants({ variant: "card" }),
+  "flex h-8.5 items-center px-3.25 hover:bg-white/6 hover:text-foreground",
+);
+
 interface ZoomControlProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -23,11 +31,7 @@ export function ZoomControl({ onZoomIn, onZoomOut, onReset }: ZoomControlProps) 
       >
         +
       </button>
-      <button
-        type="button"
-        onClick={onReset}
-        className="flex h-8.5 items-center px-3.25 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground hover:bg-white/6 hover:text-foreground"
-      >
+      <button type="button" onClick={onReset} className={RESET_CLASS}>
         Reset
       </button>
     </div>

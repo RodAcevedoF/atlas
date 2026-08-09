@@ -1,4 +1,4 @@
-import { Eyebrow } from "@/shared/ui";
+import { Eyebrow, eyebrowVariants } from "@/shared/ui";
 import { Button, cn, useToast } from "@atlas/ui";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -43,6 +43,11 @@ const FORM: Record<Mode, FormCopy> = {
 
 const INPUT_CLASS =
   "w-full rounded-[10px] border border-border bg-coverage/[0.05] px-3.5 py-3 text-[15px] text-foreground outline-none transition-colors placeholder:text-foreground/30 focus:border-conviction focus:bg-conviction/[0.06]";
+
+const DIVIDER_CLASS = cn(
+  eyebrowVariants({ variant: "card" }),
+  "my-5.5 flex items-center gap-3 text-foreground/30",
+);
 const OAUTH_CLASS =
   "h-auto justify-center gap-2.5 rounded-[10px] border-border bg-coverage/[0.07] py-3 text-[13.5px] text-foreground hover:border-border-strong hover:bg-coverage/[0.12] hover:text-foreground";
 
@@ -80,7 +85,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         <OAuthButton provider="github" variant="outline" className={OAUTH_CLASS} />
       </div>
 
-      <div className="my-5.5 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/30">
+      <div className={DIVIDER_CLASS}>
         <span className="h-px flex-1 bg-border" />
         <span>or</span>
         <span className="h-px flex-1 bg-border" />

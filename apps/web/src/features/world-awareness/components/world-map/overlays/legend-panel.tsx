@@ -1,37 +1,13 @@
-import { Eyebrow } from "@/shared/ui";
+import { Eyebrow, SegmentedControl } from "@/shared/ui";
 import type { Topic } from "../../../repositories/market-repository.ts";
 import { TOPIC_LABELS } from "../../../utils/index.ts";
 import { TopicDot } from "../../topic-dot.tsx";
 import type { MapFillMode } from "../types.ts";
 
-function ModeToggle({
-  mode,
-  onChange,
-}: { mode: MapFillMode; onChange: (mode: MapFillMode) => void }) {
-  const modes: Array<{ id: MapFillMode; label: string }> = [
-    { id: "topic", label: "Topic" },
-    { id: "tendency", label: "Tendency" },
-  ];
-  return (
-    <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-0.75">
-      {modes.map(({ id, label }) => (
-        <button
-          key={id}
-          type="button"
-          onClick={() => onChange(id)}
-          aria-pressed={mode === id}
-          className={`rounded-md py-1 text-[10px] font-semibold uppercase tracking-wide transition-colors ${
-            mode === id
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-}
+const MODES: ReadonlyArray<{ id: MapFillMode; label: string }> = [
+  { id: "topic", label: "Topic" },
+  { id: "tendency", label: "Tendency" },
+];
 
 function TendencyLegend() {
   return (
@@ -74,7 +50,7 @@ interface LegendPanelProps {
 export function LegendPanel({ mode, onModeChange, topics }: LegendPanelProps) {
   return (
     <div className="absolute right-4 top-4 z-5 flex w-46 flex-col gap-2.5 rounded-xl border border-border bg-card/70 p-2.5 backdrop-blur-md">
-      <ModeToggle mode={mode} onChange={onModeChange} />
+      <SegmentedControl items={MODES} activeId={mode} onSelect={onModeChange} />
       <div className="h-px w-full bg-border" />
       {mode === "tendency" ? <TendencyLegend /> : <TopicLegend topics={topics} />}
     </div>

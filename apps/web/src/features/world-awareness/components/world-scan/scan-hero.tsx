@@ -1,7 +1,12 @@
-import { Eyebrow } from "@/shared/ui";
+import { Eyebrow, eyebrowVariants } from "@/shared/ui";
 import { formatRelativeTime } from "@/shared/utils/index.ts";
 import { Card, cn } from "@atlas/ui";
 import type { WorldScanReportRecord } from "../../repositories/market-repository.ts";
+
+const META_STRIP_CLASS = cn(
+  eyebrowVariants({ variant: "meta" }),
+  "flex flex-wrap gap-x-6.5 gap-y-1.5 border-t border-border pt-4 text-muted-foreground",
+);
 
 interface ScanHeroProps {
   report: WorldScanReportRecord | null;
@@ -17,7 +22,7 @@ function MetaStrip({
   scopeLabel: string;
 }) {
   return (
-    <div className="flex flex-wrap gap-x-6.5 gap-y-1.5 border-t border-border pt-4 font-mono text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground">
+    <div className={META_STRIP_CLASS}>
       {report ? (
         <>
           <span>{report.header.newsSignalCount} news signals</span>

@@ -1,4 +1,6 @@
 import { type Carousel, CarouselDots, type LivePulse } from "@/shared/brand";
+import { eyebrowVariants } from "@/shared/ui";
+import { cn } from "@atlas/ui";
 import type { CSSProperties } from "react";
 import { SLIDES, type SlideKind } from "../data/landing-content.ts";
 import { SlideCopy } from "./slide-copy.tsx";
@@ -6,6 +8,11 @@ import { ArtifactCard } from "./visuals/artifact-card.tsx";
 import { GapTable } from "./visuals/gap-table.tsx";
 import { PremiseWaves } from "./visuals/premise-waves.tsx";
 import { ScanGrid } from "./visuals/scan-grid.tsx";
+
+const SLIDE_LABEL_CLASS = cn(
+  eyebrowVariants({ variant: "header" }),
+  "absolute bottom-7 left-7 flex items-center gap-3 text-faint md:left-14",
+);
 
 interface Cta {
   label: string;
@@ -70,7 +77,7 @@ export function HeroCarousel({ carousel, pulse, primary, secondary }: HeroCarous
         </div>
       </div>
 
-      <div className="absolute bottom-7 left-7 flex items-center gap-3 text-[11.5px] uppercase tracking-[0.12em] text-faint md:left-14">
+      <div className={SLIDE_LABEL_CLASS}>
         <span className="font-mono tabular-nums">{slideNo}</span>
         <span className="h-px w-6.5 bg-foreground/20" />
         <span>{slide.label}</span>

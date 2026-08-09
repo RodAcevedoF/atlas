@@ -1,5 +1,12 @@
+import { Eyebrow, eyebrowVariants } from "@/shared/ui";
+import { cn } from "@atlas/ui";
 import type { ReactNode } from "react";
 import { AppNavTabs } from "./app-nav-tabs.tsx";
+
+const LIVE_CLASS = cn(
+  eyebrowVariants({ variant: "meta" }),
+  "flex items-center gap-1.75 text-muted-foreground",
+);
 
 interface AppHeaderProps {
   subtitle: string;
@@ -9,7 +16,7 @@ interface AppHeaderProps {
 
 function LivePulse() {
   return (
-    <div className="flex items-center gap-1.75 font-mono text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground">
+    <div className={LIVE_CLASS}>
       <span
         className="h-1.75 w-1.75 rounded-full bg-positive"
         style={{
@@ -29,9 +36,7 @@ export function AppHeader({ subtitle, actions, account }: AppHeaderProps) {
         <img src="/atlas_emblem.svg" alt="Atlas" className="h-6.5 w-6.5" />
         <div className="flex flex-col leading-none">
           <span className="text-base font-semibold tracking-[-0.01em]">Atlas</span>
-          <span className="mt-0.75 font-mono text-[8.5px] uppercase tracking-[0.18em] text-muted-foreground">
-            {subtitle}
-          </span>
+          <Eyebrow className="mt-0.75">{subtitle}</Eyebrow>
         </div>
       </div>
 

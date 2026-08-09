@@ -183,9 +183,9 @@ export function RegionDetailPanel({
               <div className="font-mono text-[20px] font-medium text-primary">
                 {(breakdown?.signalCount ?? 0).toLocaleString()}
               </div>
-              <div className="text-[9.5px] uppercase tracking-widest text-muted-foreground">
+              <Eyebrow variant="header" className="block">
                 signals
-              </div>
+              </Eyebrow>
             </div>
           </div>
         ) : null}

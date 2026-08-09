@@ -1,6 +1,11 @@
-import { CTA_OUTLINE, CTA_SOLID } from "@/shared/ui/index.ts";
-import { Button } from "@atlas/ui";
+import { CTA_OUTLINE, CTA_SOLID, eyebrowVariants } from "@/shared/ui/index.ts";
+import { Button, cn } from "@atlas/ui";
 import { Link } from "react-router-dom";
+
+const KICKER_CLASS = cn(
+  eyebrowVariants({ variant: "header" }),
+  "inline-flex items-center gap-2.25 rounded-full border border-border bg-coverage/[0.04] px-3.5 py-1.75 text-foreground/80",
+);
 
 interface Cta {
   label: string;
@@ -26,7 +31,7 @@ export function SlideCopy({
 }: SlideCopyProps) {
   return (
     <div>
-      <div className="inline-flex items-center gap-2.25 rounded-full border border-border bg-coverage/[0.04] px-3.5 py-1.75 text-[11.5px] uppercase tracking-[0.12em] text-foreground/80">
+      <div className={KICKER_CLASS}>
         <span className="h-1.25 w-1.25 rounded-full bg-conviction" />
         {kicker}
       </div>

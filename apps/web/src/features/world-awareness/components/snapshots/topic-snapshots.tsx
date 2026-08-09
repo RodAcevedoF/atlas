@@ -1,3 +1,4 @@
+import { Eyebrow, eyebrowVariants } from "@/shared/ui";
 import { Card, cn } from "@atlas/ui";
 import Autoplay from "embla-carousel-autoplay";
 import useEmblaCarousel from "embla-carousel-react";
@@ -8,6 +9,8 @@ import { TopicDot } from "../topic-dot.tsx";
 import { TemperatureMeter } from "./temperature-meter.tsx";
 
 const THIN_SOURCE_THRESHOLD = 2;
+
+const RAIL_HEADING_CLASS = cn(eyebrowVariants({ variant: "meta" }), "font-medium text-foreground");
 
 const EMBLA_OPTIONS = {
   align: "start",
@@ -50,10 +53,10 @@ function SnapshotCard({ snapshot }: { snapshot: TopicSnapshotRecord }) {
   const isThin = snapshot.corroboration.sourceCount < THIN_SOURCE_THRESHOLD;
   return (
     <Card className="flex w-64.5 flex-none flex-col gap-2.25 p-3.5">
-      <span className="flex items-center gap-1.75 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
+      <Eyebrow className="flex items-center gap-1.75">
         <TopicDot topic={snapshot.topic} />
         {TOPIC_LABELS[snapshot.topic]}
-      </span>
+      </Eyebrow>
       <p className="line-clamp-2 min-h-[2.5em] text-[13px] leading-[1.4] text-foreground">
         {snapshot.headline ?? "No recent signals"}
       </p>
@@ -107,13 +110,9 @@ function RailChevron({ side, label, onClick }: RailChevronProps) {
 function RailHeading({ count }: { count: number }) {
   return (
     <div className="flex items-center gap-3.5 px-6">
-      <h2 className="font-mono text-[10.5px] font-medium uppercase tracking-[0.2em] text-foreground">
-        Latest by topic
-      </h2>
+      <h2 className={RAIL_HEADING_CLASS}>Latest by topic</h2>
       <span className="h-px flex-1 bg-border" />
-      <span className="font-mono text-[9.5px] uppercase tracking-widest text-faint">
-        {count} topics
-      </span>
+      <Eyebrow variant="meta">{count} topics</Eyebrow>
     </div>
   );
 }

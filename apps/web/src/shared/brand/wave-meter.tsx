@@ -1,6 +1,9 @@
+import { eyebrowVariants } from "@/shared/ui";
 import { cn } from "@atlas/ui";
 import type { CSSProperties } from "react";
 import type { WaveBar } from "./wave.ts";
+
+const LABEL_BASE = cn(eyebrowVariants({ variant: "meta" }), "flex justify-between");
 
 type WaveVariant = "coverage" | "conviction";
 
@@ -32,12 +35,7 @@ export function WaveMeter({ label, value, bars, variant, trackClassName }: WaveM
 
   return (
     <div>
-      <div
-        className={cn(
-          "flex justify-between font-mono text-[11px] uppercase tracking-[0.14em]",
-          styles.label,
-        )}
-      >
+      <div className={cn(LABEL_BASE, styles.label)}>
         <span>{label}</span>
         <span className={cn("tabular-nums", styles.value)}>{value}</span>
       </div>

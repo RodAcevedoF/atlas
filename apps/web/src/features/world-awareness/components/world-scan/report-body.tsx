@@ -1,4 +1,4 @@
-import { CHIP_BASE } from "@/shared/ui";
+import { CHIP_BASE, Eyebrow } from "@/shared/ui";
 import { cn } from "@atlas/ui";
 import type {
   WorldScanHistoryItem,
@@ -8,7 +8,9 @@ import { REGION_LABELS, TOPIC_LABELS } from "../../utils/index.ts";
 
 function SectionLabel({ children }: { children: string }) {
   return (
-    <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{children}</div>
+    <Eyebrow variant="header" className="block">
+      {children}
+    </Eyebrow>
   );
 }
 

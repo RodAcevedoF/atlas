@@ -6,6 +6,7 @@ import {
   useReducedMotion,
 } from "@/shared/brand";
 import { eyebrowVariants } from "@/shared/ui";
+import { cn } from "@atlas/ui";
 import { useMemo } from "react";
 
 type Mode = "login" | "register";
@@ -30,6 +31,11 @@ const PITCH: Record<Mode, PitchCopy> = {
 };
 
 const STAT_ROW = eyebrowVariants({ variant: "meta" });
+
+const PITCH_PILL = cn(
+  eyebrowVariants({ variant: "meta" }),
+  "inline-flex items-center gap-2.25 rounded-full border border-border bg-coverage/6 px-3.5 py-1.75 text-foreground/78",
+);
 
 interface AuthPitchPanelProps {
   mode: Mode;
@@ -57,7 +63,7 @@ export function AuthPitchPanel({ mode, pulse }: AuthPitchPanelProps) {
 
       <div className="relative flex h-full flex-col justify-between gap-10">
         <div>
-          <div className="inline-flex items-center gap-2.25 rounded-full border border-border bg-coverage/6 px-3.5 py-1.75 font-mono text-[11px] uppercase tracking-widest text-foreground/78">
+          <div className={PITCH_PILL}>
             <span className="h-1.25 w-1.25 rounded-full bg-conviction" />
             Coverage × Conviction
           </div>

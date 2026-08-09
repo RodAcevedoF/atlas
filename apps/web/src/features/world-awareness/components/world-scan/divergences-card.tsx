@@ -13,9 +13,9 @@ function DivergenceRow({ divergence }: { divergence: WorldScanDivergenceRecord }
     <div className="flex flex-col gap-1.75 border-b border-border py-3 last:border-b-0">
       <div className="flex items-baseline justify-between gap-2.5">
         <span className="text-[13px] leading-[1.4] text-foreground">{divergence.topic}</span>
-        <span className="whitespace-nowrap font-mono text-[9.5px] uppercase tracking-[0.1em] text-faint">
+        <Eyebrow variant="meta" className="whitespace-nowrap">
           {divergence.region}
-        </span>
+        </Eyebrow>
       </div>
       <p className="text-[12px] leading-snug text-muted-foreground">
         <span className="text-coverage">Attention </span>
@@ -36,9 +36,7 @@ export function DivergencesCard({ divergences, className }: DivergencesCardProps
     <Card className={cn("flex flex-col gap-3.5 p-5", className)}>
       <div className="flex items-center justify-between gap-3">
         <Eyebrow>Where markets disagree</Eyebrow>
-        <span className="font-mono text-[9.5px] uppercase tracking-[0.08em] text-faint">
-          {divergences.length} movers
-        </span>
+        <Eyebrow variant="meta">{divergences.length} movers</Eyebrow>
       </div>
       <div className="flex flex-col">
         {divergences.map((divergence) => (

@@ -1,3 +1,5 @@
+import { Eyebrow } from "@/shared/ui";
+
 export interface MapStatsValues {
   signals: number;
   regions: number;
@@ -7,9 +9,7 @@ export interface MapStatsValues {
 function Stat({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
   return (
     <div>
-      <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
-      </div>
+      <Eyebrow className="block">{label}</Eyebrow>
       <div
         className={`mt-0.75 text-[17px] font-semibold ${accent ? "text-primary" : "text-foreground"}`}
       >
