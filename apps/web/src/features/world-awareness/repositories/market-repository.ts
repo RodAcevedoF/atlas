@@ -1,20 +1,19 @@
-import type { GeoRegion, MarketCategory, MarketStatus, SignalSource, Topic } from "@atlas/domain";
+import type {
+  GeoRegion,
+  MarketCategory,
+  MarketStatus,
+  RegionSummary,
+  RegionTopicBreakdown,
+  SignalSource,
+  Topic,
+  TopicCount,
+} from "@atlas/domain";
 
 export type { GeoRegion, MarketCategory, MarketStatus, SignalSource, Topic };
 
-export interface TopicCountRecord {
-  topic: Topic;
-  signalCount: number;
-  totalWeight: number;
-}
+export type TopicCountRecord = TopicCount;
 
-export interface RegionTopicBreakdownRecord {
-  region: GeoRegion;
-  signalCount: number;
-  totalWeight: number;
-  sentiment: number;
-  topics: TopicCountRecord[];
-}
+export type RegionTopicBreakdownRecord = RegionTopicBreakdown;
 
 export interface WorldEventRecord {
   id: string;
@@ -27,14 +26,7 @@ export interface WorldEventRecord {
   weight: number;
 }
 
-export interface RegionSummaryRecord {
-  region: GeoRegion;
-  marketCount: number;
-  eventCount: number;
-  activeMarketCount: number;
-  totalVolumeUsd: number;
-  totalLiquidityUsd: number;
-}
+export type RegionSummaryRecord = RegionSummary;
 
 export interface MarketOutcome {
   id: string;
