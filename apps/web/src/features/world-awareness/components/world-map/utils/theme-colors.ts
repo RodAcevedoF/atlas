@@ -22,12 +22,12 @@ export function primaryHex(): string {
   return resolveToken("--primary");
 }
 
-export function primaryForegroundHex(): string {
-  return resolveToken("--primary-foreground");
+export function orbRimHex(): string {
+  return resolveToken("--card-foreground");
 }
 
-export function pinStrokeHex(): string {
-  return resolveToken("--card");
+export function orbShadowHex(): string {
+  return resolveToken("--card-deep");
 }
 
 export function emptyFillHex(): string {

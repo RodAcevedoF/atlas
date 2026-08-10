@@ -41,7 +41,7 @@ const REGION_KEYWORDS: Array<{
   },
   {
     region: "middle-east",
-    keywords: ["israel", "iran", "gaz", "gaza", "saudi", "qatar", "uae", "lebanon", "syria"],
+    keywords: ["israel", "iran", "gaza", "saudi", "qatar", "uae", "lebanon", "syria"],
   },
   {
     region: "africa",
@@ -77,6 +77,7 @@ const TOPIC_KEYWORDS: Array<{
       "war",
       "conflict",
       "attack",
+      "attacked",
       "military",
       "missile",
       "strike",
@@ -94,6 +95,8 @@ const TOPIC_KEYWORDS: Array<{
       "parliament",
       "minister",
       "vote",
+      "voted",
+      "voting",
       "campaign",
       "senate",
       "government",
@@ -120,8 +123,9 @@ const TOPIC_KEYWORDS: Array<{
     topic: "business-finance",
     keywords: [
       "market",
-      "stocks",
+      "stock",
       "crypto",
+      "cryptocurrency",
       "bitcoin",
       "earnings",
       "merger",
@@ -140,6 +144,7 @@ const TOPIC_KEYWORDS: Array<{
       "chip",
       "semiconductor",
       "tech",
+      "technology",
       "robot",
       "cyber",
       "quantum",
@@ -206,6 +211,8 @@ const TOPIC_KEYWORDS: Array<{
 
 const POSITIVE_KEYWORDS: readonly string[] = [
   "win",
+  "won",
+  "winning",
   "victory",
   "growth",
   "recovery",
@@ -232,20 +239,32 @@ const NEGATIVE_KEYWORDS: readonly string[] = [
   "decline",
   "conflict",
   "death",
+  "casualty",
   "casualties",
   "outbreak",
   "disaster",
-  "layoffs",
+  "layoff",
   "default",
   "unrest",
   "protest",
 ];
 
 function buildHaystack(parts: Array<string | null | undefined>): string {
-  return parts
+  const joined = parts
     .filter((value): value is string => Boolean(value?.trim()))
     .join(" ")
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+  return joined ? ` ${joined} ` : "";
+}
+
+function matchesKeyword(haystack: string, keyword: string): boolean {
+  return (
+    haystack.includes(` ${keyword} `) ||
+    haystack.includes(` ${keyword}s `) ||
+    haystack.includes(` ${keyword}es `)
+  );
 }
 
 export function deriveRegionsFromText(parts: Array<string | null | undefined>): GeoRegion[] {
@@ -253,7 +272,7 @@ export function deriveRegionsFromText(parts: Array<string | null | undefined>): 
   if (!haystack) return [DEFAULT_REGION];
 
   const regions = REGION_KEYWORDS.filter(({ keywords }) =>
-    keywords.some((keyword) => haystack.includes(keyword)),
+    keywords.some((keyword) => matchesKeyword(haystack, keyword)),
   ).map(({ region }) => region);
 
   return regions.length > 0 ? [...new Set(regions)] : [DEFAULT_REGION];
@@ -264,7 +283,7 @@ export function deriveTopicFromText(parts: Array<string | null | undefined>): To
   if (!haystack) return "other";
 
   const match = TOPIC_KEYWORDS.find(({ keywords }) =>
-    keywords.some((keyword) => haystack.includes(keyword)),
+    keywords.some((keyword) => matchesKeyword(haystack, keyword)),
   );
   return match?.topic ?? "other";
 }
@@ -273,8 +292,12 @@ export function classifySentimentFromText(parts: Array<string | null | undefined
   const haystack = buildHaystack(parts);
   if (!haystack) return 0;
 
-  const positiveHits = POSITIVE_KEYWORDS.filter((keyword) => haystack.includes(keyword)).length;
-  const negativeHits = NEGATIVE_KEYWORDS.filter((keyword) => haystack.includes(keyword)).length;
+  const positiveHits = POSITIVE_KEYWORDS.filter((keyword) =>
+    matchesKeyword(haystack, keyword),
+  ).length;
+  const negativeHits = NEGATIVE_KEYWORDS.filter((keyword) =>
+    matchesKeyword(haystack, keyword),
+  ).length;
   const totalHits = positiveHits + negativeHits;
   if (totalHits === 0) return 0;
 

@@ -14,6 +14,9 @@ const DEFAULT_QUERY =
 
 const MAX_RECORDS = 250;
 
+const ENGLISH_LANGUAGES = new Set(["english", "eng", "en"]);
+const SOURCE_LANG_FIELD = "sourcelang:";
+
 function clampLimit(limit: number | undefined): number {
   if (!limit || limit <= 0) return 75;
   return Math.min(limit, MAX_RECORDS);
@@ -38,8 +41,19 @@ function toGdeltDateTime(date: Date): string {
   return date.toISOString().replace(/[-:T]/g, "").slice(0, 14);
 }
 
+function isClassifiableLanguage(language: string | undefined): boolean {
+  if (!language) return true;
+  return ENGLISH_LANGUAGES.has(language.trim().toLowerCase());
+}
+
+function withSourceLang(query: string): string {
+  if (query.includes(SOURCE_LANG_FIELD)) return query;
+  return `${query} ${SOURCE_LANG_FIELD}english`;
+}
+
 function articleToSignal(article: GdeltArticle): Signal | null {
   if (!article.url || !article.title) return null;
+  if (!isClassifiableLanguage(article.language)) return null;
   const timestamp = parseSeenDate(article.seendate);
   if (!timestamp) return null;
 
@@ -72,7 +86,7 @@ function timeWindow(filter?: SignalSourceFilter): Record<string, string | undefi
 export class GdeltNewsAdapter implements SignalSourcePort {
   async fetchSignals(filter?: SignalSourceFilter): Promise<Signal[]> {
     const response = await fetchGdeltDoc({
-      query: filter?.query ?? DEFAULT_QUERY,
+      query: withSourceLang(filter?.query ?? DEFAULT_QUERY),
       mode: "ArtList",
       format: "json",
       sort: "DateDesc",

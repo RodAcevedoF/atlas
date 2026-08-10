@@ -15,18 +15,7 @@ function MapError({ message }: { message: string }) {
 }
 
 export function WorldAwarenessPage() {
-  const {
-    source,
-    setSource,
-    topic,
-    setTopic,
-    dashboard,
-    isSyncing,
-    isSyncingNews,
-    error,
-    handleSync,
-    handleSyncNews,
-  } = useMarketDashboard();
+  const { topic, setTopic, dashboard, isSyncing, error, handleSync } = useMarketDashboard();
 
   // Kept in one memo so the empty-state fallbacks stay referentially stable —
   // MapCockpit derives several memos from these arrays.
@@ -53,14 +42,7 @@ export function WorldAwarenessPage() {
 
   return (
     <main className="flex h-screen flex-col overflow-hidden">
-      <TopBar
-        source={source}
-        onSourceChange={setSource}
-        onSyncMarkets={() => void handleSync()}
-        onSyncNews={() => void handleSyncNews()}
-        isSyncing={isSyncing}
-        isSyncingNews={isSyncingNews}
-      />
+      <TopBar onSync={() => void handleSync()} isSyncing={isSyncing} />
 
       <div className="relative flex min-h-0 flex-1 flex-col">
         <MapCockpit

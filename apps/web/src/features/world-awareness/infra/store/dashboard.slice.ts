@@ -5,7 +5,6 @@ import type { MarketDashboardData } from "../../use-cases/load-market-dashboard.
 import { loadDashboard, syncMarketSnapshot, syncNewsSnapshot } from "./dashboard.commands.ts";
 import {
   type DashboardFilters,
-  type SourceFilter,
   type TopicFilter,
   initialDashboardFilters,
 } from "./dashboard.filters.ts";
@@ -17,7 +16,6 @@ export interface DashboardState {
   isSyncing: boolean;
   isSyncingNews: boolean;
   error: string | null;
-  syncMessage: string | null;
 }
 
 const initialState: DashboardState = {
@@ -27,7 +25,6 @@ const initialState: DashboardState = {
   isSyncing: false,
   isSyncingNews: false,
   error: null,
-  syncMessage: null,
 };
 
 const dashboardSlice = createSlice({
@@ -39,9 +36,6 @@ const dashboardSlice = createSlice({
     },
     setStatus(state, action: PayloadAction<MarketStatus | "">) {
       state.filters.status = action.payload;
-    },
-    setSource(state, action: PayloadAction<SourceFilter>) {
-      state.filters.source = action.payload;
     },
     setTopic(state, action: PayloadAction<TopicFilter>) {
       state.filters.topic = action.payload;
@@ -65,9 +59,8 @@ const dashboardSlice = createSlice({
         state.isSyncing = true;
         state.error = null;
       })
-      .addCase(syncMarketSnapshot.fulfilled, (state, action) => {
+      .addCase(syncMarketSnapshot.fulfilled, (state) => {
         state.isSyncing = false;
-        state.syncMessage = `Synced ${action.payload.upserted} markets from Polymarket.`;
       })
       .addCase(syncMarketSnapshot.rejected, (state, action) => {
         state.isSyncing = false;
@@ -77,9 +70,8 @@ const dashboardSlice = createSlice({
         state.isSyncingNews = true;
         state.error = null;
       })
-      .addCase(syncNewsSnapshot.fulfilled, (state, action) => {
+      .addCase(syncNewsSnapshot.fulfilled, (state) => {
         state.isSyncingNews = false;
-        state.syncMessage = `Ingested ${action.payload.upserted} news signals from GDELT.`;
       })
       .addCase(syncNewsSnapshot.rejected, (state, action) => {
         state.isSyncingNews = false;
@@ -88,7 +80,7 @@ const dashboardSlice = createSlice({
   },
 });
 
-export const { setCategory, setStatus, setSource, setTopic } = dashboardSlice.actions;
+export const { setCategory, setStatus, setTopic } = dashboardSlice.actions;
 export const dashboardReducer = dashboardSlice.reducer;
 
 export const selectDashboard = (state: RootState): DashboardState => state.worldAwarenessDashboard;

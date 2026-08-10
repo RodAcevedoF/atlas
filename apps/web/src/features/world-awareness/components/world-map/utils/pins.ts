@@ -1,4 +1,4 @@
-import type { WorldEventRecord } from "../../../repositories/market-repository.ts";
+import type { Topic, WorldEventRecord } from "../../../repositories/market-repository.ts";
 import { centroidFor } from "./region-centroids.ts";
 import { topicHex } from "./theme-colors.ts";
 
@@ -11,6 +11,7 @@ const JITTER_LAT = 5.5;
 interface PinProperties {
   id: string;
   color: string;
+  topic: Topic;
 }
 
 export type PinFeatureCollection = GeoJSON.FeatureCollection<GeoJSON.Point, PinProperties>;
@@ -43,7 +44,7 @@ export function buildPinFeatures(events: WorldEventRecord[]): PinFeatureCollecti
         type: "Point",
         coordinates: [centroid[0] + offsetLng * JITTER_LNG, centroid[1] + offsetLat * JITTER_LAT],
       },
-      properties: { id: event.id, color: topicHex(event.topic) },
+      properties: { id: event.id, color: topicHex(event.topic), topic: event.topic },
     });
   }
   return { type: "FeatureCollection", features };
