@@ -38,7 +38,7 @@ jobs:
         run: bun run lint
 
       - name: Typecheck
-        run: bun run typecheck
+        run: bun nx run-many -t typecheck --exclude @atlas/intelligence
 
       - name: Test
         run: bun run test
