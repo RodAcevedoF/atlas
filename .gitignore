@@ -6,7 +6,6 @@ dist/
 .env
 .env.*
 !.env.example
-bun.lock
 
 # Python (services/intelligence)
 .venv/

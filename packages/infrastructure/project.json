@@ -6,6 +6,10 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": { "command": "tsc --noEmit", "cwd": "{projectRoot}" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "bun test", "cwd": "{projectRoot}" }
     }
   }
 }
