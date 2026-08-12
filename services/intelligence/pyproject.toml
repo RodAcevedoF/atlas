@@ -31,10 +31,16 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B", "SIM"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# `package = false`, so `app` is never installed into the venv — put the project root on
+# sys.path or every `from app...` import in a test fails to collect.
+pythonpath = ["."]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["app"]
+files = ["app", "tests"]
 
 [[tool.mypy.overrides]]
 module = [

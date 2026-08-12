@@ -20,14 +20,21 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "uv run mypy app",
+        "command": "uv run mypy",
         "cwd": "{projectRoot}"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "uv run ruff check app",
+        "command": "uv run ruff check",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "uv run pytest",
         "cwd": "{projectRoot}"
       }
     }
