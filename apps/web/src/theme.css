@@ -31,7 +31,6 @@
   --input: rgba(150, 175, 255, 0.16);
   --ring: #4fe3c1;
   --radius: 16px;
-  --font-serif: "Bricolage Grotesque", system-ui, sans-serif;
   --font-sans: "Bricolage Grotesque", system-ui, sans-serif;
   --font-mono: "DM Mono", ui-monospace, monospace;
 
@@ -111,7 +110,6 @@
   --color-coverage: var(--coverage);
   --color-conviction: var(--conviction);
   --color-gap-negative: var(--gap-negative);
-  --font-serif: var(--font-serif);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 }

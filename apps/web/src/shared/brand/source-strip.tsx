@@ -3,6 +3,11 @@ import { cn } from "@atlas/ui";
 import { memo } from "react";
 import { WIRE_SOURCES } from "./atlas-facts.ts";
 
+const STRIP_CLASS = cn(
+  "flex flex-wrap items-center justify-center gap-x-9 gap-y-2",
+  eyebrowVariants({ variant: "meta" }),
+);
+
 interface SourceStripProps {
   trailing?: string;
   className?: string;
@@ -10,13 +15,7 @@ interface SourceStripProps {
 
 export const SourceStrip = memo(function SourceStrip({ trailing, className }: SourceStripProps) {
   return (
-    <div
-      className={cn(
-        "flex flex-wrap items-center justify-center gap-x-9 gap-y-2",
-        eyebrowVariants({ variant: "meta" }),
-        className,
-      )}
-    >
+    <div className={cn(STRIP_CLASS, className)}>
       {WIRE_SOURCES.map((source) => (
         <span key={source}>{source}</span>
       ))}
