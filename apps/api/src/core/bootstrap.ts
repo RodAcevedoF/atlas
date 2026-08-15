@@ -2,6 +2,8 @@ import { PasswordIdentityProvider } from "@atlas/infra/identity-password";
 import { CompositeMarketDataAdapter } from "@atlas/infra/market-composite";
 import { KalshiAdapter } from "@atlas/infra/market-kalshi";
 import { PolymarketAdapter } from "@atlas/infra/market-polymarket";
+import { CompositeSignalSourceAdapter } from "@atlas/infra/news-composite";
+import { ExaNewsAdapter } from "@atlas/infra/news-exa";
 import { GdeltNewsAdapter } from "@atlas/infra/news-gdelt";
 import { HttpOrchestration } from "@atlas/infra/orchestration-http";
 import { BunPasswordHasher } from "@atlas/infra/password-bun";
@@ -40,7 +42,11 @@ export async function bootstrap(): Promise<AppDeps> {
   const redis = createRedisClient(process.env.REDIS_URL ?? "redis://127.0.0.1:6379");
 
   const marketData = new CompositeMarketDataAdapter([new PolymarketAdapter(), new KalshiAdapter()]);
-  const signalSource = new GdeltNewsAdapter();
+  const exaApiKey = process.env.EXA_API_KEY;
+  const signalSource = new CompositeSignalSourceAdapter([
+    new GdeltNewsAdapter(),
+    ...(exaApiKey ? [new ExaNewsAdapter(exaApiKey)] : []),
+  ]);
   const store = new MongoMarketStore(db);
   const userStore = new MongoUserStore(db);
   const sessionStore = new RedisSessionStore(redis);
