@@ -16,6 +16,11 @@ export interface MarketFilter {
   offset?: number;
 }
 
+export interface EventFilter {
+  category?: MarketCategory;
+  limit?: number;
+}
+
 export interface PriceHistoryRange {
   from: Date;
   to: Date;
@@ -26,7 +31,7 @@ export interface MarketDataPort {
   listMarkets(filter?: MarketFilter): Promise<Market[]>;
   getMarket(id: MarketId): Promise<Market | null>;
 
-  listEvents(filter?: { category?: MarketCategory; limit?: number }): Promise<PredictionEvent[]>;
+  listEvents(filter?: EventFilter): Promise<PredictionEvent[]>;
   getEvent(id: EventId): Promise<PredictionEvent | null>;
 
   getPriceHistory(marketId: MarketId, range: PriceHistoryRange): Promise<PriceTick[]>;

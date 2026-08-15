@@ -160,7 +160,18 @@ describe("CompositeSignalSourceAdapter", () => {
 
       const signals = await composite.fetchSignals({ limit: 75 });
 
-      expect(signals).toHaveLength(76);
+      expect(signals).toHaveLength(75);
+    });
+
+    test("under-fills rather than re-asking the healthy source when one is down", async () => {
+      const composite = new CompositeSignalSourceAdapter([
+        new PrimaryNewsSource(new Error("gdelt 503")),
+        new BackupNewsSource(signalPool(100, "https://backup.test/n")),
+      ]);
+
+      const signals = await composite.fetchSignals({ limit: 100 });
+
+      expect(signals).toHaveLength(50);
     });
 
     test("gives a lone source the whole limit", async () => {
@@ -276,7 +287,9 @@ describe("CompositeSignalSourceAdapter", () => {
         10,
       );
 
-      await expect(composite.fetchSignals()).rejects.toThrow("every news source failed");
+      await expect(composite.fetchSignals()).rejects.toThrow(
+        "[news-composite] every source failed",
+      );
     });
 
     test("still returns a source that answers inside the deadline", async () => {
@@ -300,7 +313,7 @@ describe("CompositeSignalSourceAdapter", () => {
       ]);
 
       await expect(composite.fetchSignals()).rejects.toThrow(
-        "every news source failed: PrimaryNewsSource, BackupNewsSource",
+        "[news-composite] every source failed: PrimaryNewsSource, BackupNewsSource",
       );
     });
 

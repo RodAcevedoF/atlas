@@ -1,5 +1,6 @@
 // outbound ports
 export type {
+  EventFilter,
   MarketFilter,
   PriceHistoryRange,
   MarketDataPort,
