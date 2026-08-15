@@ -6,7 +6,11 @@ export type {
   MarketDataPort,
 } from "./markets/outbound/market-data.ts";
 export type { MarketStorePort } from "./markets/outbound/market-store.ts";
-export type { SignalStorePort } from "./world/outbound/signal-store.ts";
+export type {
+  SignalClassificationUpdate,
+  SignalStorePort,
+} from "./world/outbound/signal-store.ts";
+export type { MigrationLedgerPort } from "./migrations/outbound/migration-ledger.ts";
 export type { WorldScanReportStorePort } from "./world/outbound/world-scan-report-store.ts";
 export type {
   GraphRunInput,
@@ -114,6 +118,24 @@ export type {
 } from "./world/inbound/world-scan.ts";
 export { WorldScanUseCase } from "./world/inbound/world-scan-usecase.ts";
 export { ListWorldScanReportsUseCase } from "./world/inbound/list-world-scan-reports-usecase.ts";
+export type {
+  RegionDiagnostics,
+  ReclassifySignalsInput,
+  ReclassifySignalsOutput,
+  ReclassifySignals,
+} from "./world/inbound/reclassify-signals.ts";
+export { ReclassifySignalsUseCase } from "./world/inbound/reclassify-signals.ts";
+
+// migrations
+export type {
+  MigrationContext,
+  Migration,
+  MigrationRun,
+  RunMigrationsInput,
+  RunMigrationsOutput,
+  RunMigrations,
+} from "./migrations/inbound/run-migrations.ts";
+export { RunMigrationsUseCase } from "./migrations/inbound/run-migrations.ts";
 
 // auth
 export type {

@@ -62,6 +62,11 @@ export interface SignalDoc {
   createdAt: Date;
 }
 
+export interface MigrationDoc {
+  _id: string;
+  appliedAt: Date;
+}
+
 export interface PriceTickDoc {
   marketId: string;
   outcomeId: string;

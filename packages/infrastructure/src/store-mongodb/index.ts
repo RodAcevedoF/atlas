@@ -1,9 +1,11 @@
 export * from "./client.ts";
 export * from "./collections.ts";
 export * from "./indexes.ts";
+export * from "./migration-ledger.ts";
 
 import type {
   MarketStorePort,
+  SignalClassificationUpdate,
   SignalStorePort,
   WorldScanReportFilter,
   WorldScanReportRecord,
@@ -259,6 +261,17 @@ export class MongoMarketStore
       };
       return { replaceOne: { filter: { _id: signal.id }, replacement: doc, upsert: true } };
     });
+    await this.db.collection<SignalDoc>("signals").bulkWrite(operations, { ordered: false });
+  }
+
+  async updateSignalClassifications(updates: SignalClassificationUpdate[]): Promise<void> {
+    if (updates.length === 0) return;
+    const operations = updates.map((update) => ({
+      updateOne: {
+        filter: { _id: update.id },
+        update: { $set: { topic: update.topic, sentiment: update.sentiment } },
+      },
+    }));
     await this.db.collection<SignalDoc>("signals").bulkWrite(operations, { ordered: false });
   }
 

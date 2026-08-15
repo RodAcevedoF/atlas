@@ -2,13 +2,21 @@ import type {
   GeoRegion,
   RegionTopicBreakdown,
   Signal,
+  SignalId,
   SignalSource,
   Topic,
   TopicSentimentSummary,
 } from "@atlas/domain";
 
+export interface SignalClassificationUpdate {
+  id: SignalId;
+  topic: Topic;
+  sentiment: number;
+}
+
 export interface SignalStorePort {
   upsertSignals(signals: Signal[]): Promise<void>;
+  updateSignalClassifications(updates: SignalClassificationUpdate[]): Promise<void>;
   listRegionTopicBreakdowns(filter?: {
     source?: SignalSource;
     topic?: Topic;

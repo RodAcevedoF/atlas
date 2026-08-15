@@ -10,6 +10,9 @@ export interface BuildSignalOptions {
   source?: SignalSource;
   topic?: Topic;
   primaryRegion?: GeoRegion;
+  regions?: GeoRegion[];
+  title?: string;
+  sentiment?: number;
 }
 
 export function buildSignal({
@@ -19,6 +22,9 @@ export function buildSignal({
   source = "news",
   topic = "conflict",
   primaryRegion = "middle-east",
+  regions,
+  title,
+  sentiment = -0.4,
 }: BuildSignalOptions): Signal {
   const timestamp = new Date(Date.now() - hoursAgo * HOUR_MS);
   return {
@@ -26,10 +32,10 @@ export function buildSignal({
     source,
     topic,
     primaryRegion,
-    regions: [...new Set<GeoRegion>([primaryRegion, "global"])],
+    regions: regions ?? [...new Set<GeoRegion>([primaryRegion, "global"])],
     weight,
-    sentiment: -0.4,
-    title: `Headline ${ref}`,
+    sentiment,
+    title: title ?? `Headline ${ref}`,
     ref,
     timestamp,
     createdAt: timestamp,
