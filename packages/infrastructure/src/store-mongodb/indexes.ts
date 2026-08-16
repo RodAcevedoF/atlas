@@ -27,5 +27,13 @@ export async function ensureIndexes(db: Db): Promise<void> {
         { key: { "scope.topic": 1, generatedAt: -1 } },
         { key: { "scope.region": 1, generatedAt: -1 } },
       ]),
+    // not unique
+    db
+      .collection("research_runs")
+      .createIndexes([
+        { key: { createdAt: -1 } },
+        { key: { status: 1, createdAt: 1 } },
+        { key: { questionKey: 1, day: 1 } },
+      ]),
   ]);
 }

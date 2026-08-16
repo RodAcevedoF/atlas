@@ -39,6 +39,17 @@ export type {
 } from "./entities/analysis-run.ts";
 
 export type {
+  ResearchRunId,
+  ResearchRunStatus,
+  AwarenessConfidence,
+  CountryAwareness,
+  ResearchExemplar,
+  ResearchRun,
+} from "./entities/research-run.ts";
+export { makeResearchRunId } from "./entities/research-run.ts";
+export { RESEARCH_RUN_STATUSES, AWARENESS_CONFIDENCES } from "./entities/research-run.ts";
+
+export type {
   SignalId,
   SignalSource,
   Topic,
