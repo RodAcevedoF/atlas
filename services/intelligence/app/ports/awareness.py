@@ -1,0 +1,38 @@
+"""ports for the awareness lens: where a measurement comes from, and who narrates it"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Protocol
+
+
+@dataclass(slots=True, frozen=True)
+class CountrySeriesStats:
+    """aggregated shape of one country series. slots keeps the raw timeline out."""
+
+    country: str
+    awareness: float
+    peak: float
+    covered_buckets: int
+    total_buckets: int
+
+
+@dataclass(slots=True, frozen=True)
+class AwarenessDistribution:
+    executed_query: str
+    window: str
+    countries: list[CountrySeriesStats]
+
+
+class AwarenessSourcePort(Protocol):
+    """a corpus that can answer "who covered this, and how much of their own output was it"."""
+
+    async def fetch(self, query: str, window: str) -> AwarenessDistribution: ...
+
+
+class AwarenessAnalystPort(Protocol):
+    """the two language steps: a question in, a source query out."""
+
+    async def expand_query(self, question: str) -> str: ...
+
+    async def synthesize(self, question: str, distribution_summary: str) -> str: ...

@@ -1,5 +1,5 @@
-from app.adapters.gdelt_awareness import AwarenessDistribution, CountrySeriesStats
 from app.graphs.awareness import loudest, rate_country, rate_distribution
+from app.ports.awareness import AwarenessDistribution, CountrySeriesStats
 
 BUCKETS = 166
 

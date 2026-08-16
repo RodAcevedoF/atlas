@@ -4,10 +4,11 @@ measures what share of each country own monitored press output matches a query
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
 import httpx
+
+from app.ports.awareness import AwarenessDistribution, CountrySeriesStats
 
 DOC_ENDPOINT = "https://api.gdeltproject.org/api/v2/doc/doc"
 TIMELINE_MODE = "timelinesourcecountry"
@@ -28,24 +29,6 @@ class GdeltThrottled(GdeltRetryable):
 
 class GdeltUnavailable(Exception):
     """upstream answered with something unusable."""
-
-
-@dataclass(slots=True, frozen=True)
-class CountrySeriesStats:
-    """aggregated shape of one country series."""
-
-    country: str
-    awareness: float
-    peak: float
-    covered_buckets: int
-    total_buckets: int
-
-
-@dataclass(slots=True, frozen=True)
-class AwarenessDistribution:
-    executed_query: str
-    window: str
-    countries: list[CountrySeriesStats]
 
 
 def is_throttled(status: int, body: str) -> bool:
@@ -117,3 +100,14 @@ async def fetch_awareness(
         raise GdeltUnavailable(f"undecodable JSON response: {body.strip()[:200]}") from error
 
     return parse_distribution(payload, query, window)
+
+
+class GdeltAwarenessSource:
+    """AwarenessSourcePort over GDELT DOC 2.0. Holds no retry policy."""
+
+    def __init__(self, timeout_seconds: float) -> None:
+        self._timeout_seconds = timeout_seconds
+
+    async def fetch(self, query: str, window: str) -> AwarenessDistribution:
+        async with httpx.AsyncClient(timeout=self._timeout_seconds) as client:
+            return await fetch_awareness(query, window, client)

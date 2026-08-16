@@ -1,0 +1,214 @@
+import asyncio
+
+import pytest
+
+from app.core.events import GraphEvent
+from app.graphs.awareness import rate_distribution
+from app.graphs.awareness_lens import AwarenessLensGraph, render_summary, to_record
+from app.ports.awareness import AwarenessDistribution, CountrySeriesStats
+
+BUCKETS = 166
+
+
+def stats(country: str, awareness: float, peak: float, covered: int) -> CountrySeriesStats:
+    return CountrySeriesStats(
+        country=country,
+        awareness=awareness,
+        peak=peak,
+        covered_buckets=covered,
+        total_buckets=BUCKETS,
+    )
+
+
+def distribution(
+    *countries: CountrySeriesStats, query: str = "sudan", window: str = "1w"
+) -> AwarenessDistribution:
+    return AwarenessDistribution(executed_query=query, window=window, countries=list(countries))
+
+
+class InMemoryAwarenessSource:
+    def __init__(self, by_query_window: dict[tuple[str, str], AwarenessDistribution]) -> None:
+        self._by_query_window = by_query_window
+
+    async def fetch(self, query: str, window: str) -> AwarenessDistribution:
+        if (query, window) not in self._by_query_window:
+            raise LookupError(f"no distribution seeded for {query!r} over {window!r}")
+        return self._by_query_window[(query, window)]
+
+
+class ScriptedAnalyst:
+    """real AwarenessAnalystPort returning fixed language."""
+
+    def __init__(self, query: str, read: str = "EU press is loud; East Asia is silent.") -> None:
+        self._query = query
+        self._read = read
+
+    async def expand_query(self, question: str) -> str:
+        return self._query
+
+    async def synthesize(self, question: str, distribution_summary: str) -> str:
+        return self._read
+
+
+def graph_over(
+    *countries: CountrySeriesStats, query: str = '"Sudan"', window: str = "1w"
+) -> AwarenessLensGraph:
+    return AwarenessLensGraph(
+        source=InMemoryAwarenessSource(
+            {(query, window): distribution(*countries, query=query, window=window)}
+        ),
+        analyst=ScriptedAnalyst(query=query),
+    )
+
+
+class TestRenderSummary:
+    def test_a_small_distribution_is_sent_whole(self) -> None:
+        ranked = rate_distribution(
+            distribution(
+                stats("Sudan", 13.139, 100.0, 25),
+                stats("Kenya", 4.0, 18.0, 60),
+                stats("Japan", 0.016, 2.632, 40),
+            )
+        )
+
+        summary = render_summary(ranked)
+
+        assert "All 3 countries measured" in summary
+        assert "Sudan" in summary
+        assert "Japan" in summary
+
+    def test_a_large_distribution_keeps_both_ends_and_drops_the_middle(self) -> None:
+        ranked = rate_distribution(
+            distribution(*[stats(f"C{index}", 40.0 - index, 18.0, 60) for index in range(40)])
+        )
+
+        summary = render_summary(ranked)
+
+        assert "near-silent" in summary
+        assert "- C0:" in summary
+        assert "- C39:" in summary
+        assert "- C20:" not in summary
+
+    def test_artifacts_are_kept_out_of_what_the_model_reads(self) -> None:
+        ranked = rate_distribution(
+            distribution(stats("Sudan", 13.139, 100.0, 25), stats("Gambia", 0.602, 100.0, 1))
+        )
+
+        summary = render_summary(ranked)
+
+        assert "Gambia" not in summary
+        assert "Sudan" in summary
+
+    def test_a_country_carries_its_confidence_so_a_thin_figure_is_readable(self) -> None:
+        ranked = rate_distribution(distribution(stats("Sierra Leone", 1.392, 100.0, 6)))
+
+        summary = render_summary(ranked)
+
+        assert "[thin]" in summary
+
+
+class TestToRecord:
+    def test_the_persisted_shape_is_camel_cased_for_the_ts_side(self) -> None:
+        rated = rate_distribution(distribution(stats("Sudan", 13.139, 100.0, 25)))[0]
+
+        record = to_record(rated)
+
+        assert record == {
+            "country": "Sudan",
+            "awareness": 13.139,
+            "peak": 100.0,
+            "coveredBuckets": 25,
+            "totalBuckets": BUCKETS,
+            "confidence": "measured",
+        }
+
+
+class TestAwarenessRun:
+    def test_a_question_produces_a_distribution_and_a_read_of_it(self) -> None:
+        graph = graph_over(stats("Sudan", 13.139, 100.0, 25), stats("Japan", 0.016, 2.632, 40))
+
+        result = asyncio.run(graph.run("run-1", {"question": "Sudan famine coverage"}))
+
+        assert result["status"] == "succeeded"
+        assert result["executedQuery"] == '"Sudan"'
+        assert result["window"] == "1w"
+        assert result["synthesis"] == "EU press is loud; East Asia is silent."
+        assert [country["country"] for country in result["distribution"]] == ["Sudan", "Japan"]
+
+    def test_the_expanded_query_is_what_reaches_the_source(self) -> None:
+        graph = AwarenessLensGraph(
+            source=InMemoryAwarenessSource(
+                {('"Sudan" OR "Darfur"', "1w"): distribution(stats("Sudan", 13.139, 100.0, 25))}
+            ),
+            analyst=ScriptedAnalyst(query='"Sudan" OR "Darfur"'),
+        )
+
+        result = asyncio.run(graph.run("run-1", {"question": "what about sudan"}))
+
+        assert result["executedQuery"] == '"Sudan" OR "Darfur"'
+
+    def test_nothing_matching_is_an_answer_not_a_failure(self) -> None:
+        graph = graph_over()
+
+        result = asyncio.run(graph.run("run-1", {"question": "an unreported thing"}))
+
+        assert result["status"] == "no_coverage"
+        assert result["distribution"] == []
+        assert result["synthesis"] is None
+
+    def test_a_distribution_of_only_artifacts_is_no_coverage(self) -> None:
+        graph = graph_over(stats("Gambia", 0.602, 100.0, 1), stats("Fiji", 0.31, 100.0, 2))
+
+        result = asyncio.run(graph.run("run-1", {"question": "an obscure thing"}))
+
+        assert result["status"] == "no_coverage"
+        assert result["synthesis"] is None
+        assert [country["country"] for country in result["distribution"]] == ["Gambia", "Fiji"]
+
+    def test_every_tier_survives_into_the_stored_distribution(self) -> None:
+        graph = graph_over(
+            stats("Sudan", 13.139, 100.0, 25),
+            stats("Gambia", 0.602, 100.0, 1),
+            stats("Sierra Leone", 1.392, 100.0, 6),
+        )
+
+        result = asyncio.run(graph.run("run-1", {"question": "Sudan"}))
+
+        assert [country["confidence"] for country in result["distribution"]] == [
+            "measured",
+            "artifact",
+            "thin",
+        ]
+
+    def test_the_window_is_overridable_per_run(self) -> None:
+        graph = graph_over(stats("Sudan", 13.139, 100.0, 25), window="1m")
+
+        result = asyncio.run(graph.run("run-1", {"question": "Sudan", "window": "1m"}))
+
+        assert result["window"] == "1m"
+
+    def test_a_run_without_a_question_fails_loudly(self) -> None:
+        graph = graph_over(stats("Sudan", 13.139, 100.0, 25))
+
+        for name, payload in [
+            ("no question key", {}),
+            ("an empty question", {"question": ""}),
+            ("whitespace only", {"question": "   "}),
+        ]:
+            with pytest.raises(ValueError) as raised:
+                asyncio.run(graph.run("run-1", payload))
+
+            assert "question" in str(raised.value), name
+
+    def test_the_stream_shape_carries_the_finished_result(self) -> None:
+        graph = graph_over(stats("Sudan", 13.139, 100.0, 25))
+
+        async def collect() -> list[GraphEvent]:
+            return [event async for event in graph.stream("run-1", {"question": "Sudan"})]
+
+        events = asyncio.run(collect())
+
+        assert [event.type for event in events] == ["node:start", "run:complete"]
+        assert events[-1].data is not None
+        assert events[-1].data["status"] == "succeeded"
+        assert events[-1].data["synthesis"] == "EU press is loud; East Asia is silent."

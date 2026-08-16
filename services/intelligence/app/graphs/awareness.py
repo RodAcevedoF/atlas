@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from app.adapters.gdelt_awareness import AwarenessDistribution, CountrySeriesStats
+from app.ports.awareness import AwarenessDistribution, CountrySeriesStats
 
 Confidence = Literal["measured", "thin", "artifact"]
 
