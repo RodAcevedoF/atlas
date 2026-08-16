@@ -69,8 +69,8 @@ afterEach(() => {
 });
 
 describe("CompositeSignalSourceAdapter", () => {
-  describe("merging", () => {
-    test("keeps the signals from every source", async () => {
+  describe("source selection", () => {
+    test("leaves the backup untouched while the primary is answering", async () => {
       const composite = new CompositeSignalSourceAdapter([
         new PrimaryNewsSource([signal("https://example.test/a")]),
         new BackupNewsSource([signal("https://example.test/b")]),
@@ -78,41 +78,37 @@ describe("CompositeSignalSourceAdapter", () => {
 
       const signals = await composite.fetchSignals();
 
-      expect(signals.map((entry) => entry.ref)).toEqual([
-        "https://example.test/a",
-        "https://example.test/b",
-      ]);
+      expect(signals.map((entry) => entry.ref)).toEqual(["https://example.test/a"]);
     });
 
-    test("keeps one copy of an article both sources returned, from the earlier source", async () => {
+    test("does not blend a healthy primary with a healthy backup", async () => {
       const composite = new CompositeSignalSourceAdapter([
-        new PrimaryNewsSource([signal("https://example.test/a", { title: "From primary" })]),
-        new BackupNewsSource([signal("https://example.test/a", { title: "From backup" })]),
+        new PrimaryNewsSource(signalPool(3, "https://primary.test/n")),
+        new BackupNewsSource(signalPool(3, "https://backup.test/n")),
       ]);
 
       const signals = await composite.fetchSignals();
 
-      expect(signals).toHaveLength(1);
-      expect(signals[0]?.title).toBe("From primary");
+      expect(signals).toHaveLength(3);
+      expect(signals.every((entry) => entry.ref.startsWith("https://primary.test/"))).toBe(true);
     });
   });
 
-  describe("duplicate detection across sources", () => {
+  describe("duplicate detection", () => {
     const sameArticleCases = [
-      { name: "a differing scheme", backupRef: "http://example.test/story" },
-      { name: "a www prefix", backupRef: "https://www.example.test/story" },
-      { name: "a trailing slash", backupRef: "https://example.test/story/" },
-      { name: "an amp suffix", backupRef: "https://example.test/story/amp" },
-      { name: "a utm campaign", backupRef: "https://example.test/story?utm_source=twitter" },
-      { name: "a facebook click id", backupRef: "https://example.test/story?fbclid=abc123" },
-      { name: "a fragment", backupRef: "https://example.test/story#comments" },
+      { name: "a differing scheme", otherRef: "http://example.test/story" },
+      { name: "a www prefix", otherRef: "https://www.example.test/story" },
+      { name: "a trailing slash", otherRef: "https://example.test/story/" },
+      { name: "an amp suffix", otherRef: "https://example.test/story/amp" },
+      { name: "a utm campaign", otherRef: "https://example.test/story?utm_source=twitter" },
+      { name: "a facebook click id", otherRef: "https://example.test/story?fbclid=abc123" },
+      { name: "a fragment", otherRef: "https://example.test/story#comments" },
     ];
 
-    for (const { name, backupRef } of sameArticleCases) {
+    for (const { name, otherRef } of sameArticleCases) {
       test(`treats ${name} as the same article`, async () => {
         const composite = new CompositeSignalSourceAdapter([
-          new PrimaryNewsSource([signal("https://example.test/story")]),
-          new BackupNewsSource([signal(backupRef)]),
+          new PrimaryNewsSource([signal("https://example.test/story"), signal(otherRef)]),
         ]);
 
         const signals = await composite.fetchSignals();
@@ -122,16 +118,15 @@ describe("CompositeSignalSourceAdapter", () => {
     }
 
     const distinctArticleCases = [
-      { name: "a different path", backupRef: "https://example.test/other" },
-      { name: "a different host", backupRef: "https://other.test/story" },
-      { name: "a meaningful query param", backupRef: "https://example.test/story?id=42" },
+      { name: "a different path", otherRef: "https://example.test/other" },
+      { name: "a different host", otherRef: "https://other.test/story" },
+      { name: "a meaningful query param", otherRef: "https://example.test/story?id=42" },
     ];
 
-    for (const { name, backupRef } of distinctArticleCases) {
+    for (const { name, otherRef } of distinctArticleCases) {
       test(`keeps ${name} as its own article`, async () => {
         const composite = new CompositeSignalSourceAdapter([
-          new PrimaryNewsSource([signal("https://example.test/story")]),
-          new BackupNewsSource([signal(backupRef)]),
+          new PrimaryNewsSource([signal("https://example.test/story"), signal(otherRef)]),
         ]);
 
         const signals = await composite.fetchSignals();
@@ -142,8 +137,7 @@ describe("CompositeSignalSourceAdapter", () => {
 
     test("falls back to the raw ref when it is not a parseable url", async () => {
       const composite = new CompositeSignalSourceAdapter([
-        new PrimaryNewsSource([signal("not a url")]),
-        new BackupNewsSource([signal("not a url")]),
+        new PrimaryNewsSource([signal("not a url"), signal("not a url")]),
       ]);
 
       const signals = await composite.fetchSignals();
@@ -153,7 +147,7 @@ describe("CompositeSignalSourceAdapter", () => {
   });
 
   describe("limit budget", () => {
-    test("treats the caller's limit as a total, not a per-source allowance", async () => {
+    test("spends the caller's whole limit on the source that answers", async () => {
       const composite = new CompositeSignalSourceAdapter([
         new PrimaryNewsSource(signalPool(100, "https://primary.test/n")),
         new BackupNewsSource(signalPool(100, "https://backup.test/n")),
@@ -162,9 +156,10 @@ describe("CompositeSignalSourceAdapter", () => {
       const signals = await composite.fetchSignals({ limit: 75 });
 
       expect(signals).toHaveLength(75);
+      expect(signals.every((entry) => entry.ref.startsWith("https://primary.test/"))).toBe(true);
     });
 
-    test("under-fills rather than re-asking the healthy source when one is down", async () => {
+    test("fills the whole limit from the backup rather than under-filling", async () => {
       const composite = new CompositeSignalSourceAdapter([
         new PrimaryNewsSource(new Error("gdelt 503")),
         new BackupNewsSource(signalPool(100, "https://backup.test/n")),
@@ -172,7 +167,7 @@ describe("CompositeSignalSourceAdapter", () => {
 
       const signals = await composite.fetchSignals({ limit: 100 });
 
-      expect(signals).toHaveLength(50);
+      expect(signals).toHaveLength(100);
     });
 
     test("gives a lone source the whole limit", async () => {
@@ -185,7 +180,7 @@ describe("CompositeSignalSourceAdapter", () => {
       expect(signals).toHaveLength(75);
     });
 
-    test("leaves an absent limit to each source's own default", async () => {
+    test("leaves an absent limit to the answering source's own default", async () => {
       const composite = new CompositeSignalSourceAdapter([
         new PrimaryNewsSource(signalPool(3, "https://primary.test/n")),
         new BackupNewsSource(signalPool(2, "https://backup.test/n")),
@@ -193,47 +188,60 @@ describe("CompositeSignalSourceAdapter", () => {
 
       const signals = await composite.fetchSignals();
 
-      expect(signals).toHaveLength(5);
+      expect(signals).toHaveLength(3);
     });
 
-    test("narrows every source with the caller's query", async () => {
+    test("narrows the answering source with the caller's query", async () => {
       const composite = new CompositeSignalSourceAdapter([
         new PrimaryNewsSource([
           signal("https://primary.test/a", { title: "Sanctions widen" }),
           signal("https://primary.test/b", { title: "Election results" }),
         ]),
-        new BackupNewsSource([signal("https://backup.test/a", { title: "New sanctions package" })]),
       ]);
 
       const signals = await composite.fetchSignals({ query: "sanctions" });
 
-      expect(signals.map((entry) => entry.ref)).toEqual([
-        "https://primary.test/a",
-        "https://backup.test/a",
+      expect(signals.map((entry) => entry.ref)).toEqual(["https://primary.test/a"]);
+    });
+
+    test("carries the caller's query to the backup after the primary fails", async () => {
+      const composite = new CompositeSignalSourceAdapter([
+        new PrimaryNewsSource(new Error("GDELT DOC 429")),
+        new BackupNewsSource([
+          signal("https://backup.test/a", { title: "New sanctions package" }),
+          signal("https://backup.test/b", { title: "Election results" }),
+        ]),
       ]);
+
+      const signals = await composite.fetchSignals({ query: "sanctions" });
+
+      expect(signals.map((entry) => entry.ref)).toEqual(["https://backup.test/a"]);
     });
   });
 
   describe("failover", () => {
-    const failoverCases = [
-      { name: "the first source", failFirst: true },
-      { name: "the second source", failFirst: false },
-    ];
+    test("reaches the backup once the primary has failed", async () => {
+      const composite = new CompositeSignalSourceAdapter([
+        new PrimaryNewsSource(new Error("GDELT DOC 429")),
+        new BackupNewsSource([signal("https://example.test/ok")]),
+      ]);
 
-    for (const { name, failFirst } of failoverCases) {
-      test(`returns the healthy source's signals when ${name} fails`, async () => {
-        const healthy = [signal("https://example.test/ok")];
-        const failure = new Error("GDELT DOC 429");
-        const composite = new CompositeSignalSourceAdapter([
-          new PrimaryNewsSource(failFirst ? failure : healthy),
-          new BackupNewsSource(failFirst ? healthy : failure),
-        ]);
+      const signals = await composite.fetchSignals();
 
-        const signals = await composite.fetchSignals();
+      expect(signals.map((entry) => entry.ref)).toEqual(["https://example.test/ok"]);
+    });
 
-        expect(signals.map((entry) => entry.ref)).toEqual(["https://example.test/ok"]);
-      });
-    }
+    test("stops at the first source that answers, however many follow", async () => {
+      const composite = new CompositeSignalSourceAdapter([
+        new PrimaryNewsSource(new Error("GDELT DOC 429")),
+        new BackupNewsSource([signal("https://second.test/ok")]),
+        new BackupNewsSource([signal("https://third.test/ok")]),
+      ]);
+
+      const signals = await composite.fetchSignals();
+
+      expect(signals.map((entry) => entry.ref)).toEqual(["https://second.test/ok"]);
+    });
 
     test("logs the failing source rather than swallowing it", async () => {
       const composite = new CompositeSignalSourceAdapter([

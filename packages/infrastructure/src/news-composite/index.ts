@@ -1,6 +1,6 @@
 import type { SignalSourceFilter, SignalSourcePort } from "@atlas/application";
 import type { Signal } from "@atlas/domain";
-import { capToLimit, fanOutToSources, perSourceLimit } from "@atlas/shared";
+import { capToLimit, failOverAcrossSources } from "@atlas/shared";
 
 const TRACKING_PARAM_PREFIX = "utm_";
 const TRACKING_PARAMS = new Set(["fbclid", "gclid", "mc_cid", "mc_eid", "igshid"]);
@@ -47,16 +47,15 @@ export class CompositeSignalSourceAdapter implements SignalSourcePort {
   ) {}
 
   async fetchSignals(filter?: SignalSourceFilter): Promise<Signal[]> {
-    const sourceFilter = perSourceLimit(filter, this.adapters.length);
-    const perSource = await fanOutToSources(
+    const answered = await failOverAcrossSources(
       "news-composite",
       this.adapters.map((adapter) => ({
         source: adapter.constructor.name,
-        run: () => adapter.fetchSignals(sourceFilter),
+        run: () => adapter.fetchSignals(filter),
       })),
       this.timeoutMs,
     );
 
-    return capToLimit(dedupeByRef(perSource.flat()), filter?.limit);
+    return capToLimit(dedupeByRef(answered), filter?.limit);
   }
 }

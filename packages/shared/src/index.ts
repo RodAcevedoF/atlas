@@ -4,7 +4,12 @@ export {
   RetryableResponseError,
   type FetchRetryOptions,
 } from "./http-retry.ts";
-export { fanOutToSources, SourceTimeoutError, type FanOutTask } from "./fan-out.ts";
+export {
+  failOverAcrossSources,
+  fanOutToSources,
+  SourceTimeoutError,
+  type FanOutTask,
+} from "./fan-out.ts";
 export { capToLimit, perSourceLimit } from "./limit-budget.ts";
 
 export class NotImplementedError extends Error {
