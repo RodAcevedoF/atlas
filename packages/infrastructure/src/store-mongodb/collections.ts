@@ -54,6 +54,7 @@ export interface SignalDoc {
   topic: Topic;
   primaryRegion: GeoRegion;
   regions: GeoRegion[];
+  sourceCountry?: string | null;
   weight: number;
   sentiment: number;
   title: string;

@@ -49,7 +49,7 @@ function diagnoseRegions(signals: Signal[]): RegionDiagnostics {
   let wouldNarrowToGlobal = 0;
 
   for (const signal of signals) {
-    const recomputed = deriveRegionsFromText([signal.title]);
+    const recomputed = deriveRegionsFromText([signal.title, signal.sourceCountry]);
     const stored = new Set(signal.regions);
     const differs =
       recomputed.length !== stored.size || recomputed.some((region) => !stored.has(region));

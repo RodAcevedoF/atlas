@@ -55,7 +55,7 @@ describe("ReclassifySignalsUseCase", () => {
     expect(result.otherShareAfter).toBeCloseTo(1 / 3, 10);
   });
 
-  test("leaves regions untouched — `sourcecountry` fed them and was never stored", async () => {
+  test("leaves regions untouched — the diagnostics only report, they never write", async () => {
     const { store, signals } = inMemorySignalStore(staleCorpus());
 
     const result = await new ReclassifySignalsUseCase(store).execute();
@@ -64,6 +64,22 @@ describe("ReclassifySignalsUseCase", () => {
     expect(weather?.regions).toEqual(["north-america"]);
     expect(weather?.primaryRegion).toBe("north-america");
     expect(result.regions).toEqual({ divergent: 1, wouldNarrowToGlobal: 1 });
+  });
+
+  test("diagnoses a signal with a stored country against both its inputs, not the title alone", async () => {
+    const { store } = inMemorySignalStore([
+      buildSignal({
+        ref: "https://example.test/valley",
+        title: "Warm afternoon in the valley",
+        sourceCountry: "France",
+        regions: ["europe"],
+        primaryRegion: "europe",
+      }),
+    ]);
+
+    const result = await new ReclassifySignalsUseCase(store).execute();
+
+    expect(result.regions).toEqual({ divergent: 0, wouldNarrowToGlobal: 0 });
   });
 
   test("never touches market signals, whose topic comes from the market category", async () => {

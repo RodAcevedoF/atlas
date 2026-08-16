@@ -13,6 +13,7 @@ function signal(ref: string, overrides: Partial<Signal> = {}): Signal {
     topic: "conflict",
     primaryRegion: "global",
     regions: ["global"],
+    sourceCountry: null,
     weight: 1,
     sentiment: 0,
     title: `Headline ${ref}`,

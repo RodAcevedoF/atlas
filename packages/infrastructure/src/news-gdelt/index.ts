@@ -64,6 +64,7 @@ function articleToSignal(article: GdeltArticle): Signal | null {
     topic: deriveTopicFromText([article.title]),
     primaryRegion: regions[0] ?? "global",
     regions,
+    sourceCountry: article.sourcecountry ?? null,
     weight: 1,
     sentiment: classifySentimentFromText([article.title]),
     title: article.title,

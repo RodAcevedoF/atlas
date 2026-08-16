@@ -43,6 +43,7 @@ export interface Signal {
   topic: Topic;
   primaryRegion: GeoRegion;
   regions: GeoRegion[];
+  sourceCountry: string | null;
   weight: number;
   sentiment: number;
   title: string;
@@ -58,6 +59,8 @@ export function marketToSignal(market: Market): Signal {
     topic: marketCategoryToTopic(market.category),
     primaryRegion: market.primaryRegion,
     regions: market.regions,
+    // markets carry no publisher country
+    sourceCountry: null,
     weight: market.volumeUsd,
     // market signals encode price/volume
     sentiment: 0,

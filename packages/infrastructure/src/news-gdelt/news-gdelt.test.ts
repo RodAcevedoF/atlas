@@ -133,6 +133,7 @@ describe("GdeltNewsAdapter", () => {
         topic: "politics",
         primaryRegion: "europe",
         regions: ["europe"],
+        sourceCountry: "France",
         weight: 1,
         sentiment: 0,
         title: "Election results announced",
@@ -150,6 +151,29 @@ describe("GdeltNewsAdapter", () => {
       expect(signal?.primaryRegion).toBe("global");
       expect(signal?.regions).toEqual(["global"]);
     });
+
+    const sourceCountryCases = [
+      {
+        name: "keeps the provider country unmapped, so a later classifier can re-derive regions",
+        sourcecountry: "France",
+        expected: "France",
+      },
+      {
+        name: "records no country rather than inventing one when GDELT omits it",
+        sourcecountry: undefined,
+        expected: null,
+      },
+    ];
+
+    for (const { name, sourcecountry, expected } of sourceCountryCases) {
+      test(name, async () => {
+        stubGdelt([article({ sourcecountry })]);
+
+        const [signal] = await new GdeltNewsAdapter().fetchSignals();
+
+        expect(signal?.sourceCountry).toBe(expected);
+      });
+    }
 
     const dropCases = [
       { name: "an article with no url", overrides: { url: "" } },

@@ -11,6 +11,7 @@ export interface BuildSignalOptions {
   topic?: Topic;
   primaryRegion?: GeoRegion;
   regions?: GeoRegion[];
+  sourceCountry?: string | null;
   title?: string;
   sentiment?: number;
 }
@@ -23,6 +24,7 @@ export function buildSignal({
   topic = "conflict",
   primaryRegion = "middle-east",
   regions,
+  sourceCountry = null,
   title,
   sentiment = -0.4,
 }: BuildSignalOptions): Signal {
@@ -33,6 +35,7 @@ export function buildSignal({
     topic,
     primaryRegion,
     regions: regions ?? [...new Set<GeoRegion>([primaryRegion, "global"])],
+    sourceCountry,
     weight,
     sentiment,
     title: title ?? `Headline ${ref}`,

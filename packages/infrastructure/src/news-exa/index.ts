@@ -31,6 +31,7 @@ function resultToSignal(result: ExaResult): Signal | null {
     topic: deriveTopicFromText([result.title]),
     primaryRegion: regions[0] ?? "global",
     regions,
+    sourceCountry: null,
     weight: 1,
     sentiment: classifySentimentFromText([result.title]),
     title: result.title,
