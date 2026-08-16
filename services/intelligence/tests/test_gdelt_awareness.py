@@ -11,6 +11,7 @@ from app.adapters.gdelt_awareness import (
     is_throttled,
     parse_distribution,
 )
+from app.ports.awareness import AwarenessRetryable, AwarenessUnavailable
 
 THROTTLE_BODY = (
     "Please limit requests to one every 5 seconds or contact someone@example.com for larger "
@@ -36,6 +37,20 @@ def timeline(**series: list[float]) -> dict[str, object]:
 def responding(status: int, body: str) -> httpx.AsyncClient:
     transport = httpx.MockTransport(lambda _: httpx.Response(status, text=body))
     return httpx.AsyncClient(transport=transport)
+
+
+class TestFailureVocabulary:
+    # the graph catches the port's two failure kinds; an adapter error the port cannot name
+    # escapes the graph and the run dies permanently.
+    cases = [
+        ("a throttle is retryable", GdeltThrottled("Please limit requests"), AwarenessRetryable),
+        ("a gateway blip is retryable too", GdeltRetryable("HTTP 503"), AwarenessRetryable),
+        ("an unusable answer is unavailable", GdeltUnavailable("HTTP 400"), AwarenessUnavailable),
+    ]
+
+    def test_every_gdelt_failure_is_carried_in_the_port_vocabulary(self) -> None:
+        for name, error, expected in self.cases:
+            assert isinstance(error, expected), name
 
 
 class TestThrottleDetection:

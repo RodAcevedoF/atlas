@@ -133,6 +133,13 @@ export type {
 } from "./world/inbound/reclassify-signals.ts";
 export { ReclassifySignalsUseCase } from "./world/inbound/reclassify-signals.ts";
 
+// research
+export type {
+  ExecuteResearchRun,
+  ExecuteResearchRunOutput,
+} from "./research/inbound/execute-research-run.ts";
+export { ExecuteResearchRunUseCase } from "./research/inbound/execute-research-run.ts";
+
 // migrations
 export type {
   MigrationContext,

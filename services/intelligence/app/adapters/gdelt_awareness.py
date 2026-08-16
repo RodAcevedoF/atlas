@@ -8,7 +8,12 @@ from typing import Any
 
 import httpx
 
-from app.ports.awareness import AwarenessDistribution, CountrySeriesStats
+from app.ports.awareness import (
+    AwarenessDistribution,
+    AwarenessRetryable,
+    AwarenessUnavailable,
+    CountrySeriesStats,
+)
 
 DOC_ENDPOINT = "https://api.gdeltproject.org/api/v2/doc/doc"
 TIMELINE_MODE = "timelinesourcecountry"
@@ -19,7 +24,7 @@ THROTTLE_MARKER = "Please limit requests"
 SERIES_SUFFIX = " Volume Intensity"
 
 
-class GdeltRetryable(Exception):
+class GdeltRetryable(AwarenessRetryable):
     """Upstream failed in a way an identical later request may survive."""
 
 
@@ -27,7 +32,7 @@ class GdeltThrottled(GdeltRetryable):
     """upstream refused for rate reasons."""
 
 
-class GdeltUnavailable(Exception):
+class GdeltUnavailable(AwarenessUnavailable):
     """upstream answered with something unusable."""
 
 

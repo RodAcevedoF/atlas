@@ -6,6 +6,14 @@ from dataclasses import dataclass
 from typing import Protocol
 
 
+class AwarenessRetryable(Exception):
+    """the source failed in a way an identical later request may survive."""
+
+
+class AwarenessUnavailable(Exception):
+    """the source answered with something unusable."""
+
+
 @dataclass(slots=True, frozen=True)
 class CountrySeriesStats:
     """aggregated shape of one country series. slots keeps the raw timeline out."""

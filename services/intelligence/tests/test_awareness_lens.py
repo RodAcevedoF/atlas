@@ -5,7 +5,12 @@ import pytest
 from app.core.events import GraphEvent
 from app.graphs.awareness import rate_distribution
 from app.graphs.awareness_lens import AwarenessLensGraph, render_summary, to_record
-from app.ports.awareness import AwarenessDistribution, CountrySeriesStats
+from app.ports.awareness import (
+    AwarenessDistribution,
+    AwarenessRetryable,
+    AwarenessUnavailable,
+    CountrySeriesStats,
+)
 
 BUCKETS = 166
 
@@ -34,6 +39,28 @@ class InMemoryAwarenessSource:
         if (query, window) not in self._by_query_window:
             raise LookupError(f"no distribution seeded for {query!r} over {window!r}")
         return self._by_query_window[(query, window)]
+
+
+class FailingAwarenessSource:
+    def __init__(self, error: Exception) -> None:
+        self._error = error
+
+    async def fetch(self, query: str, window: str) -> AwarenessDistribution:
+        raise self._error
+
+
+class SynthesisFailingAnalyst:
+    """expands normally, then cannot narrate — the measurement is already paid for."""
+
+    def __init__(self, query: str, error: Exception) -> None:
+        self._query = query
+        self._error = error
+
+    async def expand_query(self, question: str) -> str:
+        return self._query
+
+    async def synthesize(self, question: str, distribution_summary: str) -> str:
+        raise self._error
 
 
 class ScriptedAnalyst:
@@ -199,6 +226,43 @@ class TestAwarenessRun:
                 asyncio.run(graph.run("run-1", payload))
 
             assert "question" in str(raised.value), name
+
+    failure_cases = [
+        (
+            "a retryable source failure lets the worker go quiet and re-run",
+            AwarenessRetryable("Please limit requests"),
+            "failed_retryable",
+        ),
+        ("an unusable answer is permanent", AwarenessUnavailable("HTTP 400"), "failed_permanent"),
+    ]
+
+    def test_a_source_failure_crosses_the_boundary_as_a_status_not_an_exception(self) -> None:
+        for name, error, expected in self.failure_cases:
+            graph = AwarenessLensGraph(
+                source=FailingAwarenessSource(error), analyst=ScriptedAnalyst(query='"Sudan"')
+            )
+
+            result = asyncio.run(graph.run("run-1", {"question": "sudan famine"}))
+
+            assert result["status"] == expected, name
+            assert result["error"] == str(error), name
+            assert result["synthesis"] is None, name
+
+    def test_a_narration_failure_keeps_the_measurement_and_stays_retryable(self) -> None:
+        query = '"Sudan"'
+        graph = AwarenessLensGraph(
+            source=InMemoryAwarenessSource(
+                {(query, "1w"): distribution(stats("Sudan", 13.139, 100.0, 25), query=query)}
+            ),
+            analyst=SynthesisFailingAnalyst(query=query, error=RuntimeError("provider 429")),
+        )
+
+        result = asyncio.run(graph.run("run-1", {"question": "sudan famine"}))
+
+        assert result["status"] == "failed_retryable"
+        assert result["error"] == "provider 429"
+        assert result["synthesis"] is None
+        assert [country["country"] for country in result["distribution"]] == ["Sudan"]
 
     def test_the_stream_shape_carries_the_finished_result(self) -> None:
         graph = graph_over(stats("Sudan", 13.139, 100.0, 25))

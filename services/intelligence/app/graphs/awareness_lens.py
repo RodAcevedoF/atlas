@@ -5,7 +5,12 @@ from langgraph.graph import END, START, StateGraph
 
 from app.core.events import GraphEvent
 from app.graphs.awareness import RatedCountry, loudest, rate_distribution
-from app.ports.awareness import AwarenessAnalystPort, AwarenessSourcePort
+from app.ports.awareness import (
+    AwarenessAnalystPort,
+    AwarenessRetryable,
+    AwarenessSourcePort,
+    AwarenessUnavailable,
+)
 
 DEFAULT_WINDOW = "1w"
 
@@ -21,6 +26,7 @@ class AwarenessState(TypedDict):
     ranked: list[RatedCountry]
     synthesis: str
     status: str
+    error: str
 
 
 def to_record(country: RatedCountry) -> dict[str, Any]:
@@ -62,7 +68,8 @@ def render_summary(ranked: list[RatedCountry]) -> str:
 
 
 def _route(state: AwarenessState) -> str:
-    return "end" if state.get("status") == "no_coverage" else "synthesize"
+    """measure sets a status only when it has already ended the run."""
+    return "synthesize" if state.get("status") is None else "end"
 
 
 class AwarenessLensGraph:
@@ -84,16 +91,25 @@ class AwarenessLensGraph:
             return {"executed_query": await self._analyst.expand_query(state["question"])}
 
         async def measure_node(state: AwarenessState) -> dict[str, Any]:
-            distribution = await self._source.fetch(state["executed_query"], state["window"])
+            try:
+                distribution = await self._source.fetch(state["executed_query"], state["window"])
+            except AwarenessRetryable as error:
+                return {"status": "failed_retryable", "error": str(error)}
+            except AwarenessUnavailable as error:
+                return {"status": "failed_permanent", "error": str(error)}
+
             ranked = rate_distribution(distribution)
             if not loudest(ranked, limit=len(ranked)):
                 return {"ranked": ranked, "status": "no_coverage"}
             return {"ranked": ranked}
 
         async def synthesize_node(state: AwarenessState) -> dict[str, Any]:
-            read = await self._analyst.synthesize(
-                state["question"], render_summary(state["ranked"])
-            )
+            summary = render_summary(state["ranked"])
+            try:
+                read = await self._analyst.synthesize(state["question"], summary)
+            except Exception as error:
+                return {"status": "failed_retryable", "error": str(error)}
+
             return {"synthesis": read, "status": "succeeded"}
 
         builder = StateGraph(AwarenessState)
@@ -134,6 +150,7 @@ def _result(state: AwarenessState) -> dict[str, Any]:
         "executedQuery": state.get("executed_query"),
         "window": state["window"],
         "status": state["status"],
+        "error": state.get("error"),
         "distribution": [to_record(country) for country in state.get("ranked") or []],
         "synthesis": state.get("synthesis"),
     }

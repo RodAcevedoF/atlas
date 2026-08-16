@@ -3,15 +3,9 @@ import type {
   SignalClassificationUpdate,
   SignalStorePort,
 } from "../world/outbound/signal-store.ts";
+import { UnsupportedPortMethodError } from "./unsupported-port-method.ts";
 
 export type ListSignalsFilter = Parameters<SignalStorePort["listSignals"]>[0];
-
-class UnsupportedPortMethodError extends Error {
-  constructor(fake: string, method: string) {
-    super(`${fake} does not support ${method}`);
-    this.name = "UnsupportedPortMethodError";
-  }
-}
 
 export interface RecordingSignalStore {
   store: SignalStorePort;
