@@ -139,6 +139,16 @@ export type {
   ExecuteResearchRunOutput,
 } from "./research/inbound/execute-research-run.ts";
 export { ExecuteResearchRunUseCase } from "./research/inbound/execute-research-run.ts";
+export type {
+  RequestResearchRun,
+  RequestResearchRunInput,
+  RequestResearchRunOutput,
+} from "./research/inbound/request-research-run.ts";
+export {
+  InvalidResearchQuestionError,
+  RequestResearchRunUseCase,
+  ResearchDailyCapReachedError,
+} from "./research/inbound/request-research-run.ts";
 
 // migrations
 export type {

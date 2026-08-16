@@ -85,6 +85,7 @@ export class MongoResearchRunStore implements ResearchRunStorePort {
             attempts: { $lt: RESEARCH_MAX_ATTEMPTS },
             completedAt: { $lt: input.completedBefore },
           },
+          { status: "running", startedAt: { $lt: input.startedBefore } },
         ],
       },
       {

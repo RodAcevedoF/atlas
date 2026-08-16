@@ -14,6 +14,8 @@ import { RESEARCH_MAX_ATTEMPTS } from "../outbound/research-run-store.ts";
 
 const GRAPH_NAME = "awareness";
 const ERROR_SAMPLE_CHARS = 200;
+/** a live run cannot outlast its own timeout, so an older `running` row belongs to a dead process */
+const STALE_TIMEOUT_MULTIPLE = 2;
 const IN_FLIGHT_STATUSES = ["queued", "running"] as const satisfies readonly ResearchRunStatus[];
 
 export interface ExecuteResearchRunOutput {
@@ -135,12 +137,24 @@ export class ExecuteResearchRunUseCase implements ExecuteResearchRun {
     const run = await this.store.claimNextResearchRun({
       now,
       completedBefore: new Date(now.getTime() - this.retryAfterMs),
+      startedBefore: new Date(now.getTime() - this.runTimeoutMs * STALE_TIMEOUT_MULTIPLE),
     });
     if (!run) return { runId: null, status: null };
 
-    const outcome = await this.measure(run);
+    const outcome = await this.outcomeFor(run);
     await this.store.completeResearchRun({ ...outcome, id: run.id, completedAt: new Date() });
     return { runId: run.id, status: outcome.status };
+  }
+
+  private async outcomeFor(run: ResearchRun): Promise<RunOutcome> {
+    if (run.attempts > RESEARCH_MAX_ATTEMPTS) {
+      return failure(
+        "failed_permanent",
+        `abandoned after ${RESEARCH_MAX_ATTEMPTS} interrupted attempts`,
+        run.attempts,
+      );
+    }
+    return this.measure(run);
   }
 
   private async measure(run: ResearchRun): Promise<RunOutcome> {

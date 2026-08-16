@@ -5,6 +5,7 @@ export const RESEARCH_MAX_ATTEMPTS = 2;
 export interface ClaimResearchRunInput {
   now: Date;
   completedBefore: Date;
+  startedBefore: Date;
 }
 
 export type CompleteResearchRunInput = Pick<

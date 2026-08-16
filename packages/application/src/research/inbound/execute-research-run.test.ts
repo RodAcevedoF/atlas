@@ -235,6 +235,64 @@ describe("ExecuteResearchRunUseCase", () => {
     expect(stored?.distribution).toEqual([]);
   });
 
+  test("a run stranded by a crash is reclaimed, not left running forever", async () => {
+    const stranded = run({
+      status: "running",
+      attempts: 1,
+      startedAt: new Date(Date.now() - RUN_TIMEOUT_MS * 3),
+    });
+    const { store, runs } = inMemoryResearchRunStore([stranded]);
+    const useCase = new ExecuteResearchRunUseCase(
+      store,
+      answering(SUCCESS_BODY),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    await useCase.execute();
+
+    const [stored] = runs();
+    expect(stored?.status).toBe("succeeded");
+    expect(stored?.attempts).toBe(2);
+  });
+
+  test("a run still inside its timeout is left to the worker holding it", async () => {
+    const live = run({ status: "running", attempts: 1, startedAt: new Date() });
+    const { store } = inMemoryResearchRunStore([live]);
+    const useCase = new ExecuteResearchRunUseCase(
+      store,
+      answering(SUCCESS_BODY),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    const result = await useCase.execute();
+
+    expect(result).toEqual({ runId: null, status: null });
+  });
+
+  test("a run stranded past its attempts is abandoned rather than measured again", async () => {
+    const exhausted = run({
+      status: "running",
+      attempts: 2,
+      startedAt: new Date(Date.now() - RUN_TIMEOUT_MS * 3),
+    });
+    const { store, runs } = inMemoryResearchRunStore([exhausted]);
+    const useCase = new ExecuteResearchRunUseCase(
+      store,
+      failing(new Error("the graph must not be called for an abandoned run")),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    await useCase.execute();
+
+    const [stored] = runs();
+    expect(stored?.status).toBe("failed_permanent");
+    expect(stored?.error).toBe("abandoned after 2 interrupted attempts");
+    expect(stored?.completedAt).not.toBeNull();
+  });
+
   test("a graph that never answers gives up and stays retryable, freeing the worker", async () => {
     const { store, runs } = inMemoryResearchRunStore([run()]);
     const useCase = new ExecuteResearchRunUseCase(store, hanging(), RETRY_AFTER_MS, 5);

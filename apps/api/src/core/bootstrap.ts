@@ -28,6 +28,7 @@ import { type WorldDeps, makeWorldDependencies } from "../modules/world/dependen
 const DEFAULT_RESEARCH_RETRY_AFTER_MS = 11 * 60 * 1000;
 const DEFAULT_RESEARCH_POLL_INTERVAL_MS = 5_000;
 const DEFAULT_RESEARCH_RUN_TIMEOUT_MS = 120_000;
+const DEFAULT_RESEARCH_DAILY_CAP = 25;
 
 export interface AppDeps {
   auth: AuthDeps;
@@ -39,11 +40,17 @@ export interface AppDeps {
   redis: ReturnType<typeof createRedisClient>;
 }
 
-function readIntervalMs(name: string, fallback: number): number {
+function readPositiveNumber(name: string, fallback: number): number {
   const raw = process.env[name];
   if (raw === undefined) return fallback;
   const parsed = Number(raw);
   if (!Number.isFinite(parsed) || parsed <= 0) throw new Error(`${name} must be a positive number`);
+  return parsed;
+}
+
+function readPositiveInt(name: string, fallback: number): number {
+  const parsed = readPositiveNumber(name, fallback);
+  if (!Number.isInteger(parsed)) throw new Error(`${name} must be a whole number`);
   return parsed;
 }
 
@@ -99,9 +106,13 @@ export async function bootstrap(): Promise<AppDeps> {
   const research = makeResearchDependencies({
     store: new MongoResearchRunStore(db),
     orchestration,
-    retryAfterMs: readIntervalMs("RESEARCH_RETRY_AFTER_MS", DEFAULT_RESEARCH_RETRY_AFTER_MS),
-    runTimeoutMs: readIntervalMs("RESEARCH_RUN_TIMEOUT_MS", DEFAULT_RESEARCH_RUN_TIMEOUT_MS),
-    pollIntervalMs: readIntervalMs("RESEARCH_POLL_INTERVAL_MS", DEFAULT_RESEARCH_POLL_INTERVAL_MS),
+    retryAfterMs: readPositiveNumber("RESEARCH_RETRY_AFTER_MS", DEFAULT_RESEARCH_RETRY_AFTER_MS),
+    runTimeoutMs: readPositiveNumber("RESEARCH_RUN_TIMEOUT_MS", DEFAULT_RESEARCH_RUN_TIMEOUT_MS),
+    pollIntervalMs: readPositiveNumber(
+      "RESEARCH_POLL_INTERVAL_MS",
+      DEFAULT_RESEARCH_POLL_INTERVAL_MS,
+    ),
+    dailyCap: readPositiveInt("RESEARCH_DAILY_CAP", DEFAULT_RESEARCH_DAILY_CAP),
   });
 
   return { auth, profile, markets, news, world, research, redis };
