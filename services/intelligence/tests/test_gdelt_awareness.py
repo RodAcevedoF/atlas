@@ -23,8 +23,10 @@ def timeline(**series: list[float]) -> dict[str, object]:
         "timeline": [
             {
                 "series": f"{country} Volume Intensity",
-                "data": [{"date": f"2026081{index}T000000Z", "value": value}
-                         for index, value in enumerate(values)],
+                "data": [
+                    {"date": f"2026081{index}T000000Z", "value": value}
+                    for index, value in enumerate(values)
+                ],
             }
             for country, values in series.items()
         ]

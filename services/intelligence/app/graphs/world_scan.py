@@ -124,9 +124,7 @@ def _route(state: ScanState) -> str:
 
 def _ground_node(state: ScanState) -> dict[str, Any]:
     return {
-        "narrative": ground_citations(
-            state["narrative"], state["news_tags"], state["market_tags"]
-        )
+        "narrative": ground_citations(state["narrative"], state["news_tags"], state["market_tags"])
     }
 
 
@@ -159,9 +157,7 @@ class WorldScanGraph:
         builder.add_node("generate", generate_node)
         builder.add_node("ground", _ground_node)
         builder.add_edge(START, "scope")
-        builder.add_conditional_edges(
-            "scope", _route, {"generate": "generate", "ground": "ground"}
-        )
+        builder.add_conditional_edges("scope", _route, {"generate": "generate", "ground": "ground"})
         builder.add_edge("generate", "ground")
         builder.add_edge("ground", END)
         return builder.compile()

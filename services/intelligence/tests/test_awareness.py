@@ -16,11 +16,21 @@ def stats(country: str, awareness: float, peak: float, covered: int) -> CountryS
 
 class TestConfidence:
     cases = [
-        ("a saturated peak sustained across the window is a real level", 13.139, 100.0, 25,
-         "measured"),
+        (
+            "a saturated peak sustained across the window is a real level",
+            13.139,
+            100.0,
+            25,
+            "measured",
+        ),
         ("a saturated peak over a handful of buckets is spiky but real", 1.392, 100.0, 6, "thin"),
-        ("a saturated peak over almost no buckets is a denominator artifact", 0.602, 100.0, 1,
-         "artifact"),
+        (
+            "a saturated peak over almost no buckets is a denominator artifact",
+            0.602,
+            100.0,
+            1,
+            "artifact",
+        ),
         ("an unsaturated peak is measured however low the level", 1.241, 18.868, 61, "measured"),
         ("near-silence never saturates, so it is reported not discarded", 0.016, 2.632, 1, "thin"),
     ]
