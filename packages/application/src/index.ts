@@ -13,6 +13,13 @@ export type {
 export type { MigrationLedgerPort } from "./migrations/outbound/migration-ledger.ts";
 export type { WorldScanReportStorePort } from "./world/outbound/world-scan-report-store.ts";
 export type {
+  ClaimResearchRunInput,
+  CompleteResearchRunInput,
+  ResearchRunFilter,
+  ResearchRunStorePort,
+} from "./research/outbound/research-run-store.ts";
+export { RESEARCH_MAX_ATTEMPTS } from "./research/outbound/research-run-store.ts";
+export type {
   GraphRunInput,
   GraphEventType,
   GraphEvent,

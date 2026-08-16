@@ -33,7 +33,7 @@ export async function ensureIndexes(db: Db): Promise<void> {
       .createIndexes([
         { key: { createdAt: -1 } },
         { key: { status: 1, createdAt: 1 } },
-        { key: { questionKey: 1, day: 1 } },
+        { key: { day: 1, questionKey: 1 } },
       ]),
   ]);
 }

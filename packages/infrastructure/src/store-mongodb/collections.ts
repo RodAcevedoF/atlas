@@ -1,10 +1,13 @@
 import type { WorldScanReport } from "@atlas/application";
 import type {
   AnalysisRunStatus,
+  CountryAwareness,
   GeoRegion,
   InsightKind,
   MarketCategory,
   MarketStatus,
+  ResearchExemplar,
+  ResearchRunStatus,
   SignalSource,
   Topic,
   TradeSide,
@@ -131,6 +134,24 @@ export interface AnalysisRunDoc {
   startedAt: Date;
   completedAt: Date | null;
   error: string | null;
+}
+
+export interface ResearchRunDoc {
+  _id: string;
+  question: string;
+  questionKey: string;
+  day: string;
+  executedQuery: string | null;
+  window: string;
+  distribution: CountryAwareness[];
+  exemplars: ResearchExemplar[];
+  synthesis: string | null;
+  status: ResearchRunStatus;
+  error: string | null;
+  attempts: number;
+  createdAt: Date;
+  startedAt: Date | null;
+  completedAt: Date | null;
 }
 
 export interface WorldScanReportDoc {

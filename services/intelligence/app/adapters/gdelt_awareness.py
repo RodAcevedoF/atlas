@@ -37,7 +37,7 @@ def is_throttled(status: int, body: str) -> bool:
 
 def _is_transient_status(status: int) -> bool:
     """A gateway blip or an upstream request timeout."""
-    return status >= httpx.codes.INTERNAL_SERVER_ERROR or status == httpx.codes.REQUEST_TIMEOUT
+    return status >= 500 or status == 408
 
 
 def _summarize(country: str, values: list[float]) -> CountrySeriesStats:
@@ -85,7 +85,7 @@ async def fetch_awareness(
         raise GdeltThrottled(body.strip()[:200])
     if _is_transient_status(response.status_code):
         raise GdeltRetryable(f"HTTP {response.status_code}")
-    if response.status_code != httpx.codes.OK:
+    if response.status_code != 200:
         raise GdeltUnavailable(f"HTTP {response.status_code}")
     if not body.lstrip().startswith("{"):
         raise GdeltUnavailable(f"non-JSON response: {body.strip()[:200]}")

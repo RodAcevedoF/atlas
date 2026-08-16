@@ -126,14 +126,19 @@ class TestFetchAwareness:
         with pytest.raises(GdeltUnavailable):
             asyncio.run(fetch_awareness("sudan", "1w", client))
 
-    def test_a_gateway_failure_is_retryable_not_permanent(self) -> None:
-        # A blip must not mark the run permanently failed — the user could never re-run it.
-        client = responding(503, "upstream unavailable")
+    retryable_cases = [
+        ("a gateway blip, which must not mark the run permanently failed", 503),
+        ("an upstream request timeout — the one 4xx that is a blip, not a bad query", 408),
+    ]
 
-        with pytest.raises(GdeltRetryable) as raised:
-            asyncio.run(fetch_awareness("sudan", "1w", client))
+    def test_transient_upstream_failures_are_retryable_not_permanent(self) -> None:
+        for name, status in self.retryable_cases:
+            client = responding(status, "upstream unavailable")
 
-        assert not isinstance(raised.value, GdeltUnavailable)
+            with pytest.raises(GdeltRetryable) as raised:
+                asyncio.run(fetch_awareness("sudan", "1w", client))
+
+            assert not isinstance(raised.value, GdeltUnavailable), name
 
     def test_a_client_error_stays_permanent(self) -> None:
         client = responding(400, "bad query syntax")

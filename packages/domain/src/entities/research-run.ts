@@ -48,6 +48,7 @@ export interface ResearchRun {
   synthesis: string | null;
   status: ResearchRunStatus;
   error: string | null;
+  attempts: number;
   createdAt: Date;
   startedAt: Date | null;
   completedAt: Date | null;
