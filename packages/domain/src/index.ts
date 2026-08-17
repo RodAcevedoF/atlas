@@ -45,8 +45,9 @@ export type {
   CountryAwareness,
   ResearchExemplar,
   ResearchRun,
+  PublicResearchRun,
 } from "./entities/research-run.ts";
-export { makeResearchRunId } from "./entities/research-run.ts";
+export { makeResearchRunId, toPublicResearchRun } from "./entities/research-run.ts";
 export { RESEARCH_RUN_STATUSES, AWARENESS_CONFIDENCES } from "./entities/research-run.ts";
 
 export type {

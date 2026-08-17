@@ -53,3 +53,35 @@ export interface ResearchRun {
   startedAt: Date | null;
   completedAt: Date | null;
 }
+
+export interface PublicResearchRun {
+  id: ResearchRunId;
+  question: string;
+  day: string;
+  executedQuery: string | null;
+  window: string;
+  distribution: CountryAwareness[];
+  exemplars: ResearchExemplar[];
+  synthesis: string | null;
+  status: ResearchRunStatus;
+  createdAt: Date;
+  startedAt: Date | null;
+  completedAt: Date | null;
+}
+
+export function toPublicResearchRun(run: ResearchRun): PublicResearchRun {
+  return {
+    id: run.id,
+    question: run.question,
+    day: run.day,
+    executedQuery: run.executedQuery,
+    window: run.window,
+    distribution: run.distribution,
+    exemplars: run.exemplars,
+    synthesis: run.synthesis,
+    status: run.status,
+    createdAt: run.createdAt,
+    startedAt: run.startedAt,
+    completedAt: run.completedAt,
+  };
+}

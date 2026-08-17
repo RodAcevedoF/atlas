@@ -163,7 +163,7 @@ class WorldScanGraph:
         return builder.compile()
 
     async def run(self, run_id: str, input: dict[str, Any]) -> dict[str, Any]:
-        final = await self._graph.ainvoke(cast(ScanState, {"payload": input}))
+        final = await self._graph.ainvoke({"payload": input})
         return cast(dict[str, Any], final["narrative"])
 
     async def stream(self, run_id: str, input: dict[str, Any]) -> AsyncIterator[GraphEvent]:

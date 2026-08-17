@@ -13,8 +13,8 @@ export type CompleteResearchRunInput = Pick<
   "id" | "status" | "executedQuery" | "distribution" | "exemplars" | "synthesis" | "error"
 > & { completedAt: Date };
 
-export interface ResearchRunFilter {
-  limit?: number;
+export interface ResearchRunPage {
+  limit: number;
 }
 
 export interface ResearchRunStorePort {
@@ -24,5 +24,5 @@ export interface ResearchRunStorePort {
   countResearchRunsForDay(day: string): Promise<number>;
   claimNextResearchRun(input: ClaimResearchRunInput): Promise<ResearchRun | null>;
   completeResearchRun(input: CompleteResearchRunInput): Promise<void>;
-  listResearchRuns(filter?: ResearchRunFilter): Promise<ResearchRun[]>;
+  listResearchRuns(page: ResearchRunPage): Promise<ResearchRun[]>;
 }

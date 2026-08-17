@@ -1,7 +1,7 @@
 import type {
   ClaimResearchRunInput,
   CompleteResearchRunInput,
-  ResearchRunFilter,
+  ResearchRunPage,
   ResearchRunStorePort,
 } from "@atlas/application";
 import { RESEARCH_MAX_ATTEMPTS } from "@atlas/application";
@@ -114,12 +114,12 @@ export class MongoResearchRunStore implements ResearchRunStorePort {
     );
   }
 
-  async listResearchRuns(filter?: ResearchRunFilter): Promise<ResearchRun[]> {
+  async listResearchRuns(page: ResearchRunPage): Promise<ResearchRun[]> {
     const docs = await this.db
       .collection<ResearchRunDoc>(COLLECTION)
       .find({})
       .sort({ createdAt: -1 })
-      .limit(filter?.limit ?? 20)
+      .limit(page.limit)
       .toArray();
     return docs.map(docToResearchRun);
   }

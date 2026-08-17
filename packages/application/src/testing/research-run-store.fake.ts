@@ -4,9 +4,6 @@ import type {
   ResearchRunStorePort,
 } from "../research/outbound/research-run-store.ts";
 import { RESEARCH_MAX_ATTEMPTS } from "../research/outbound/research-run-store.ts";
-import { UnsupportedPortMethodError } from "./unsupported-port-method.ts";
-
-const FAKE = "inMemoryResearchRunStore";
 
 export interface InMemoryResearchRunStore {
   store: ResearchRunStorePort;
@@ -71,8 +68,8 @@ export function inMemoryResearchRunStore(seed: ResearchRun[] = []): InMemoryRese
       held.set(input.id, { ...run, ...input });
       return Promise.resolve();
     },
-    listResearchRuns: () => {
-      throw new UnsupportedPortMethodError(FAKE, "listResearchRuns");
+    listResearchRuns(page) {
+      return Promise.resolve([...held.values()].sort(newestFirst).slice(0, page.limit));
     },
   };
 

@@ -5,6 +5,7 @@ from langgraph.graph import END, START, StateGraph
 
 from app.core.events import GraphEvent
 from app.graphs.awareness import RatedCountry, loudest, rate_distribution
+from app.graphs.query_validation import violation
 from app.ports.awareness import (
     AwarenessAnalystPort,
     AwarenessRetryable,
@@ -13,6 +14,8 @@ from app.ports.awareness import (
 )
 
 DEFAULT_WINDOW = "1w"
+
+EXPANSION_ATTEMPTS = 2
 
 # bounds the synthesis prompt.
 LOUDEST_IN_SUMMARY = 15
@@ -67,9 +70,17 @@ def render_summary(ranked: list[RatedCountry]) -> str:
     )
 
 
+def _still_open(state: AwarenessState) -> bool:
+    """a node sets a status only when it has already ended the run."""
+    return state.get("status") is None
+
+
+def _route_expansion(state: AwarenessState) -> str:
+    return "measure" if _still_open(state) else "end"
+
+
 def _route(state: AwarenessState) -> str:
-    """measure sets a status only when it has already ended the run."""
-    return "synthesize" if state.get("status") is None else "end"
+    return "synthesize" if _still_open(state) else "end"
 
 
 class AwarenessLensGraph:
@@ -88,7 +99,23 @@ class AwarenessLensGraph:
 
     def _build(self) -> Any:
         async def expand_node(state: AwarenessState) -> dict[str, Any]:
-            return {"executed_query": await self._analyst.expand_query(state["question"])}
+            query = ""
+            reason = None
+            for _ in range(EXPANSION_ATTEMPTS):
+                try:
+                    query = await self._analyst.expand_query(state["question"])
+                except Exception as error:
+                    return {"status": "failed_retryable", "error": str(error)}
+
+                reason = violation(query)
+                if reason is None:
+                    return {"executed_query": query}
+
+            return {
+                "executed_query": query,
+                "status": "failed_permanent",
+                "error": f"unusable expanded query: {reason}",
+            }
 
         async def measure_node(state: AwarenessState) -> dict[str, Any]:
             try:
@@ -117,7 +144,9 @@ class AwarenessLensGraph:
         builder.add_node("measure", measure_node)
         builder.add_node("synthesize", synthesize_node)
         builder.add_edge(START, "expand")
-        builder.add_edge("expand", "measure")
+        builder.add_conditional_edges(
+            "expand", _route_expansion, {"measure": "measure", "end": END}
+        )
         builder.add_conditional_edges("measure", _route, {"synthesize": "synthesize", "end": END})
         builder.add_edge("synthesize", END)
         return builder.compile()
@@ -128,10 +157,7 @@ class AwarenessLensGraph:
             raise ValueError("an awareness run needs a question")
 
         final = await self._graph.ainvoke(
-            cast(
-                AwarenessState,
-                {"question": question, "window": str(input.get("window") or self._window)},
-            )
+            {"question": question, "window": str(input.get("window") or self._window)}
         )
         return _result(cast(AwarenessState, final))
 

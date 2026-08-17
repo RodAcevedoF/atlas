@@ -10,6 +10,7 @@ import { registerAuthRoutes } from "./routes/auth.ts";
 import { registerMarketsRoutes } from "./routes/markets.ts";
 import { registerNewsRoutes } from "./routes/news.ts";
 import { registerProfileRoutes } from "./routes/profile.ts";
+import { registerResearchRoutes } from "./routes/research.ts";
 import { registerWorldRoutes } from "./routes/world.ts";
 
 const app = Fastify({ logger: { redact: loggerRedactPaths } });
@@ -31,6 +32,7 @@ await registerProfileRoutes(app, deps.profile);
 await registerMarketsRoutes(app, deps.markets);
 await registerNewsRoutes(app, deps.news);
 await registerWorldRoutes(app, deps.world);
+await registerResearchRoutes(app, deps.research);
 
 registerResearchWorker(app, deps.research);
 

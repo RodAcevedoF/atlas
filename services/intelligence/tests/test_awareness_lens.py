@@ -63,6 +63,36 @@ class SynthesisFailingAnalyst:
         raise self._error
 
 
+class ExpansionFailingAnalyst:
+    """cannot even expand — nothing has been measured yet."""
+
+    def __init__(self, error: Exception) -> None:
+        self._error = error
+
+    async def expand_query(self, question: str) -> str:
+        raise self._error
+
+    async def synthesize(self, question: str, distribution_summary: str) -> str:
+        raise AssertionError("synthesis cannot run when the expansion never produced a query")
+
+
+class ScriptedExpansions:
+    """expands to each query in turn, then repeats the last — the shape a retried expansion sees."""
+
+    def __init__(self, *queries: str, read: str = "EU press is loud; East Asia is silent.") -> None:
+        self._queries = list(queries)
+        self._read = read
+        self._call = 0
+
+    async def expand_query(self, question: str) -> str:
+        query = self._queries[min(self._call, len(self._queries) - 1)]
+        self._call += 1
+        return query
+
+    async def synthesize(self, question: str, distribution_summary: str) -> str:
+        return self._read
+
+
 class ScriptedAnalyst:
     """real AwarenessAnalystPort returning fixed language."""
 
@@ -263,6 +293,48 @@ class TestAwarenessRun:
         assert result["error"] == "provider 429"
         assert result["synthesis"] is None
         assert [country["country"] for country in result["distribution"]] == ["Sudan"]
+
+    def test_an_expansion_failure_is_as_retryable_as_the_same_blip_one_node_later(self) -> None:
+        graph = AwarenessLensGraph(
+            source=InMemoryAwarenessSource({}),
+            analyst=ExpansionFailingAnalyst(RuntimeError("provider 429")),
+        )
+
+        result = asyncio.run(graph.run("run-1", {"question": "sudan famine"}))
+
+        assert result["status"] == "failed_retryable"
+        assert result["error"] == "provider 429"
+        assert result["distribution"] == []
+        assert result["synthesis"] is None
+
+    def test_a_malformed_expansion_is_asked_again_before_it_costs_anything(self) -> None:
+        good = "Sudan AND (famine OR مجاعة)"
+        graph = AwarenessLensGraph(
+            source=InMemoryAwarenessSource(
+                {(good, "1w"): distribution(stats("Sudan", 13.139, 100.0, 25), query=good)}
+            ),
+            analyst=ScriptedExpansions("Sudan AND (famine OR مجاعة) AND (press OR prensa)", good),
+        )
+
+        result = asyncio.run(graph.run("run-1", {"question": "sudan famine"}))
+
+        assert result["status"] == "succeeded"
+        assert result["executedQuery"] == good
+
+    def test_a_query_still_malformed_on_the_retry_never_reaches_the_source(self) -> None:
+        malformed = "Taiwan AND (strait OR 海峡) AND (tensions OR 紧张)"
+        graph = AwarenessLensGraph(
+            source=InMemoryAwarenessSource({}),
+            analyst=ScriptedExpansions(malformed),
+        )
+
+        result = asyncio.run(graph.run("run-1", {"question": "taiwan strait tensions"}))
+
+        assert result["status"] == "failed_permanent"
+        assert "AND-groups" in result["error"]
+        assert result["executedQuery"] == malformed
+        assert result["distribution"] == []
+        assert result["synthesis"] is None
 
     def test_the_stream_shape_carries_the_finished_result(self) -> None:
         graph = graph_over(stats("Sudan", 13.139, 100.0, 25))

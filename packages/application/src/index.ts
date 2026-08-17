@@ -15,7 +15,7 @@ export type { WorldScanReportStorePort } from "./world/outbound/world-scan-repor
 export type {
   ClaimResearchRunInput,
   CompleteResearchRunInput,
-  ResearchRunFilter,
+  ResearchRunPage,
   ResearchRunStorePort,
 } from "./research/outbound/research-run-store.ts";
 export { RESEARCH_MAX_ATTEMPTS } from "./research/outbound/research-run-store.ts";
@@ -149,6 +149,13 @@ export {
   RequestResearchRunUseCase,
   ResearchDailyCapReachedError,
 } from "./research/inbound/request-research-run.ts";
+export type { GetResearchRun } from "./research/inbound/get-research-run.ts";
+export { GetResearchRunUseCase } from "./research/inbound/get-research-run.ts";
+export type {
+  ListResearchRuns,
+  ResearchRunFilter,
+} from "./research/inbound/list-research-runs.ts";
+export { ListResearchRunsUseCase } from "./research/inbound/list-research-runs.ts";
 
 // migrations
 export type {
