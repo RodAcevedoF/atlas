@@ -7,7 +7,7 @@ import type {
 import { TOPIC_LABELS } from "../../../utils/index.ts";
 import type { BreakdownIndex, MapFillMode } from "../types.ts";
 import { FILL_REGIONS, REGION_SUBREGIONS } from "./region-for-country.ts";
-import { emptyFillHex, sentimentHex, topicHex } from "./theme-colors.ts";
+import { emptyFillHex, primaryHex, sentimentHex, topicHex } from "./theme-colors.ts";
 
 function dominantTopic(record: RegionTopicBreakdownRecord | undefined): Topic | null {
   if (!record || record.topics.length === 0) return null;
@@ -51,6 +51,18 @@ export function buildFillOpacity(byRegion: BreakdownIndex, peak: number): Expres
     branches.push(REGION_SUBREGIONS[region], Number((0.16 + 0.68 * ratio).toFixed(3)));
   }
   return ["match", ["get", "subregion"], ...branches, 0.05] as unknown as ExpressionSpecification;
+}
+
+export function buildAwarenessRamp(): ExpressionSpecification {
+  return [
+    "interpolate",
+    ["linear"],
+    ["get", "intensity"],
+    0,
+    emptyFillHex(),
+    1,
+    primaryHex(),
+  ] as unknown as ExpressionSpecification;
 }
 
 export function topicsPresent(byRegion: BreakdownIndex): Topic[] {

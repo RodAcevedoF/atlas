@@ -12,6 +12,34 @@ export const RESET_CAMERA = {
 export const COUNTRIES_SOURCE = "countries";
 export const COUNTRY_FILL_LAYER = "country-fills";
 export const COUNTRY_SELECTED_LAYER = "country-selected";
+export const MUTED_FILL_OPACITY = 0.35;
+
+export const AWARENESS_SOURCE = "awareness-distribution";
+export const AWARENESS_GLOW_LAYER = "awareness-glow";
+export const AWARENESS_ORB_LAYER = "awareness-orbs";
+export const AWARENESS_LABEL_LAYER = "awareness-labels";
+const AWARENESS_CORE_RADIUS = ["interpolate", ["linear"], ["get", "intensity"], 0, 4, 1, 22];
+export const AWARENESS_ORB_RADIUS = AWARENESS_CORE_RADIUS as unknown as ExpressionSpecification;
+export const AWARENESS_GLOW_RADIUS = [
+  "+",
+  AWARENESS_CORE_RADIUS,
+  14,
+] as unknown as ExpressionSpecification;
+
+export const AWARENESS_ORB_OPACITY = [
+  "match",
+  ["get", "confidence"],
+  "measured",
+  0.9,
+  0.4,
+] as unknown as ExpressionSpecification;
+export const AWARENESS_LABEL_TEXT = ["get", "country"] as unknown as ExpressionSpecification;
+
+export const AWARENESS_LABEL_FILTER = [
+  ">",
+  ["get", "intensity"],
+  0.45,
+] as unknown as FilterSpecification;
 
 export const PIN_SOURCE = "event-pins";
 export const PIN_CLUSTER_GLOW_LAYER = "pin-cluster-glow";
@@ -23,6 +51,7 @@ export const PIN_POINT_LAYER = "pin-unclustered";
 export const CLUSTER_MAX_ZOOM = 4;
 export const CLUSTER_RADIUS_PX = 40;
 export const INTERACTIVE_LAYERS = [COUNTRY_FILL_LAYER, PIN_CLUSTER_LAYER, PIN_POINT_LAYER];
+export const NO_INTERACTIVE_LAYERS: string[] = [];
 
 export const BASEMAP_LAND_LAYERS = [
   "background",

@@ -1,3 +1,4 @@
+import { useLatestResearchRun } from "@/features/research/hooks/use-latest-research-run.ts";
 import { useMemo } from "react";
 import { TopBar } from "./components/dashboard/top-bar.tsx";
 import { MapCockpit } from "./components/world-map/map-cockpit.tsx";
@@ -16,9 +17,9 @@ function MapError({ message }: { message: string }) {
 
 export function WorldAwarenessPage() {
   const { topic, setTopic, dashboard, isSyncing, error, handleSync } = useMarketDashboard();
+  const { run: researchRun, error: researchError } = useLatestResearchRun();
+  const mapError = error ?? researchError;
 
-  // Kept in one memo so the empty-state fallbacks stay referentially stable —
-  // MapCockpit derives several memos from these arrays.
   const { markets, worldTopics, worldEvents } = useMemo(
     () => ({
       markets: dashboard?.markets ?? [],
@@ -52,8 +53,9 @@ export function WorldAwarenessPage() {
           topic={topic}
           onTopicChange={setTopic}
           stats={stats}
+          researchRun={researchRun}
         />
-        {error ? <MapError message={error} /> : null}
+        {mapError ? <MapError message={mapError} /> : null}
       </div>
     </main>
   );

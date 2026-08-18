@@ -7,17 +7,20 @@ import {
   BASEMAP_STYLE,
   INITIAL_VIEW_STATE,
   INTERACTIVE_LAYERS,
+  NO_INTERACTIVE_LAYERS,
   PIN_CLUSTER_LAYER,
   PIN_POINT_LAYER,
   PIN_SOURCE,
   RESET_CAMERA,
 } from "./constants.ts";
+import { AwarenessOrbLayers } from "./overlays/awareness-orb-layers.tsx";
 import { CountryFillLayers } from "./overlays/country-fill-layers.tsx";
 import { EventPinLayers } from "./overlays/event-pin-layers.tsx";
 import { LegendPanel } from "./overlays/legend-panel.tsx";
 import { RegionHoverPopup } from "./overlays/region-hover-popup.tsx";
 import { ZoomControl } from "./overlays/zoom-control.tsx";
 import type { BreakdownIndex, HoverState, MapFillMode } from "./types.ts";
+import type { AwarenessFeatureCollection } from "./utils/awareness-points.ts";
 import { applyBasemapTheme } from "./utils/basemap-theme.ts";
 import { topicsPresent } from "./utils/fill-expressions.ts";
 import { buildPinFeatures } from "./utils/pins.ts";
@@ -28,6 +31,7 @@ interface WorldMapProps {
   peak: number;
   selected: GeoRegion | null;
   events: WorldEventRecord[];
+  awareness: AwarenessFeatureCollection | null;
   onSelect: (region: GeoRegion) => void;
   onSelectEvent: (event: WorldEventRecord) => void;
   onClearSelection: () => void;
@@ -38,6 +42,7 @@ export function WorldMap({
   peak,
   selected,
   events,
+  awareness,
   onSelect,
   onSelectEvent,
   onClearSelection,
@@ -123,6 +128,7 @@ export function WorldMap({
   const zoomOut = useCallback(() => mapRef.current?.zoomOut(), []);
 
   const hoverRecord = hover ? byRegion.get(hover.region) : undefined;
+  const paintsRun = awareness !== null;
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-card">
@@ -131,7 +137,7 @@ export function WorldMap({
           ref={mapRef}
           initialViewState={INITIAL_VIEW_STATE}
           mapStyle={BASEMAP_STYLE}
-          interactiveLayerIds={INTERACTIVE_LAYERS}
+          interactiveLayerIds={paintsRun ? NO_INTERACTIVE_LAYERS : INTERACTIVE_LAYERS}
           cursor={hover || pinHover ? "pointer" : "grab"}
           onLoad={handleLoad}
           onClick={handleClick}
@@ -139,15 +145,27 @@ export function WorldMap({
           onMouseLeave={clearHover}
           attributionControl={false}
         >
-          <CountryFillLayers byRegion={byRegion} peak={peak} mode={mode} selected={selected} />
-          <EventPinLayers data={pinData} />
-          {hover ? <RegionHoverPopup hover={hover} record={hoverRecord} mode={mode} /> : null}
+          <CountryFillLayers
+            byRegion={byRegion}
+            peak={peak}
+            mode={mode}
+            selected={selected}
+            muted={paintsRun}
+          />
+          {awareness ? (
+            <AwarenessOrbLayers data={awareness} />
+          ) : (
+            <>
+              <EventPinLayers data={pinData} />
+              {hover ? <RegionHoverPopup hover={hover} record={hoverRecord} mode={mode} /> : null}
+            </>
+          )}
         </MapGL>
       </div>
 
       <div className="atlas-map-vignette pointer-events-none absolute inset-0" aria-hidden="true" />
 
-      <LegendPanel mode={mode} onModeChange={setMode} topics={legendTopics} />
+      {paintsRun ? null : <LegendPanel mode={mode} onModeChange={setMode} topics={legendTopics} />}
       <ZoomControl onZoomIn={zoomIn} onZoomOut={zoomOut} onReset={resetView} />
     </div>
   );

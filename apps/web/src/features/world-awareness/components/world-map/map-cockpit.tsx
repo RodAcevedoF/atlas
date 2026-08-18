@@ -1,3 +1,4 @@
+import type { ResearchRunRecord } from "@/features/research/repositories/research-repository.ts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { TopicFilter } from "../../infra/store/dashboard.filters.ts";
@@ -8,11 +9,17 @@ import type {
   WorldEventRecord,
 } from "../../repositories/market-repository.ts";
 import { deriveRegionCross } from "../../utils/index.ts";
+import {
+  AwarenessLegend,
+  AwarenessRunNotice,
+  AwarenessRunPill,
+} from "./overlays/awareness-legend.tsx";
 import { MapStats, type MapStatsValues } from "./overlays/map-stats.tsx";
 import { TopicPicker } from "./overlays/topic-picker.tsx";
 import { FloatingPanel } from "./panels/floating-panel.tsx";
 import { PinDetail } from "./panels/pin-detail.tsx";
 import { RegionDetailPanel } from "./panels/region-detail-panel.tsx";
+import { buildAwarenessPaint } from "./utils/awareness-points.ts";
 import { countTopicSignals } from "./utils/topic-counts.ts";
 import { WorldMap } from "./world-map.tsx";
 
@@ -29,6 +36,7 @@ interface MapCockpitProps {
   topic: TopicFilter;
   onTopicChange: (topic: TopicFilter) => void;
   stats: MapStatsValues;
+  researchRun: ResearchRunRecord | null;
 }
 
 export function MapCockpit({
@@ -38,9 +46,17 @@ export function MapCockpit({
   topic,
   onTopicChange,
   stats,
+  researchRun,
 }: MapCockpitProps) {
   const navigate = useNavigate();
   const byRegion = useMemo(() => indexByRegion(worldTopics), [worldTopics]);
+  const awarenessPaint = useMemo(
+    () => (researchRun ? buildAwarenessPaint(researchRun.distribution) : null),
+    [researchRun],
+  );
+  const [showsAmbient, setShowsAmbient] = useState(false);
+  const plotted = awarenessPaint?.points.features.length ?? 0;
+  const paintsRun = plotted > 0 && !showsAmbient;
   const topicCounts = useMemo(() => countTopicSignals(worldTopics), [worldTopics]);
   const peak = useMemo(
     () => worldTopics.reduce((max, breakdown) => Math.max(max, breakdown.signalCount), 0),
@@ -104,14 +120,32 @@ export function MapCockpit({
           peak={peak}
           selected={selectedRegion}
           events={worldEvents}
+          awareness={paintsRun && awarenessPaint ? awarenessPaint.points : null}
           onSelect={selectRegion}
           onSelectEvent={selectEvent}
           onClearSelection={clearSelection}
         />
       </div>
 
-      <TopicPicker topic={topic} counts={topicCounts} onTopicChange={onTopicChange} />
-      <MapStats {...stats} />
+      {paintsRun && researchRun && awarenessPaint ? (
+        <AwarenessLegend
+          run={researchRun}
+          plotted={plotted}
+          unmapped={awarenessPaint.unmapped}
+          onShowAmbient={() => setShowsAmbient(true)}
+        />
+      ) : null}
+      {researchRun && plotted === 0 ? <AwarenessRunNotice run={researchRun} /> : null}
+
+      {paintsRun ? null : (
+        <>
+          <TopicPicker topic={topic} counts={topicCounts} onTopicChange={onTopicChange} />
+          <MapStats {...stats} />
+          {researchRun && plotted > 0 ? (
+            <AwarenessRunPill run={researchRun} onShowRun={() => setShowsAmbient(false)} />
+          ) : null}
+        </>
+      )}
 
       <FloatingPanel
         visible={selectedRegion !== null}
