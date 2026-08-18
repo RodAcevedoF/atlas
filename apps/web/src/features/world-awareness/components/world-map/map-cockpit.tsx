@@ -19,7 +19,7 @@ import { TopicPicker } from "./overlays/topic-picker.tsx";
 import { FloatingPanel } from "./panels/floating-panel.tsx";
 import { PinDetail } from "./panels/pin-detail.tsx";
 import { RegionDetailPanel } from "./panels/region-detail-panel.tsx";
-import { buildAwarenessPaint } from "./utils/awareness-points.ts";
+import { selectAwarenessRun } from "./utils/awareness-run.ts";
 import { countTopicSignals } from "./utils/topic-counts.ts";
 import { WorldMap } from "./world-map.tsx";
 
@@ -36,7 +36,7 @@ interface MapCockpitProps {
   topic: TopicFilter;
   onTopicChange: (topic: TopicFilter) => void;
   stats: MapStatsValues;
-  researchRun: ResearchRunRecord | null;
+  researchRuns: ResearchRunRecord[];
 }
 
 export function MapCockpit({
@@ -46,17 +46,15 @@ export function MapCockpit({
   topic,
   onTopicChange,
   stats,
-  researchRun,
+  researchRuns,
 }: MapCockpitProps) {
   const navigate = useNavigate();
   const byRegion = useMemo(() => indexByRegion(worldTopics), [worldTopics]);
-  const awarenessPaint = useMemo(
-    () => (researchRun ? buildAwarenessPaint(researchRun.distribution) : null),
-    [researchRun],
-  );
+  const awareness = useMemo(() => selectAwarenessRun(researchRuns), [researchRuns]);
   const [showsAmbient, setShowsAmbient] = useState(false);
-  const plotted = awarenessPaint?.points.features.length ?? 0;
+  const plotted = awareness.paint?.points.features.length ?? 0;
   const paintsRun = plotted > 0 && !showsAmbient;
+  const showsFallback = paintsRun && awareness.isFallback;
   const topicCounts = useMemo(() => countTopicSignals(worldTopics), [worldTopics]);
   const peak = useMemo(
     () => worldTopics.reduce((max, breakdown) => Math.max(max, breakdown.signalCount), 0),
@@ -120,29 +118,31 @@ export function MapCockpit({
           peak={peak}
           selected={selectedRegion}
           events={worldEvents}
-          awareness={paintsRun && awarenessPaint ? awarenessPaint.points : null}
+          awareness={paintsRun && awareness.paint ? awareness.paint.points : null}
           onSelect={selectRegion}
           onSelectEvent={selectEvent}
           onClearSelection={clearSelection}
         />
       </div>
 
-      {paintsRun && researchRun && awarenessPaint ? (
+      {paintsRun && awareness.run && awareness.paint ? (
         <AwarenessLegend
-          run={researchRun}
+          run={awareness.run}
           plotted={plotted}
-          unmapped={awarenessPaint.unmapped}
+          unmapped={awareness.paint.unmapped}
           onShowAmbient={() => setShowsAmbient(true)}
         />
       ) : null}
-      {researchRun && plotted === 0 ? <AwarenessRunNotice run={researchRun} /> : null}
+      {awareness.latest && (plotted === 0 || showsFallback) ? (
+        <AwarenessRunNotice latest={awareness.latest} isFallback={showsFallback} />
+      ) : null}
 
       {paintsRun ? null : (
         <>
           <TopicPicker topic={topic} counts={topicCounts} onTopicChange={onTopicChange} />
           <MapStats {...stats} />
-          {researchRun && plotted > 0 ? (
-            <AwarenessRunPill run={researchRun} onShowRun={() => setShowsAmbient(false)} />
+          {awareness.run && plotted > 0 ? (
+            <AwarenessRunPill run={awareness.run} onShowRun={() => setShowsAmbient(false)} />
           ) : null}
         </>
       )}

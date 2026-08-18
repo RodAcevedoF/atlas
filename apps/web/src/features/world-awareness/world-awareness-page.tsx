@@ -1,4 +1,4 @@
-import { useLatestResearchRun } from "@/features/research/hooks/use-latest-research-run.ts";
+import { useRecentResearchRuns } from "@/features/research/hooks/use-recent-research-runs.ts";
 import { useMemo } from "react";
 import { TopBar } from "./components/dashboard/top-bar.tsx";
 import { MapCockpit } from "./components/world-map/map-cockpit.tsx";
@@ -17,7 +17,7 @@ function MapError({ message }: { message: string }) {
 
 export function WorldAwarenessPage() {
   const { topic, setTopic, dashboard, isSyncing, error, handleSync } = useMarketDashboard();
-  const { run: researchRun, error: researchError } = useLatestResearchRun();
+  const { runs: researchRuns, error: researchError } = useRecentResearchRuns();
   const mapError = error ?? researchError;
 
   const { markets, worldTopics, worldEvents } = useMemo(
@@ -53,7 +53,7 @@ export function WorldAwarenessPage() {
           topic={topic}
           onTopicChange={setTopic}
           stats={stats}
-          researchRun={researchRun}
+          researchRuns={researchRuns}
         />
         {mapError ? <MapError message={mapError} /> : null}
       </div>

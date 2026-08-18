@@ -43,5 +43,5 @@ export interface ResearchRunRecord {
 }
 
 export interface ResearchRepository {
-  latestRun(): Promise<ResearchRunRecord | null>;
+  recentRuns(limit: number): Promise<ResearchRunRecord[]>;
 }
