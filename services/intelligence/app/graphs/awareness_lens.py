@@ -11,6 +11,7 @@ from app.ports.awareness import (
     AwarenessRetryable,
     AwarenessSourcePort,
     AwarenessUnavailable,
+    RejectedQuery,
 )
 
 DEFAULT_WINDOW = "1w"
@@ -99,11 +100,10 @@ class AwarenessLensGraph:
 
     def _build(self) -> Any:
         async def expand_node(state: AwarenessState) -> dict[str, Any]:
-            query = ""
-            reason = None
+            rejected: list[RejectedQuery] = []
             for _ in range(EXPANSION_ATTEMPTS):
                 try:
-                    query = await self._analyst.expand_query(state["question"])
+                    query = await self._analyst.expand_query(state["question"], rejected)
                 except Exception as error:
                     return {"status": "failed_retryable", "error": str(error)}
 
@@ -111,10 +111,13 @@ class AwarenessLensGraph:
                 if reason is None:
                     return {"executed_query": query}
 
+                rejected.append(RejectedQuery(query=query, reason=reason))
+
+            last = rejected[-1]
             return {
-                "executed_query": query,
+                "executed_query": last.query,
                 "status": "failed_permanent",
-                "error": f"unusable expanded query: {reason}",
+                "error": f"unusable expanded query: {last.reason}",
             }
 
         async def measure_node(state: AwarenessState) -> dict[str, Any]:

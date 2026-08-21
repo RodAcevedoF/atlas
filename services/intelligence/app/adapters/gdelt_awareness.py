@@ -56,9 +56,11 @@ def _summarize(country: str, values: list[float]) -> CountrySeriesStats:
 
 
 def parse_distribution(payload: dict[str, Any], query: str, window: str) -> AwarenessDistribution:
-    series_list = payload.get("timeline")
+    if "timeline" not in payload:
+        return AwarenessDistribution(executed_query=query, window=window, countries=[])
+    series_list = payload["timeline"]
     if not isinstance(series_list, list):
-        raise GdeltUnavailable("response carried no timeline")
+        raise GdeltUnavailable(f"unusable timeline: {type(series_list).__name__}")
 
     countries = []
     for series in series_list:

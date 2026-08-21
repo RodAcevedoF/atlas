@@ -54,8 +54,6 @@ class TestFailureVocabulary:
 
 
 class TestThrottleDetection:
-    # GDELT ships the identical notice under both codes, so a status-only check reads the 200
-    # form as success and a body-only check misses the 429 form.
     cases = [
         ("a 429 carrying the notice", 429, THROTTLE_BODY, True),
         ("a 200 carrying the notice", 200, THROTTLE_BODY, True),
@@ -92,9 +90,19 @@ class TestParseDistribution:
             "Japan",
         ]
 
-    def test_a_response_without_a_timeline_is_unusable(self) -> None:
+    def test_a_response_without_a_timeline_measured_no_coverage(self) -> None:
+        distribution = parse_distribution({"articles": []}, "sudan", "1w")
+
+        assert distribution.countries == []
+        assert distribution.executed_query == "sudan"
+
+    def test_a_timeline_that_is_not_a_list_is_unusable(self) -> None:
         with pytest.raises(GdeltUnavailable):
-            parse_distribution({"articles": []}, "sudan", "1w")
+            parse_distribution({"timeline": {"Sudan": [1.0]}}, "sudan", "1w")
+
+    def test_an_explicit_null_timeline_is_unusable_not_silence(self) -> None:
+        with pytest.raises(GdeltUnavailable):
+            parse_distribution({"timeline": None}, "sudan", "1w")
 
     def test_a_series_with_no_name_cannot_be_attributed_and_is_unusable(self) -> None:
         # skipping it would report the country as absent, which reads as a finding.

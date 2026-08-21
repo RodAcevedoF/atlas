@@ -1,12 +1,14 @@
 """AwarenessAnalystPort over a LangChain chat model (provider chosen by config)."""
 
+from collections.abc import Sequence
 from typing import Any, cast
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel
 
 from app.adapters.chat_model import make_chat_model
 from app.core.config import Settings
+from app.ports.awareness import RejectedQuery
 
 QUERY_SYSTEM_PROMPT = """You translate a user's question into a GDELT DOC 2.0 search query.
 
@@ -64,6 +66,25 @@ country that is not in the data.
 the distribution has no discernible pattern, say that plainly rather than inventing one."""
 
 
+def _expansion_messages(question: str, rejected: Sequence[RejectedQuery]) -> list[BaseMessage]:
+    """Each refusal is replayed as the turn it was, so the model corrects rather than rerolls."""
+    messages: list[BaseMessage] = [
+        SystemMessage(content=QUERY_SYSTEM_PROMPT),
+        HumanMessage(content=question),
+    ]
+    for attempt in rejected:
+        messages.append(AIMessage(content=attempt.query))
+        messages.append(
+            HumanMessage(
+                content=(
+                    f"That query is unusable: {attempt.reason}. "
+                    "Return a corrected query for the same question."
+                )
+            )
+        )
+    return messages
+
+
 class _ExpandedQuery(BaseModel):
     query: str
 
@@ -84,11 +105,9 @@ class LangChainAnalyst:
             self._chat_model = make_chat_model(self._settings)
         return self._chat_model
 
-    async def expand_query(self, question: str) -> str:
+    async def expand_query(self, question: str, rejected: Sequence[RejectedQuery]) -> str:
         structured = self._model().with_structured_output(_ExpandedQuery)
-        result = await structured.ainvoke(
-            [SystemMessage(content=QUERY_SYSTEM_PROMPT), HumanMessage(content=question)]
-        )
+        result = await structured.ainvoke(_expansion_messages(question, rejected))
         query = cast(_ExpandedQuery, result).query.strip()
         if not query:
             raise ValueError("query expansion produced nothing to measure")

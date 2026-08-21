@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -38,9 +39,17 @@ class AwarenessSourcePort(Protocol):
     async def fetch(self, query: str, window: str) -> AwarenessDistribution: ...
 
 
+@dataclass(slots=True, frozen=True)
+class RejectedQuery:
+    """an expansion the validator refused"""
+
+    query: str
+    reason: str
+
+
 class AwarenessAnalystPort(Protocol):
     """the two language steps: a question in, a source query out."""
 
-    async def expand_query(self, question: str) -> str: ...
+    async def expand_query(self, question: str, rejected: Sequence[RejectedQuery]) -> str: ...
 
     async def synthesize(self, question: str, distribution_summary: str) -> str: ...

@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import Sequence
 
 import pytest
 
@@ -10,6 +11,7 @@ from app.ports.awareness import (
     AwarenessRetryable,
     AwarenessUnavailable,
     CountrySeriesStats,
+    RejectedQuery,
 )
 
 BUCKETS = 166
@@ -56,7 +58,7 @@ class SynthesisFailingAnalyst:
         self._query = query
         self._error = error
 
-    async def expand_query(self, question: str) -> str:
+    async def expand_query(self, question: str, rejected: Sequence[RejectedQuery]) -> str:
         return self._query
 
     async def synthesize(self, question: str, distribution_summary: str) -> str:
@@ -69,7 +71,7 @@ class ExpansionFailingAnalyst:
     def __init__(self, error: Exception) -> None:
         self._error = error
 
-    async def expand_query(self, question: str) -> str:
+    async def expand_query(self, question: str, rejected: Sequence[RejectedQuery]) -> str:
         raise self._error
 
     async def synthesize(self, question: str, distribution_summary: str) -> str:
@@ -84,10 +86,27 @@ class ScriptedExpansions:
         self._read = read
         self._call = 0
 
-    async def expand_query(self, question: str) -> str:
+    async def expand_query(self, question: str, rejected: Sequence[RejectedQuery]) -> str:
         query = self._queries[min(self._call, len(self._queries) - 1)]
         self._call += 1
         return query
+
+    async def synthesize(self, question: str, distribution_summary: str) -> str:
+        return self._read
+
+
+class CorrectingAnalyst:
+    """usable only once told what was wrong — a reroll on the same input stays malformed."""
+
+    def __init__(self, malformed: str, corrected: str, read: str = "EU press is loud.") -> None:
+        self._malformed = malformed
+        self._corrected = corrected
+        self._read = read
+
+    async def expand_query(self, question: str, rejected: Sequence[RejectedQuery]) -> str:
+        if any("AND-groups" in attempt.reason for attempt in rejected):
+            return self._corrected
+        return self._malformed
 
     async def synthesize(self, question: str, distribution_summary: str) -> str:
         return self._read
@@ -100,7 +119,7 @@ class ScriptedAnalyst:
         self._query = query
         self._read = read
 
-    async def expand_query(self, question: str) -> str:
+    async def expand_query(self, question: str, rejected: Sequence[RejectedQuery]) -> str:
         return self._query
 
     async def synthesize(self, question: str, distribution_summary: str) -> str:
@@ -314,6 +333,23 @@ class TestAwarenessRun:
                 {(good, "1w"): distribution(stats("Sudan", 13.139, 100.0, 25), query=good)}
             ),
             analyst=ScriptedExpansions("Sudan AND (famine OR مجاعة) AND (press OR prensa)", good),
+        )
+
+        result = asyncio.run(graph.run("run-1", {"question": "sudan famine"}))
+
+        assert result["status"] == "succeeded"
+        assert result["executedQuery"] == good
+
+    def test_the_retry_is_told_why_the_first_query_was_refused(self) -> None:
+        # without the reason the retry is a reroll on identical input, so it repeats the mistake.
+        good = "Sudan AND (famine OR مجاعة)"
+        graph = AwarenessLensGraph(
+            source=InMemoryAwarenessSource(
+                {(good, "1w"): distribution(stats("Sudan", 13.139, 100.0, 25), query=good)}
+            ),
+            analyst=CorrectingAnalyst(
+                malformed="Sudan AND (famine OR مجاعة) AND (press OR prensa)", corrected=good
+            ),
         )
 
         result = asyncio.run(graph.run("run-1", {"question": "sudan famine"}))
