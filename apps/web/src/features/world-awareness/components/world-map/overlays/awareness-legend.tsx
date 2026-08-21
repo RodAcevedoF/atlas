@@ -23,7 +23,7 @@ interface AwarenessRunNoticeProps {
 
 export function AwarenessRunNotice({ latest, isFallback }: AwarenessRunNoticeProps) {
   return (
-    <div className="pointer-events-none absolute left-1/2 top-4 z-10 max-w-md -translate-x-1/2 rounded-xl border border-border bg-card/86 px-4 py-2 text-center text-[12.5px] text-muted-foreground backdrop-blur-md">
+    <div className="max-w-md rounded-xl border border-border bg-card/86 px-4 py-2 text-center text-[12.5px] text-muted-foreground backdrop-blur-md">
       {LATEST_RUN_OUTCOME[latest.status]}{" "}
       {isFallback ? SHOWING_INSTEAD.fallback : SHOWING_INSTEAD.ambient}
     </div>

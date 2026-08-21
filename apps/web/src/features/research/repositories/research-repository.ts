@@ -42,6 +42,14 @@ export interface ResearchRunRecord {
   completedAt: string | null;
 }
 
+export interface ResearchRunRequestRecord {
+  runId: string;
+  status: ResearchRunStatus;
+  deduped: boolean;
+}
+
 export interface ResearchRepository {
   recentRuns(limit: number): Promise<ResearchRunRecord[]>;
+  runById(runId: string): Promise<ResearchRunRecord>;
+  requestRun(question: string): Promise<ResearchRunRequestRecord>;
 }

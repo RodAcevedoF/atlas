@@ -7,14 +7,6 @@ import { useMarketDashboard } from "./hooks/use-market-dashboard.ts";
 
 const EMPTY_STATS: MapStatsValues = { signals: 0, regions: 0, topics: 0 };
 
-function MapError({ message }: { message: string }) {
-  return (
-    <div className="pointer-events-none absolute left-1/2 top-4 z-10 max-w-md -translate-x-1/2 rounded-xl border border-destructive/40 bg-card/86 px-4 py-2 text-center text-[12.5px] text-destructive backdrop-blur-md">
-      {message}
-    </div>
-  );
-}
-
 export function WorldAwarenessPage() {
   const { topic, setTopic, dashboard, isSyncing, error, handleSync } = useMarketDashboard();
   const { runs: researchRuns, error: researchError } = useRecentResearchRuns();
@@ -54,8 +46,8 @@ export function WorldAwarenessPage() {
           onTopicChange={setTopic}
           stats={stats}
           researchRuns={researchRuns}
+          error={mapError}
         />
-        {mapError ? <MapError message={mapError} /> : null}
       </div>
     </main>
   );
