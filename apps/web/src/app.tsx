@@ -2,7 +2,7 @@ import { useAuth } from "@/features/auth/auth-provider.tsx";
 import { AuthPage } from "@/features/auth/components/auth-page.tsx";
 import { GuestRoute } from "@/features/auth/components/guest-route.tsx";
 import { ProtectedRoute } from "@/features/auth/components/protected-route.tsx";
-import { VerifyBanner } from "@/features/auth/components/verify-banner.tsx";
+import { VerifyEmailCard } from "@/features/auth/components/verify-email-card.tsx";
 import { VerifyEmailView } from "@/features/auth/components/verify-email-view.tsx";
 import { IntelligencePage } from "@/features/intelligence/intelligence-page.tsx";
 import { LandingPage } from "@/features/marketing/landing-page.tsx";
@@ -10,7 +10,7 @@ import { WorldAwarenessPage } from "@/features/world-awareness/world-awareness-p
 import { AtlasLoader } from "@/shared/ui";
 import { useToast } from "@atlas/ui";
 import { useEffect } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 
 function RootIndex() {
   const { status } = useAuth();
@@ -25,21 +25,12 @@ function RootIndex() {
   return <LandingPage />;
 }
 
-function DashboardShell() {
+function ProtectedShell() {
   return (
-    <>
-      <VerifyBanner />
-      <WorldAwarenessPage />
-    </>
-  );
-}
-
-function IntelligenceShell() {
-  return (
-    <>
-      <VerifyBanner />
-      <IntelligencePage />
-    </>
+    <ProtectedRoute>
+      <VerifyEmailCard />
+      <Outlet />
+    </ProtectedRoute>
   );
 }
 
@@ -65,22 +56,10 @@ export function App() {
         }
       />
       <Route path="/verify" element={<VerifyEmailView />} />
-      <Route
-        path="/world"
-        element={
-          <ProtectedRoute>
-            <DashboardShell />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/intelligence"
-        element={
-          <ProtectedRoute>
-            <IntelligenceShell />
-          </ProtectedRoute>
-        }
-      />
+      <Route element={<ProtectedShell />}>
+        <Route path="/world" element={<WorldAwarenessPage />} />
+        <Route path="/intelligence" element={<IntelligencePage />} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
