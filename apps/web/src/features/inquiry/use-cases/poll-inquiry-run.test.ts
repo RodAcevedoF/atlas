@@ -1,8 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type {
-  InquiryRunRequestRecord,
-  InquiryRunStatus,
-} from "../repositories/inquiry-repository.ts";
+import type { InquiryRunStatus } from "@atlas/domain";
+import type { InquiryRunRequestRecord } from "../repositories/inquiry-repository.ts";
 import { inMemoryInquiryRepository } from "../testing/inquiry-repository.fake.ts";
 import { type PollSchedule, makePollInquiryRun } from "./poll-inquiry-run.ts";
 

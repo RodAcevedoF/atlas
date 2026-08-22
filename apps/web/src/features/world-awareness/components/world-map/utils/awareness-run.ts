@@ -1,4 +1,4 @@
-import type { InquiryRunSummaryRecord } from "@/features/inquiry/repositories/inquiry-repository.ts";
+import type { InquiryRunSummaryRecord } from "@/features/inquiry";
 import { hasPlottableCountry } from "./awareness-points.ts";
 
 /** Why a `?run=` request went unhonoured — "unknown" means it never reached this window at all. */

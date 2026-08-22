@@ -1,7 +1,9 @@
-import { InquiryHistory } from "@/features/inquiry/components/inquiry-history.tsx";
-import { resolveSelectedRunId } from "@/features/inquiry/components/selected-run.ts";
-import { useInquiryRun } from "@/features/inquiry/hooks/use-inquiry-run.ts";
-import { useRecentInquiryRuns } from "@/features/inquiry/hooks/use-recent-inquiry-runs.ts";
+import {
+  InquiryHistory,
+  resolveSelectedRunId,
+  useInquiryRun,
+  useRecentInquiryRuns,
+} from "@/features/inquiry";
 import { useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 

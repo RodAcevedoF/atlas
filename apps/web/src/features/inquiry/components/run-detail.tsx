@@ -1,10 +1,10 @@
 import { canPaintDistribution } from "@/features/world-awareness/components/world-map/utils/awareness-points.ts";
 import { Eyebrow } from "@/shared/ui";
 import { formatRelativeTime } from "@/shared/utils/index.ts";
+import type { AwarenessConfidence } from "@atlas/domain";
 import { Button, cn } from "@atlas/ui";
 import { Link } from "react-router-dom";
 import type {
-  AwarenessConfidence,
   CountryAwarenessRecord,
   InquiryRunRecord,
 } from "../repositories/inquiry-repository.ts";

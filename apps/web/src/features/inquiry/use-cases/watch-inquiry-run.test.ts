@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { InquiryRunStatus } from "../repositories/inquiry-repository.ts";
+import type { InquiryRunStatus } from "@atlas/domain";
 import { buildInquiryRunSummary } from "../testing/inquiry-builder.ts";
 import { hasRunInFlight } from "./watch-inquiry-run.ts";
 

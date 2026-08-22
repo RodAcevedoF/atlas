@@ -1,7 +1,4 @@
-import type {
-  InquiryRunRecord,
-  InquiryRunSummaryRecord,
-} from "@/features/inquiry/repositories/inquiry-repository.ts";
+import type { InquiryRunRecord, InquiryRunSummaryRecord } from "@/features/inquiry";
 import { Eyebrow } from "@/shared/ui";
 import type { AwarenessRequestMiss } from "../utils/awareness-run.ts";
 

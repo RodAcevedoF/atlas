@@ -1,4 +1,4 @@
-import type { InquiryRunStatus } from "../repositories/inquiry-repository.ts";
+import type { InquiryRunStatus } from "@atlas/domain";
 
 export const RUN_STATUS_LABEL: Record<InquiryRunStatus, string> = {
   queued: "Queued",

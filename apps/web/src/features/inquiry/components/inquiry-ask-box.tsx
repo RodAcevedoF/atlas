@@ -1,8 +1,8 @@
+import type { InquiryRunStatus } from "@atlas/domain";
 import { cn } from "@atlas/ui";
 import { type FormEvent, useState } from "react";
 import { useInquiryAsk } from "../hooks/use-inquiry-ask.ts";
 import type { InquiryAskState } from "../infra/store/inquiry.slice.ts";
-import type { InquiryRunStatus } from "../repositories/inquiry-repository.ts";
 import { INQUIRY_QUESTION_MAX_CHARS } from "../use-cases/request-inquiry-run.ts";
 
 const SENDING = "Sending your question…";

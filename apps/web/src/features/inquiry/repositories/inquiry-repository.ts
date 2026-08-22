@@ -1,14 +1,4 @@
-export const AWARENESS_CONFIDENCES = ["measured", "thin", "artifact"] as const;
-export type AwarenessConfidence = (typeof AWARENESS_CONFIDENCES)[number];
-
-export type InquiryRunStatus =
-  | "queued"
-  | "running"
-  | "succeeded"
-  | "no_coverage"
-  | "below_floor"
-  | "failed_retryable"
-  | "failed_permanent";
+import type { AwarenessConfidence, InquiryRunStatus } from "@atlas/domain";
 
 export interface CountryAwarenessRecord {
   country: string;

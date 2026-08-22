@@ -1,8 +1,8 @@
-import { useInquiryRun } from "@/features/inquiry/hooks/use-inquiry-run.ts";
-import type {
-  InquiryRunRecord,
-  InquiryRunSummaryRecord,
-} from "@/features/inquiry/repositories/inquiry-repository.ts";
+import {
+  type InquiryRunRecord,
+  type InquiryRunSummaryRecord,
+  useInquiryRun,
+} from "@/features/inquiry";
 import { useCallback, useMemo, useState } from "react";
 import {
   type AwarenessPaint,

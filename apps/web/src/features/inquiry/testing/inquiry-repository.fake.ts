@@ -1,4 +1,5 @@
-import type { InquiryRepository, InquiryRunStatus } from "../repositories/inquiry-repository.ts";
+import type { InquiryRunStatus } from "@atlas/domain";
+import type { InquiryRepository } from "../repositories/inquiry-repository.ts";
 import { buildInquiryRun } from "./inquiry-builder.ts";
 
 export interface InquiryRepositorySeed {

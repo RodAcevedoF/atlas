@@ -1,6 +1,6 @@
+import type { InquiryRunStatus } from "@atlas/domain";
 import type {
   InquiryRunRequestRecord,
-  InquiryRunStatus,
   InquiryRunSummaryRecord,
 } from "../repositories/inquiry-repository.ts";
 

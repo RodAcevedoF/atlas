@@ -1,5 +1,4 @@
-import { InquiryAskBox } from "@/features/inquiry/components/inquiry-ask-box.tsx";
-import type { InquiryRunSummaryRecord } from "@/features/inquiry/repositories/inquiry-repository.ts";
+import { InquiryAskBox, type InquiryRunSummaryRecord } from "@/features/inquiry";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAwarenessLayer } from "../../hooks/use-awareness-layer.ts";

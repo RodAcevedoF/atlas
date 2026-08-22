@@ -1,8 +1,8 @@
 import type { RootState } from "@/store/index.ts";
+import type { InquiryRunStatus } from "@atlas/domain";
 import { createSlice } from "@reduxjs/toolkit";
 import type {
   InquiryRunRecord,
-  InquiryRunStatus,
   InquiryRunSummaryRecord,
 } from "../../repositories/inquiry-repository.ts";
 import {

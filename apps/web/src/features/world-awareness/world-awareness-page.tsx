@@ -1,4 +1,4 @@
-import { useRecentInquiryRuns } from "@/features/inquiry/hooks/use-recent-inquiry-runs.ts";
+import { useRecentInquiryRuns } from "@/features/inquiry";
 import { useMemo } from "react";
 import { TopBar } from "./components/dashboard/top-bar.tsx";
 import { MapCockpit } from "./components/world-map/map-cockpit.tsx";

@@ -1,7 +1,5 @@
-import type {
-  AwarenessConfidence,
-  CountryAwarenessRecord,
-} from "@/features/inquiry/repositories/inquiry-repository.ts";
+import type { CountryAwarenessRecord } from "@/features/inquiry";
+import type { AwarenessConfidence } from "@atlas/domain";
 import { COUNTRY_CENTROIDS } from "./country-centroids.ts";
 
 const BASEMAP_NAMES: Record<string, string> = {

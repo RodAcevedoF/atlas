@@ -1,8 +1,8 @@
 import type { AppThunkExtra, RootState } from "@/store/index.ts";
+import type { InquiryRunStatus } from "@atlas/domain";
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import type {
   InquiryRunRecord,
-  InquiryRunStatus,
   InquiryRunSummaryRecord,
 } from "../../repositories/inquiry-repository.ts";
 import { makeLoadInquiryRun } from "../../use-cases/load-inquiry-run.ts";
