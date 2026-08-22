@@ -2,7 +2,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { GeoJSONSource } from "maplibre-gl";
 import { useCallback, useMemo, useRef, useState } from "react";
 import MapGL, { type MapEvent, type MapLayerMouseEvent, type MapRef } from "react-map-gl/maplibre";
-import type { GeoRegion, WorldEventRecord } from "../../repositories/market-repository.ts";
+import type { GeoRegion, WorldEventRecord } from "../../repositories/world-repository.ts";
 import {
   BASEMAP_STYLE,
   INITIAL_VIEW_STATE,

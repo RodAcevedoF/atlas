@@ -1,4 +1,4 @@
-import type { RegionTopicBreakdownRecord, Topic } from "../../../repositories/market-repository.ts";
+import type { RegionTopicBreakdownRecord, Topic } from "../../../repositories/world-repository.ts";
 
 export interface TopicSignalCounts {
   total: number;

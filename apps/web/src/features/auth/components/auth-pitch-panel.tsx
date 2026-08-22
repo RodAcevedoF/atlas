@@ -19,14 +19,14 @@ interface PitchCopy {
 
 const PITCH: Record<Mode, PitchCopy> = {
   login: {
-    lead: "The scan never stopped while you were away —",
-    accent: `${ATLAS_STATS.signalsReadToday.toLocaleString()} signals since midnight.`,
-    body: "Two gaps widened overnight: Sudan corridor talks and the EU chip subsidy vote.",
+    lead: "The world kept happening while you were away —",
+    accent: `${ATLAS_STATS.signalsReadToday.toLocaleString()} signals read since midnight.`,
+    body: "Two questions moved most overnight: the Sudan corridor and the EU chip subsidy vote.",
   },
   register: {
-    lead: "The world is read twice. Once in the press,",
-    accent: "once in the odds.",
-    body: "Follow the topics you cover and Atlas writes you a dated, sourced read every morning.",
+    lead: "Every story is reported everywhere.",
+    accent: "It only happens somewhere.",
+    body: "Ask a question and Atlas maps every claim it can place, then writes you the summary.",
   },
 };
 
@@ -49,7 +49,7 @@ export function AuthPitchPanel({ mode, pulse }: AuthPitchPanelProps) {
     () => buildWave({ seed: 0.41, phase: 0, count: 26, motionless: reducedMotion }),
     [reducedMotion],
   );
-  const convictionBars = useMemo(
+  const locatedBars = useMemo(
     () => buildWave({ seed: 0.33, phase: 2.2, count: 26, motionless: reducedMotion }),
     [reducedMotion],
   );
@@ -65,7 +65,7 @@ export function AuthPitchPanel({ mode, pulse }: AuthPitchPanelProps) {
         <div>
           <div className={PITCH_PILL}>
             <span className="h-1.25 w-1.25 rounded-full bg-conviction" />
-            Coverage × Conviction
+            Claims × Places
           </div>
           <div className="mt-6 max-w-[17ch] text-balance text-[34px] font-medium leading-[1.04] tracking-[-0.042em]">
             {copy.lead} <span className="text-conviction">{copy.accent}</span>
@@ -86,9 +86,9 @@ export function AuthPitchPanel({ mode, pulse }: AuthPitchPanelProps) {
           <div className="mt-4">
             <WaveMeter
               variant="conviction"
-              label="Conviction"
-              value={pulse.conviction}
-              bars={convictionBars}
+              label="Located claims"
+              value={pulse.located}
+              bars={locatedBars}
               trackClassName="h-13.5"
             />
           </div>

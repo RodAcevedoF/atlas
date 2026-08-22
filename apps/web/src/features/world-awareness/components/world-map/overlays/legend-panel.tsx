@@ -1,5 +1,5 @@
 import { Eyebrow, SegmentedControl } from "@/shared/ui";
-import type { Topic } from "../../../repositories/market-repository.ts";
+import type { Topic } from "../../../repositories/world-repository.ts";
 import { TOPIC_LABELS } from "../../../utils/index.ts";
 import { TopicDot } from "../../topic-dot.tsx";
 import type { MapFillMode } from "../types.ts";

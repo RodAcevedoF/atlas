@@ -1,5 +1,5 @@
 import { Popup } from "react-map-gl/maplibre";
-import type { RegionTopicBreakdownRecord } from "../../../repositories/market-repository.ts";
+import type { RegionTopicBreakdownRecord } from "../../../repositories/world-repository.ts";
 import { REGION_LABELS } from "../../../utils/index.ts";
 import type { HoverState, MapFillMode } from "../types.ts";
 import { hoverDetail } from "../utils/fill-expressions.ts";

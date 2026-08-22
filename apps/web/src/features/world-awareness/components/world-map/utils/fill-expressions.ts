@@ -3,7 +3,7 @@ import type {
   GeoRegion,
   RegionTopicBreakdownRecord,
   Topic,
-} from "../../../repositories/market-repository.ts";
+} from "../../../repositories/world-repository.ts";
 import { TOPIC_LABELS } from "../../../utils/index.ts";
 import type { BreakdownIndex, MapFillMode } from "../types.ts";
 import { FILL_REGIONS, REGION_SUBREGIONS } from "./region-for-country.ts";

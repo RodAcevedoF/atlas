@@ -1,4 +1,4 @@
-import type { GeoRegion, Topic } from "../repositories/market-repository.ts";
+import type { GeoRegion, Topic } from "../repositories/world-repository.ts";
 
 export const REGION_LABELS: Record<GeoRegion, string> = {
   "north-america": "North America",

@@ -1,52 +1,13 @@
 import type {
   GeoRegion,
-  MarketCategory,
-  MarketRecord,
-  MarketStatus,
   RegionTopicBreakdownRecord,
   SignalSource,
   Topic,
   TopicCountRecord,
   WorldEventRecord,
-} from "../repositories/market-repository.ts";
+} from "../repositories/world-repository.ts";
 
 const FIXED_TIMESTAMP = "2026-08-01T00:00:00.000Z";
-
-export interface BuildMarketOptions {
-  id: string;
-  category?: MarketCategory;
-  primaryRegion?: GeoRegion;
-  status?: MarketStatus;
-  volumeUsd?: number;
-  liquidityUsd?: number;
-}
-
-export function buildMarket({
-  id,
-  category = "politics",
-  primaryRegion = "europe",
-  status = "active",
-  volumeUsd = 1_000,
-  liquidityUsd = 100,
-}: BuildMarketOptions): MarketRecord {
-  return {
-    id,
-    eventId: null,
-    slug: id,
-    title: `Market ${id}`,
-    description: `Description ${id}`,
-    category,
-    primaryRegion,
-    regions: [primaryRegion],
-    status,
-    outcomes: [],
-    volumeUsd,
-    liquidityUsd,
-    resolvesAt: null,
-    createdAt: FIXED_TIMESTAMP,
-    updatedAt: FIXED_TIMESTAMP,
-  };
-}
 
 export interface BuildWorldEventOptions {
   id: string;

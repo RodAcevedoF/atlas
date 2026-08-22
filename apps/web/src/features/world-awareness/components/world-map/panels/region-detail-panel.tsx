@@ -1,99 +1,15 @@
 import { Eyebrow } from "@/shared/ui/index.ts";
-import { formatRelativeTime } from "@/shared/utils/index.ts";
-import { Button } from "@atlas/ui";
 import type {
   GeoRegion,
   RegionTopicBreakdownRecord,
-} from "../../../repositories/market-repository.ts";
-import {
-  type CrossStance,
-  REGION_LABELS,
-  type RegionCross,
-  TOPIC_COLOR_VAR,
-  TOPIC_LABELS,
-} from "../../../utils/index.ts";
+} from "../../../repositories/world-repository.ts";
+import { REGION_LABELS, TOPIC_COLOR_VAR, TOPIC_LABELS } from "../../../utils/index.ts";
 import { TopicDot } from "../../topic-dot.tsx";
-import {
-  DetailPanel,
-  DetailPanelBody,
-  DetailPanelFooter,
-  DetailPanelHeader,
-} from "./detail-panel.tsx";
-import { MarketMiniRow } from "./market-mini-row.tsx";
+import { DetailPanel, DetailPanelBody, DetailPanelHeader } from "./detail-panel.tsx";
 
 interface RegionDetailPanelProps {
   region: GeoRegion | null;
   breakdown: RegionTopicBreakdownRecord | undefined;
-  cross: RegionCross | null;
-  onOpenScan: () => void;
-}
-
-const STANCE_LABELS: Record<CrossStance, string> = {
-  both: "News + market",
-  "attention-only": "Headlines only",
-  "expectation-only": "Market only",
-  quiet: "Quiet",
-};
-
-function CrossSection({ cross }: { cross: RegionCross }) {
-  const isBoth = cross.stance === "both";
-  return (
-    <div className="flex flex-col gap-2.5">
-      <div className="flex items-center justify-between">
-        <Eyebrow variant="header">Attention vs. expectation</Eyebrow>
-        <span
-          className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
-            isBoth ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
-          }`}
-        >
-          {STANCE_LABELS[cross.stance]}
-        </span>
-      </div>
-
-      {cross.stance === "quiet" ? (
-        <div className="text-[12px] text-muted-foreground">
-          No news or market signal for this selection.
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2.5">
-          <div className="flex flex-col gap-1.5">
-            <div className="text-[10.5px] font-medium text-muted-foreground">Attention · news</div>
-            {cross.news.length === 0 ? (
-              <div className="text-[11.5px] text-muted-foreground">No headlines.</div>
-            ) : (
-              cross.news.map((event) => (
-                <a
-                  key={event.id}
-                  href={event.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group flex items-baseline justify-between gap-2"
-                >
-                  <span className="text-[12px] leading-snug text-foreground/90 transition-colors group-hover:text-primary">
-                    {event.title}
-                  </span>
-                  <span className="flex-none font-mono text-[10px] text-muted-foreground">
-                    {formatRelativeTime(event.timestamp)}
-                  </span>
-                </a>
-              ))
-            )}
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <div className="text-[10.5px] font-medium text-muted-foreground">
-              Expectation · markets
-            </div>
-            {cross.markets.length === 0 ? (
-              <div className="text-[11.5px] text-muted-foreground">No markets.</div>
-            ) : (
-              cross.markets.map((market) => <MarketMiniRow key={market.id} market={market} />)
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
 
 function TopicBars({ breakdown }: { breakdown: RegionTopicBreakdownRecord | undefined }) {
@@ -151,19 +67,14 @@ function EmptyState() {
       <div className="flex flex-col gap-1">
         <span className="text-sm font-semibold">Pick a region</span>
         <span className="max-w-52.5 text-xs text-muted-foreground">
-          Select a highlighted country on the map to see its news and where the market disagrees.
+          Select a highlighted country on the map to see what it is covering right now.
         </span>
       </div>
     </div>
   );
 }
 
-export function RegionDetailPanel({
-  region,
-  breakdown,
-  cross,
-  onOpenScan,
-}: RegionDetailPanelProps) {
+export function RegionDetailPanel({ region, breakdown }: RegionDetailPanelProps) {
   return (
     <DetailPanel>
       <DetailPanelHeader>
@@ -194,17 +105,9 @@ export function RegionDetailPanel({
       {!region ? (
         <EmptyState />
       ) : (
-        <>
-          <DetailPanelBody className="gap-4">
-            {cross ? <CrossSection cross={cross} /> : null}
-            <TopicBars breakdown={breakdown} />
-          </DetailPanelBody>
-          <DetailPanelFooter>
-            <Button size="sm" variant="secondary" className="w-full" onClick={onOpenScan}>
-              Open full scan
-            </Button>
-          </DetailPanelFooter>
-        </>
+        <DetailPanelBody className="gap-4">
+          <TopicBars breakdown={breakdown} />
+        </DetailPanelBody>
       )}
     </DetailPanel>
   );

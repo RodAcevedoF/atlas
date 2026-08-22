@@ -1,5 +1,5 @@
 import type { ExpressionSpecification } from "maplibre-gl";
-import type { Topic } from "../../../repositories/market-repository.ts";
+import type { Topic } from "../../../repositories/world-repository.ts";
 import { CURATED_TOPICS, TOPIC_COLOR_VAR } from "../../../utils/index.ts";
 import { topicHex } from "./theme-colors.ts";
 

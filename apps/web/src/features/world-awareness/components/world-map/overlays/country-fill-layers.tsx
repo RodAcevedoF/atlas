@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Layer, Source } from "react-map-gl/maplibre";
-import type { GeoRegion } from "../../../repositories/market-repository.ts";
+import type { GeoRegion } from "../../../repositories/world-repository.ts";
 import {
   COUNTRIES_SOURCE,
   COUNTRIES_URL,

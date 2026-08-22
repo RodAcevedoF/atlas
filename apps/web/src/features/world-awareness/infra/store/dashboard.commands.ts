@@ -1,17 +1,13 @@
 import type { AppThunkExtra, RootState } from "@/store/index.ts";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import type {
-  IngestMarketsResult,
-  IngestNewsResult,
-} from "../../repositories/market-repository.ts";
+import type { IngestNewsResult } from "../../repositories/world-repository.ts";
 import {
-  type LoadMarketDashboardInput,
-  type MarketDashboardData,
-  makeLoadMarketDashboard,
-} from "../../use-cases/load-market-dashboard.ts";
-import { makeSyncMarketSnapshot } from "../../use-cases/sync-market-snapshot.ts";
+  type LoadWorldDashboardInput,
+  type WorldDashboardData,
+  makeLoadWorldDashboard,
+} from "../../use-cases/load-world-dashboard.ts";
 import { makeSyncNewsSnapshot } from "../../use-cases/sync-news-snapshot.ts";
-import { toLoadMarketDashboardInput } from "./dashboard.filters.ts";
+import { toLoadWorldDashboardInput } from "./dashboard.filters.ts";
 
 interface CommandConfig {
   state: RootState;
@@ -19,30 +15,17 @@ interface CommandConfig {
 }
 
 export const loadDashboard = createAsyncThunk<
-  MarketDashboardData,
-  LoadMarketDashboardInput,
+  WorldDashboardData,
+  LoadWorldDashboardInput,
   CommandConfig
->("worldAwarenessDashboard/load", (input, { extra }) => makeLoadMarketDashboard(extra)(input));
-
-export const syncMarketSnapshot = createAsyncThunk<IngestMarketsResult, void, CommandConfig>(
-  "worldAwarenessDashboard/syncMarket",
-  async (_input, { extra, getState, dispatch }) => {
-    const { filters } = getState().worldAwarenessDashboard;
-    const result = await makeSyncMarketSnapshot(extra)({
-      categories: filters.category ? [filters.category] : undefined,
-      maxMarkets: 100,
-    });
-    void dispatch(loadDashboard(toLoadMarketDashboardInput(filters)));
-    return result;
-  },
-);
+>("worldAwarenessDashboard/load", (input, { extra }) => makeLoadWorldDashboard(extra)(input));
 
 export const syncNewsSnapshot = createAsyncThunk<IngestNewsResult, void, CommandConfig>(
   "worldAwarenessDashboard/syncNews",
   async (_input, { extra, getState, dispatch }) => {
     const result = await makeSyncNewsSnapshot(extra)({ limit: 75 });
-    const { filters } = getState().worldAwarenessDashboard;
-    void dispatch(loadDashboard(toLoadMarketDashboardInput(filters)));
+    const { topic } = getState().worldAwarenessDashboard;
+    void dispatch(loadDashboard(toLoadWorldDashboardInput(topic)));
     return result;
   },
 );

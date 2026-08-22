@@ -1,24 +1,17 @@
 import { AuthProvider } from "@/features/auth/auth-provider.tsx";
 import { HttpInquiryRepository } from "@/features/inquiry/repositories/http-inquiry-repository.ts";
 import type { InquiryRepository } from "@/features/inquiry/repositories/inquiry-repository.ts";
-import { HttpSavedReportsRepository } from "@/features/intelligence/repositories/http-saved-reports-repository.ts";
-import type { SavedReportsRepository } from "@/features/intelligence/repositories/saved-reports-repository.ts";
-import { HttpMarketRepository } from "@/features/world-awareness/repositories/http-market-repository.ts";
-import type { MarketRepository } from "@/features/world-awareness/repositories/market-repository.ts";
+import { HttpWorldRepository } from "@/features/world-awareness/repositories/http-world-repository.ts";
+import type { WorldRepository } from "@/features/world-awareness/repositories/world-repository.ts";
 import { makeStore } from "@/store/index.ts";
 import { ToastProvider } from "@atlas/ui";
 import { type PropsWithChildren, useState } from "react";
 import { Provider as ReduxProvider } from "react-redux";
 
 export function AppProviders({ children }: PropsWithChildren) {
-  const [marketRepository] = useState<MarketRepository>(() => new HttpMarketRepository());
-  const [savedReportsRepository] = useState<SavedReportsRepository>(
-    () => new HttpSavedReportsRepository(),
-  );
+  const [worldRepository] = useState<WorldRepository>(() => new HttpWorldRepository());
   const [inquiryRepository] = useState<InquiryRepository>(() => new HttpInquiryRepository());
-  const [store] = useState(() =>
-    makeStore({ marketRepository, savedReportsRepository, inquiryRepository }),
-  );
+  const [store] = useState(() => makeStore({ worldRepository, inquiryRepository }));
 
   return (
     <ReduxProvider store={store}>

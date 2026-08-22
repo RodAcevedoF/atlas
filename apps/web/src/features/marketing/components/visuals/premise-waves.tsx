@@ -3,16 +3,16 @@ import { useMemo } from "react";
 
 interface PremiseWavesProps {
   coverage: number;
-  conviction: number;
+  located: number;
 }
 
-export function PremiseWaves({ coverage, conviction }: PremiseWavesProps) {
+export function PremiseWaves({ coverage, located }: PremiseWavesProps) {
   const reducedMotion = useReducedMotion();
   const coverageBars = useMemo(
     () => buildWave({ seed: 0.41, phase: 0, count: 30, motionless: reducedMotion }),
     [reducedMotion],
   );
-  const convictionBars = useMemo(
+  const locatedBars = useMemo(
     () => buildWave({ seed: 0.33, phase: 2.2, count: 30, motionless: reducedMotion }),
     [reducedMotion],
   );
@@ -29,9 +29,9 @@ export function PremiseWaves({ coverage, conviction }: PremiseWavesProps) {
       <div className="mt-6.5">
         <WaveMeter
           variant="conviction"
-          label="Conviction"
-          value={conviction}
-          bars={convictionBars}
+          label="Located claims"
+          value={located}
+          bars={locatedBars}
           trackClassName="h-23"
         />
       </div>

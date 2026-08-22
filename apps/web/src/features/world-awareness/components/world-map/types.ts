@@ -1,7 +1,4 @@
-import type {
-  GeoRegion,
-  RegionTopicBreakdownRecord,
-} from "../../repositories/market-repository.ts";
+import type { GeoRegion, RegionTopicBreakdownRecord } from "../../repositories/world-repository.ts";
 
 export type MapFillMode = "topic" | "tendency";
 export type BreakdownIndex = Map<GeoRegion, RegionTopicBreakdownRecord>;

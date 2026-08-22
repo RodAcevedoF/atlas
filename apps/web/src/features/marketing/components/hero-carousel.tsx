@@ -5,7 +5,7 @@ import type { CSSProperties } from "react";
 import { SLIDES, type SlideKind } from "../data/landing-content.ts";
 import { SlideCopy } from "./slide-copy.tsx";
 import { ArtifactCard } from "./visuals/artifact-card.tsx";
-import { GapTable } from "./visuals/gap-table.tsx";
+import { PlaceTable } from "./visuals/place-table.tsx";
 import { PremiseWaves } from "./visuals/premise-waves.tsx";
 import { ScanGrid } from "./visuals/scan-grid.tsx";
 
@@ -32,12 +32,12 @@ const pad2 = (value: number) => String(value).padStart(2, "0");
 function SlideVisual({ kind, pulse }: { kind: SlideKind; pulse: LivePulse }) {
   switch (kind) {
     case "premise":
-      return <PremiseWaves coverage={pulse.coverage} conviction={pulse.conviction} />;
-    case "gap":
-      return <GapTable />;
+      return <PremiseWaves coverage={pulse.coverage} located={pulse.located} />;
+    case "question":
+      return <PlaceTable />;
     case "artifact":
       return <ArtifactCard />;
-    case "scan":
+    case "live":
       return <ScanGrid scanCount={pulse.scanCount} hotCells={pulse.hotCells} />;
   }
 }

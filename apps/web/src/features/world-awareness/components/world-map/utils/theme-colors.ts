@@ -1,4 +1,4 @@
-import type { Topic } from "../../../repositories/market-repository.ts";
+import type { Topic } from "../../../repositories/world-repository.ts";
 import { TOPIC_COLOR_VAR } from "../../../utils/index.ts";
 const resolved = new Map<string, string>();
 

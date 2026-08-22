@@ -32,7 +32,3 @@ export function DetailPanelBody({ className, children }: DetailPanelBodyProps) {
     </div>
   );
 }
-
-export function DetailPanelFooter({ children }: { children: ReactNode }) {
-  return <div className="flex-none border-t border-border p-3">{children}</div>;
-}

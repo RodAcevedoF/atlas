@@ -1,4 +1,4 @@
-import type { Topic, WorldEventRecord } from "../../../repositories/market-repository.ts";
+import type { Topic, WorldEventRecord } from "../../../repositories/world-repository.ts";
 import { centroidFor } from "./region-centroids.ts";
 import { topicHex } from "./theme-colors.ts";
 

@@ -1,16 +1,14 @@
 import { InquiryAskBox } from "@/features/inquiry/components/inquiry-ask-box.tsx";
 import type { InquiryRunSummaryRecord } from "@/features/inquiry/repositories/inquiry-repository.ts";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useAwarenessLayer } from "../../hooks/use-awareness-layer.ts";
 import type { TopicFilter } from "../../infra/store/dashboard.filters.ts";
 import type {
   GeoRegion,
-  MarketRecord,
   RegionTopicBreakdownRecord,
   WorldEventRecord,
-} from "../../repositories/market-repository.ts";
-import { deriveRegionCross } from "../../utils/index.ts";
+} from "../../repositories/world-repository.ts";
 import {
   AwarenessLegend,
   AwarenessRunNotice,
@@ -34,7 +32,6 @@ function indexByRegion(breakdowns: RegionTopicBreakdownRecord[]): BreakdownIndex
 interface MapCockpitProps {
   worldTopics: RegionTopicBreakdownRecord[];
   worldEvents: WorldEventRecord[];
-  markets: MarketRecord[];
   topic: TopicFilter;
   onTopicChange: (topic: TopicFilter) => void;
   stats: MapStatsValues;
@@ -45,14 +42,12 @@ interface MapCockpitProps {
 export function MapCockpit({
   worldTopics,
   worldEvents,
-  markets,
   topic,
   onTopicChange,
   stats,
   inquiryRuns,
   error,
 }: MapCockpitProps) {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedRunId = searchParams.get("run");
   const byRegion = useMemo(() => indexByRegion(worldTopics), [worldTopics]);
@@ -65,20 +60,6 @@ export function MapCockpit({
   );
   const [selectedRegion, setSelectedRegion] = useState<GeoRegion | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<WorldEventRecord | null>(null);
-
-  const cross = useMemo(
-    () => (selectedRegion ? deriveRegionCross(selectedRegion, topic, markets, worldEvents) : null),
-    [selectedRegion, topic, markets, worldEvents],
-  );
-
-  const relatedMarkets = useMemo(
-    () =>
-      selectedEvent
-        ? deriveRegionCross(selectedEvent.primaryRegion, selectedEvent.topic, markets, worldEvents)
-            .markets
-        : [],
-    [selectedEvent, markets, worldEvents],
-  );
 
   const selectRegion = useCallback((region: GeoRegion) => {
     setSelectedEvent(null);
@@ -108,13 +89,6 @@ export function MapCockpit({
     setSelectedRegion(null);
     setSelectedEvent(null);
   }, []);
-
-  const openScan = useCallback(() => {
-    const params = new URLSearchParams({ view: "scan" });
-    if (topic) params.set("topic", topic);
-    if (selectedRegion) params.set("region", selectedRegion);
-    navigate(`/intelligence?${params.toString()}`);
-  }, [selectedRegion, topic, navigate]);
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -182,8 +156,6 @@ export function MapCockpit({
         <RegionDetailPanel
           region={selectedRegion}
           breakdown={selectedRegion ? byRegion.get(selectedRegion) : undefined}
-          cross={cross}
-          onOpenScan={openScan}
         />
       </FloatingPanel>
 
@@ -193,7 +165,7 @@ export function MapCockpit({
         label="event detail"
         className="left-4 top-4"
       >
-        {selectedEvent ? <PinDetail event={selectedEvent} markets={relatedMarkets} /> : null}
+        {selectedEvent ? <PinDetail event={selectedEvent} /> : null}
       </FloatingPanel>
     </div>
   );

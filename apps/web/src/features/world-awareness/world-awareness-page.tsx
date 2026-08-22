@@ -3,18 +3,17 @@ import { useMemo } from "react";
 import { TopBar } from "./components/dashboard/top-bar.tsx";
 import { MapCockpit } from "./components/world-map/map-cockpit.tsx";
 import type { MapStatsValues } from "./components/world-map/overlays/map-stats.tsx";
-import { useMarketDashboard } from "./hooks/use-market-dashboard.ts";
+import { useWorldDashboard } from "./hooks/use-world-dashboard.ts";
 
 const EMPTY_STATS: MapStatsValues = { signals: 0, regions: 0, topics: 0 };
 
 export function WorldAwarenessPage() {
-  const { topic, setTopic, dashboard, isSyncing, error, handleSync } = useMarketDashboard();
+  const { topic, setTopic, dashboard, isSyncing, error, handleSync } = useWorldDashboard();
   const { runs: inquiryRuns, error: inquiryError } = useRecentInquiryRuns();
   const mapError = error ?? inquiryError;
 
-  const { markets, worldTopics, worldEvents } = useMemo(
+  const { worldTopics, worldEvents } = useMemo(
     () => ({
-      markets: dashboard?.markets ?? [],
       worldTopics: dashboard?.worldTopics ?? [],
       worldEvents: dashboard?.worldEvents ?? [],
     }),
@@ -41,7 +40,6 @@ export function WorldAwarenessPage() {
         <MapCockpit
           worldTopics={worldTopics}
           worldEvents={worldEvents}
-          markets={markets}
           topic={topic}
           onTopicChange={setTopic}
           stats={stats}

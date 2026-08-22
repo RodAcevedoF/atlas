@@ -35,23 +35,23 @@ export function ArtifactCard() {
 
         <div className="mt-5 grid grid-cols-3 gap-px bg-border">
           <div className="bg-card-2 px-2.5 py-3">
-            <div className={STAT_LABEL}>coverage</div>
-            <div className={STAT_VALUE}>{ARTIFACT.coverage}</div>
+            <div className={STAT_LABEL}>claims</div>
+            <div className={cn(STAT_VALUE, "text-conviction")}>{ARTIFACT.claims}</div>
           </div>
           <div className="bg-card-2 px-2.5 py-3">
-            <div className={STAT_LABEL}>conviction</div>
-            <div className={cn(STAT_VALUE, "text-conviction")}>{ARTIFACT.conviction}</div>
+            <div className={STAT_LABEL}>places</div>
+            <div className={STAT_VALUE}>{ARTIFACT.places}</div>
           </div>
           <div className="bg-card-2 px-2.5 py-3">
-            <div className={STAT_LABEL}>gap</div>
-            <div className={cn(STAT_VALUE, "text-gap-negative")}>{ARTIFACT.gap}</div>
+            <div className={STAT_LABEL}>sources</div>
+            <div className={STAT_VALUE}>{ARTIFACT.sources}</div>
           </div>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-1.75 text-[10.5px] text-foreground/40">
-          {ARTIFACT.sources.map((source) => (
-            <span key={source} className="rounded-full border border-border px-2.25 py-1">
-              {source}
+          {ARTIFACT.refs.map((ref) => (
+            <span key={ref} className="rounded-full border border-border px-2.25 py-1">
+              {ref}
             </span>
           ))}
         </div>

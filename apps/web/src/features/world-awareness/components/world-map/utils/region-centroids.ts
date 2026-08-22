@@ -1,4 +1,4 @@
-import type { GeoRegion } from "../../../repositories/market-repository.ts";
+import type { GeoRegion } from "../../../repositories/world-repository.ts";
 
 // Approximate [lng, lat] anchor per region for pin placement. Coordinates are NOT geocoded:
 // GDELT DOC 2.0 carries no per-article geo, so a pin sits at its region centroid plus a

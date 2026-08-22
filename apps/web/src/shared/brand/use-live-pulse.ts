@@ -3,7 +3,7 @@ import { useReducedMotion } from "./use-reduced-motion.ts";
 
 export interface LivePulse {
   coverage: number;
-  conviction: number;
+  located: number;
   scanCount: number;
   hotCells: number[];
 }
@@ -13,7 +13,7 @@ interface LivePulseOptions {
   cellCount?: number;
 }
 
-const INITIAL: LivePulse = { coverage: 71, conviction: 44, scanCount: 4128, hotCells: [4, 19, 33] };
+const INITIAL: LivePulse = { coverage: 71, located: 44, scanCount: 4128, hotCells: [4, 19, 33] };
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const drift = (spread: number) => Math.round((Math.random() - 0.5) * spread);
@@ -33,7 +33,7 @@ export function useLivePulse({
     const timer = setInterval(() => {
       setPulse((previous) => ({
         coverage: clamp(previous.coverage + drift(6), 40, 98),
-        conviction: clamp(previous.conviction + drift(7), 12, 92),
+        located: clamp(previous.located + drift(7), 12, 92),
         scanCount: previous.scanCount + Math.floor(Math.random() * 4),
         hotCells: [0, 1, 2].map(() => Math.floor(Math.random() * cellCount)),
       }));
