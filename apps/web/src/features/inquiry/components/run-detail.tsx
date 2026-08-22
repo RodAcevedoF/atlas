@@ -1,61 +1,76 @@
-import { canPaintDistribution } from "@/features/world-awareness/components/world-map/utils/awareness-points.ts";
 import { Eyebrow } from "@/shared/ui";
 import { formatRelativeTime } from "@/shared/utils/index.ts";
-import type { AwarenessConfidence } from "@atlas/domain";
 import { Button, cn } from "@atlas/ui";
 import { Link } from "react-router-dom";
 import type {
-  CountryAwarenessRecord,
+  InquiryClaimRecord,
+  InquiryPlaceRecord,
   InquiryRunRecord,
 } from "../repositories/inquiry-repository.ts";
+import { isPaintableRun } from "./paintable-run.ts";
 import { RUN_STATUS_LABEL, runStatusClass } from "./run-status.ts";
 
-const NO_QUERY = "No query was produced for this run.";
 const NO_SYNTHESIS = "No synthesis for this run.";
-const NO_DISTRIBUTION = "This run measured no country.";
+const NO_PLACES = "This run placed no claim on the map.";
 
-const CONFIDENCE_CLASS: Record<AwarenessConfidence, string> = {
-  measured: "text-card-foreground",
-  thin: "text-muted-foreground",
-  artifact: "text-faint",
-};
+const LOW_CONFIDENCE = 0.5;
 
-function DistributionRow({ country }: { country: CountryAwarenessRecord }) {
+function ClaimRow({ claim }: { claim: InquiryClaimRecord }) {
   return (
-    <tr className="border-t border-border">
-      <td className={cn("py-1.5 pr-3", CONFIDENCE_CLASS[country.confidence])}>{country.country}</td>
-      <td className="py-1.5 pr-3 text-right font-mono tabular-nums">
-        {country.awareness.toFixed(2)}%
-      </td>
-      <td className="py-1.5 pr-3 text-muted-foreground">{country.confidence}</td>
-      <td className="py-1.5 text-right font-mono tabular-nums text-muted-foreground">
-        {country.coveredBuckets}/{country.totalBuckets}
-      </td>
-    </tr>
+    <li className="border-t border-border py-1.5">
+      <a
+        href={claim.sourceUrl}
+        target="_blank"
+        rel="noreferrer noopener"
+        className={cn(
+          "hover:underline",
+          claim.confidence < LOW_CONFIDENCE ? "text-muted-foreground" : "text-card-foreground",
+        )}
+      >
+        {claim.text}
+      </a>
+      <span className="ml-2 font-mono text-[10.5px] text-muted-foreground tabular-nums">
+        {claim.confidence.toFixed(2)}
+        {claim.publishedDate ? ` · ${claim.publishedDate.slice(0, 10)}` : null}
+      </span>
+    </li>
   );
 }
 
-function Distribution({ distribution }: { distribution: CountryAwarenessRecord[] }) {
-  if (distribution.length === 0) {
-    return <p className="text-[12px] text-muted-foreground">{NO_DISTRIBUTION}</p>;
+function PlaceBlock({ place }: { place: InquiryPlaceRecord }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[12.5px] font-semibold text-card-foreground">
+          {place.place}
+          {place.country ? (
+            <span className="font-normal text-muted-foreground"> · {place.country}</span>
+          ) : null}
+        </span>
+        <span className="font-mono text-[10.5px] text-muted-foreground tabular-nums">
+          {place.claimCount} claims
+        </span>
+      </div>
+      <ul className="text-[12px] leading-relaxed">
+        {place.claims.map((claim) => (
+          <ClaimRow key={`${claim.sourceUrl}:${claim.text}`} claim={claim} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function Places({ places }: { places: InquiryPlaceRecord[] }) {
+  if (places.length === 0) {
+    return <p className="text-[12px] text-muted-foreground">{NO_PLACES}</p>;
   }
 
   return (
-    <table className="w-full text-[12px]">
-      <thead>
-        <tr className="text-left text-muted-foreground">
-          <th className="pb-1.5 pr-3 font-medium">Country</th>
-          <th className="pb-1.5 pr-3 text-right font-medium">Share of its output</th>
-          <th className="pb-1.5 pr-3 font-medium">Confidence</th>
-          <th className="pb-1.5 text-right font-medium">Buckets covered</th>
-        </tr>
-      </thead>
-      <tbody>
-        {distribution.map((country) => (
-          <DistributionRow key={country.country} country={country} />
-        ))}
-      </tbody>
-    </table>
+    <div className="flex flex-col gap-4">
+      {places.map((place) => (
+        <PlaceBlock key={`${place.place}:${place.country ?? ""}`} place={place} />
+      ))}
+    </div>
   );
 }
 
@@ -74,23 +89,11 @@ export function RunDetail({ run }: { run: InquiryRunRecord }) {
           </span>
         </div>
 
-        {canPaintDistribution(run.distribution) ? (
+        {isPaintableRun(run.places.length) ? (
           <Button asChild size="sm" variant="secondary">
             <Link to={`/world?run=${encodeURIComponent(run.id)}`}>Show on map</Link>
           </Button>
         ) : null}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Eyebrow>Executed query</Eyebrow>
-        <p
-          className={cn(
-            "rounded-lg border border-border bg-muted/45 px-3 py-2 font-mono text-[11.5px] leading-relaxed",
-            run.executedQuery ? "text-card-foreground" : "text-muted-foreground",
-          )}
-        >
-          {run.executedQuery ?? NO_QUERY}
-        </p>
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -101,8 +104,14 @@ export function RunDetail({ run }: { run: InquiryRunRecord }) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Eyebrow>Distribution</Eyebrow>
-        <Distribution distribution={run.distribution} />
+        <div className="flex items-baseline justify-between gap-3">
+          <Eyebrow>Claims by place</Eyebrow>
+          <span className="font-mono text-[10.5px] text-muted-foreground tabular-nums">
+            {run.claimCount} claims
+            {run.unplacedClaims > 0 ? ` · ${run.unplacedClaims} unplaced` : null}
+          </span>
+        </div>
+        <Places places={run.places} />
       </div>
     </div>
   );

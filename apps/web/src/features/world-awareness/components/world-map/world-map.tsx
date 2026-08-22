@@ -20,8 +20,8 @@ import { LegendPanel } from "./overlays/legend-panel.tsx";
 import { RegionHoverPopup } from "./overlays/region-hover-popup.tsx";
 import { ZoomControl } from "./overlays/zoom-control.tsx";
 import type { BreakdownIndex, HoverState, MapFillMode } from "./types.ts";
-import type { AwarenessFeatureCollection } from "./utils/awareness-points.ts";
 import { applyBasemapTheme } from "./utils/basemap-theme.ts";
+import type { ClaimFeatureCollection } from "./utils/claim-points.ts";
 import { topicsPresent } from "./utils/fill-expressions.ts";
 import { buildPinFeatures } from "./utils/pins.ts";
 import { regionForSubregion } from "./utils/region-for-country.ts";
@@ -31,7 +31,7 @@ interface WorldMapProps {
   peak: number;
   selected: GeoRegion | null;
   events: WorldEventRecord[];
-  awareness: AwarenessFeatureCollection | null;
+  awareness: ClaimFeatureCollection | null;
   onSelect: (region: GeoRegion) => void;
   onSelectEvent: (event: WorldEventRecord) => void;
   onClearSelection: () => void;

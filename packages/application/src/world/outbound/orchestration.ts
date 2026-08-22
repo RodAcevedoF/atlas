@@ -1,3 +1,10 @@
+export class GraphUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GraphUnavailableError";
+  }
+}
+
 export interface GraphRunInput {
   graphName: string;
   input: Record<string, unknown>;

@@ -1,15 +1,21 @@
-import type { CountryAwareness, InquiryRun, InquiryRunId, InquiryRunStatus } from "@atlas/domain";
-import { AWARENESS_CONFIDENCES, INQUIRY_RUN_STATUSES } from "@atlas/domain";
+import type {
+  InquiryClaim,
+  InquiryPlace,
+  InquiryRun,
+  InquiryRunId,
+  InquiryRunStatus,
+} from "@atlas/domain";
+import { INQUIRY_RUN_STATUSES } from "@atlas/domain";
 import type { OrchestrationPort } from "../../world/outbound/orchestration.ts";
+import { GraphUnavailableError } from "../../world/outbound/orchestration.ts";
 import type {
   CompleteInquiryRunInput,
   InquiryRunStorePort,
 } from "../outbound/inquiry-run-store.ts";
 import { INQUIRY_MAX_ATTEMPTS } from "../outbound/inquiry-run-store.ts";
 
-const GRAPH_NAME = "awareness";
+const GRAPH_NAME = "inquiry";
 const ERROR_SAMPLE_CHARS = 200;
-/** a live run cannot outlast its own timeout, so an older `running` row belongs to a dead process */
 const STALE_TIMEOUT_MULTIPLE = 2;
 const IN_FLIGHT_STATUSES = ["queued", "running"] as const satisfies readonly InquiryRunStatus[];
 
@@ -51,17 +57,37 @@ function isTerminalStatus(value: unknown): value is InquiryRunStatus {
   return !(IN_FLIGHT_STATUSES as readonly string[]).includes(value);
 }
 
-function isCountryAwareness(value: unknown): value is CountryAwareness {
+function isNullableText(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
+function isClaim(value: unknown): value is InquiryClaim {
   if (typeof value !== "object" || value === null) return false;
   const row = value as Record<string, unknown>;
   return (
-    typeof row.country === "string" &&
-    typeof row.awareness === "number" &&
-    typeof row.peak === "number" &&
-    typeof row.coveredBuckets === "number" &&
-    typeof row.totalBuckets === "number" &&
-    typeof row.confidence === "string" &&
-    (AWARENESS_CONFIDENCES as readonly string[]).includes(row.confidence)
+    typeof row.text === "string" &&
+    typeof row.confidence === "number" &&
+    typeof row.sourceUrl === "string" &&
+    isNullableText(row.sourceTitle) &&
+    isNullableText(row.publishedDate)
+  );
+}
+
+/**
+ * A place without real coordinates cannot be an orb, so it must never reach the map, and a
+ * `claimCount` that disagrees with the claims beside it would print a wrong number over a right list.
+ */
+function isPlace(value: unknown): value is InquiryPlace {
+  if (typeof value !== "object" || value === null) return false;
+  const row = value as Record<string, unknown>;
+  return (
+    typeof row.place === "string" &&
+    isNullableText(row.country) &&
+    typeof row.latitude === "number" &&
+    typeof row.longitude === "number" &&
+    Array.isArray(row.claims) &&
+    row.claims.every(isClaim) &&
+    row.claimCount === row.claims.length
   );
 }
 
@@ -69,11 +95,16 @@ function asText(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-function asDistribution(value: unknown): CountryAwareness[] | null {
+function asPlaces(value: unknown): InquiryPlace[] | null {
   if (value === undefined || value === null) return [];
   if (!Array.isArray(value)) return null;
-  const rows = value.filter(isCountryAwareness);
+  const rows = value.filter(isPlace);
   return rows.length === value.length ? rows : null;
+}
+
+function asCount(value: unknown): number | null {
+  if (value === undefined || value === null) return 0;
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : null;
 }
 
 function sample(value: unknown): string {
@@ -88,9 +119,10 @@ function failure(status: FailedStatus, error: string, attempts: number): RunOutc
   return {
     status: isExhausted(status, attempts) ? "failed_permanent" : status,
     error,
-    executedQuery: null,
-    distribution: [],
-    exemplars: [],
+    places: [],
+    claimCount: 0,
+    unplacedClaims: 0,
+    costUsd: 0,
     synthesis: null,
   };
 }
@@ -100,21 +132,30 @@ function toOutcome(body: Record<string, unknown>, attempts: number): RunOutcome 
     return failure("failed_permanent", `unusable graph status: ${String(body.status)}`, attempts);
   }
 
-  const distribution = asDistribution(body.distribution);
-  if (!distribution) {
-    return failure(
-      "failed_permanent",
-      `unusable graph distribution: ${sample(body.distribution)}`,
-      attempts,
-    );
+  const places = asPlaces(body.places);
+  if (!places) {
+    return failure("failed_permanent", `unusable graph places: ${sample(body.places)}`, attempts);
+  }
+
+  const claimCount = asCount(body.claimCount);
+  const unplacedClaims = asCount(body.unplacedClaims);
+  const costUsd = asCount(body.costUsd);
+  if (claimCount === null || unplacedClaims === null || costUsd === null) {
+    const counts = {
+      claimCount: body.claimCount,
+      unplacedClaims: body.unplacedClaims,
+      costUsd: body.costUsd,
+    };
+    return failure("failed_permanent", `unusable graph counts: ${sample(counts)}`, attempts);
   }
 
   return {
     status: isExhausted(body.status, attempts) ? "failed_permanent" : body.status,
     error: asText(body.error),
-    executedQuery: asText(body.executedQuery),
-    distribution,
-    exemplars: [],
+    places,
+    claimCount,
+    unplacedClaims,
+    costUsd,
     synthesis: asText(body.synthesis),
   };
 }
@@ -172,7 +213,7 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
       );
       return toOutcome(body, run.attempts);
     } catch (error) {
-      if (error instanceof GraphTimeoutError) {
+      if (error instanceof GraphTimeoutError || error instanceof GraphUnavailableError) {
         return failure("failed_retryable", error.message, run.attempts);
       }
       return failure(

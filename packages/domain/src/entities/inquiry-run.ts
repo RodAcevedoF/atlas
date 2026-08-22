@@ -15,25 +15,25 @@ export const INQUIRY_RUN_STATUSES = [
 ] as const;
 export type InquiryRunStatus = (typeof INQUIRY_RUN_STATUSES)[number];
 
-export const AWARENESS_CONFIDENCES = ["measured", "thin", "artifact"] as const;
-export type AwarenessConfidence = (typeof AWARENESS_CONFIDENCES)[number];
-
-export interface CountryAwareness {
-  country: string;
-  awareness: number;
-  peak: number;
-  /** buckets carrying any coverage */
-  coveredBuckets: number;
-  totalBuckets: number;
-  confidence: AwarenessConfidence;
+export interface InquiryClaim {
+  text: string;
+  confidence: number;
+  sourceUrl: string;
+  sourceTitle: string | null;
+  publishedDate: string | null;
 }
 
-export interface InquiryExemplar {
+/**
+ * One place with the claims that landed on it — the map's unit, aggregated server-side.
+ * The place is where the claim says the event happened, never where it was published.
+ */
+export interface InquiryPlace {
+  place: string;
   country: string | null;
-  title: string;
-  url: string;
-  domain: string | null;
-  seenAt: Date;
+  latitude: number;
+  longitude: number;
+  claimCount: number;
+  claims: InquiryClaim[];
 }
 
 export interface InquiryRun {
@@ -41,10 +41,13 @@ export interface InquiryRun {
   question: string;
   questionKey: string;
   day: string;
-  executedQuery: string | null;
   window: string;
-  distribution: CountryAwareness[];
-  exemplars: InquiryExemplar[];
+  places: InquiryPlace[];
+  /** every claim retrieved, including the ones no place could be resolved for */
+  claimCount: number;
+  /** claims the map cannot show — the difference is a finding, not a rounding error */
+  unplacedClaims: number;
+  costUsd: number;
   synthesis: string | null;
   status: InquiryRunStatus;
   error: string | null;
@@ -58,10 +61,10 @@ export interface PublicInquiryRun {
   id: InquiryRunId;
   question: string;
   day: string;
-  executedQuery: string | null;
   window: string;
-  distribution: CountryAwareness[];
-  exemplars: InquiryExemplar[];
+  places: InquiryPlace[];
+  claimCount: number;
+  unplacedClaims: number;
   synthesis: string | null;
   status: InquiryRunStatus;
   createdAt: Date;
@@ -74,7 +77,8 @@ export interface InquiryRunSummary {
   question: string;
   day: string;
   window: string;
-  measuredCountries: string[];
+  /** how many orbs this run would paint — 0 means there is nothing to show */
+  placeCount: number;
   status: InquiryRunStatus;
   createdAt: Date;
   startedAt: Date | null;
@@ -84,7 +88,7 @@ export interface InquiryRunSummary {
 export type InquiryRunListRow = Pick<
   InquiryRun,
   "id" | "question" | "day" | "window" | "status" | "createdAt" | "startedAt" | "completedAt"
-> & { distribution: Pick<CountryAwareness, "country" | "confidence">[] };
+> & { placeCount: number };
 
 export function toInquiryRunSummary(run: InquiryRunListRow): InquiryRunSummary {
   return {
@@ -92,9 +96,7 @@ export function toInquiryRunSummary(run: InquiryRunListRow): InquiryRunSummary {
     question: run.question,
     day: run.day,
     window: run.window,
-    measuredCountries: run.distribution
-      .filter((country) => country.confidence !== "artifact")
-      .map((country) => country.country),
+    placeCount: run.placeCount,
     status: run.status,
     createdAt: run.createdAt,
     startedAt: run.startedAt,
@@ -107,10 +109,10 @@ export function toPublicInquiryRun(run: InquiryRun): PublicInquiryRun {
     id: run.id,
     question: run.question,
     day: run.day,
-    executedQuery: run.executedQuery,
     window: run.window,
-    distribution: run.distribution,
-    exemplars: run.exemplars,
+    places: run.places,
+    claimCount: run.claimCount,
+    unplacedClaims: run.unplacedClaims,
     synthesis: run.synthesis,
     status: run.status,
     createdAt: run.createdAt,

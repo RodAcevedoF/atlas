@@ -1,7 +1,5 @@
 import type { InquiryRunSummaryRecord } from "@/features/inquiry";
-import { hasPlottableCountry } from "./awareness-points.ts";
 
-/** Why a `?run=` request went unhonoured — "unknown" means it never reached this window at all. */
 export type AwarenessRequestMiss = "unpaintable" | "unknown";
 
 export interface AwarenessSelection {
@@ -12,7 +10,7 @@ export interface AwarenessSelection {
 }
 
 function isPaintable(run: InquiryRunSummaryRecord): boolean {
-  return hasPlottableCountry(run.measuredCountries);
+  return run.placeCount > 0;
 }
 
 function firstPaintable(runs: InquiryRunSummaryRecord[]): InquiryRunSummaryRecord | null {

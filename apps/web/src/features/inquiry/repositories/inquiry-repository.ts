@@ -1,30 +1,30 @@
-import type { AwarenessConfidence, InquiryRunStatus } from "@atlas/domain";
+import type { InquiryRunStatus } from "@atlas/domain";
 
-export interface CountryAwarenessRecord {
-  country: string;
-  awareness: number;
-  peak: number;
-  coveredBuckets: number;
-  totalBuckets: number;
-  confidence: AwarenessConfidence;
+export interface InquiryClaimRecord {
+  text: string;
+  confidence: number;
+  sourceUrl: string;
+  sourceTitle: string | null;
+  publishedDate: string | null;
 }
 
-export interface InquiryExemplarRecord {
+export interface InquiryPlaceRecord {
+  place: string;
   country: string | null;
-  title: string;
-  url: string;
-  domain: string | null;
-  seenAt: string;
+  latitude: number;
+  longitude: number;
+  claimCount: number;
+  claims: InquiryClaimRecord[];
 }
 
 export interface InquiryRunRecord {
   id: string;
   question: string;
   day: string;
-  executedQuery: string | null;
   window: string;
-  distribution: CountryAwarenessRecord[];
-  exemplars: InquiryExemplarRecord[];
+  places: InquiryPlaceRecord[];
+  claimCount: number;
+  unplacedClaims: number;
   synthesis: string | null;
   status: InquiryRunStatus;
   createdAt: string;
@@ -37,7 +37,7 @@ export interface InquiryRunSummaryRecord {
   question: string;
   day: string;
   window: string;
-  measuredCountries: string[];
+  placeCount: number;
   status: InquiryRunStatus;
   createdAt: string;
   startedAt: string | null;

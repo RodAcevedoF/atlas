@@ -26,10 +26,7 @@ function toListRow(run: InquiryRun): InquiryRunListRow {
     question: run.question,
     day: run.day,
     window: run.window,
-    distribution: run.distribution.map((country) => ({
-      country: country.country,
-      confidence: country.confidence,
-    })),
+    placeCount: run.places.length,
     status: run.status,
     createdAt: run.createdAt,
     startedAt: run.startedAt,

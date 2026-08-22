@@ -4,6 +4,7 @@ import {
   MongoSignalStore,
   createMongoClient,
   dropSavedReportIds,
+  emptyGdeltEraInquiryRuns,
   renameResearchRunsToInquiryRuns,
 } from "@atlas/infra/store-mongodb";
 import { buildMigrations } from "./migrations.ts";
@@ -23,7 +24,11 @@ async function migrate(): Promise<void> {
 
     const result = await new RunMigrationsUseCase(
       ledger,
-      buildMigrations(store, [renameResearchRunsToInquiryRuns(db), dropSavedReportIds(db)]),
+      buildMigrations(store, [
+        renameResearchRunsToInquiryRuns(db),
+        dropSavedReportIds(db),
+        emptyGdeltEraInquiryRuns(db),
+      ]),
     ).execute({
       dryRun,
     });

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { CountryAwareness, InquiryRun } from "@atlas/domain";
+import type { InquiryPlace, InquiryRun } from "@atlas/domain";
 import { makeInquiryRunId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import { ListInquiryRunsUseCase } from "./list-inquiry-runs.ts";
@@ -12,10 +12,12 @@ function run(index: number): InquiryRun {
     question: `question ${index}`,
     questionKey: `question ${index}`,
     day: "2026-08-17",
-    executedQuery: null,
+
     window: "1w",
-    distribution: [],
-    exemplars: [],
+    places: [],
+    claimCount: 0,
+    unplacedClaims: 0,
+    costUsd: 0,
     synthesis: null,
     status: "succeeded",
     error: null,
@@ -26,8 +28,23 @@ function run(index: number): InquiryRun {
   };
 }
 
-function country(name: string, confidence: CountryAwareness["confidence"]): CountryAwareness {
-  return { country: name, awareness: 4.5, peak: 9, coveredBuckets: 3, totalBuckets: 4, confidence };
+function place(name: string): InquiryPlace {
+  return {
+    place: name,
+    country: "Sudan",
+    latitude: 15.5,
+    longitude: 32.56,
+    claimCount: 1,
+    claims: [
+      {
+        text: `something happened in ${name}`,
+        confidence: 0.8,
+        sourceUrl: "https://example.test/article",
+        sourceTitle: null,
+        publishedDate: null,
+      },
+    ],
+  };
 }
 
 function useCaseOverSeeded(): ListInquiryRunsUseCase {
@@ -55,15 +72,10 @@ describe("ListInquiryRunsUseCase", () => {
     });
   }
 
-  test("a listed run carries its measured country names, never the tables behind them", async () => {
+  test("a listed run carries how many places it would paint, never the claims behind them", async () => {
     const measured = run(0);
-    measured.executedQuery = "france OR spain";
     measured.synthesis = "a long synthesis the list has no use for";
-    measured.distribution = [
-      country("France", "measured"),
-      country("Spain", "thin"),
-      country("Chad", "artifact"),
-    ];
+    measured.places = [place("Khartoum"), place("El Fasher")];
     const { store } = inMemoryInquiryRunStore([measured]);
     const useCase = new ListInquiryRunsUseCase(store);
 
@@ -74,7 +86,7 @@ describe("ListInquiryRunsUseCase", () => {
       question: "question 0",
       day: "2026-08-17",
       window: "1w",
-      measuredCountries: ["France", "Spain"],
+      placeCount: 2,
       status: "succeeded",
       createdAt: measured.createdAt,
       startedAt: null,

@@ -1,11 +1,4 @@
-import type {
-  CountryAwareness,
-  GeoRegion,
-  InquiryExemplar,
-  InquiryRunStatus,
-  SignalSource,
-  Topic,
-} from "@atlas/domain";
+import type { GeoRegion, InquiryPlace, InquiryRunStatus, SignalSource, Topic } from "@atlas/domain";
 
 export interface SignalDoc {
   _id: string;
@@ -32,10 +25,11 @@ export interface InquiryRunDoc {
   question: string;
   questionKey: string;
   day: string;
-  executedQuery: string | null;
   window: string;
-  distribution: CountryAwareness[];
-  exemplars: InquiryExemplar[];
+  places: InquiryPlace[];
+  claimCount: number;
+  unplacedClaims: number;
+  costUsd: number;
   synthesis: string | null;
   status: InquiryRunStatus;
   error: string | null;

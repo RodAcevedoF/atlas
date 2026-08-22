@@ -4,6 +4,7 @@ import type {
   GraphRunInput,
   OrchestrationPort,
 } from "@atlas/application";
+import { GraphUnavailableError } from "@atlas/application";
 
 interface WireEvent {
   runId: string;
@@ -23,16 +24,26 @@ export class HttpOrchestration implements OrchestrationPort {
   }
 
   async run(input: GraphRunInput): Promise<Record<string, unknown>> {
-    const res = await this.fetchImpl(
-      `${this.baseUrl}/graphs/${encodeURIComponent(input.graphName)}/run`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ input: input.input, runId: input.runId }),
-      },
-    );
+    const route = `POST /graphs/${input.graphName}/run`;
+    let res: Response;
+    try {
+      res = await this.fetchImpl(
+        `${this.baseUrl}/graphs/${encodeURIComponent(input.graphName)}/run`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ input: input.input, runId: input.runId }),
+        },
+      );
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new GraphUnavailableError(`${route} unreachable: ${reason}`);
+    }
+    if (res.status >= 500) {
+      throw new GraphUnavailableError(`${route} ${res.status} ${res.statusText}`);
+    }
     if (!res.ok) {
-      throw new Error(`POST /graphs/${input.graphName}/run ${res.status} ${res.statusText}`);
+      throw new Error(`${route} ${res.status} ${res.statusText}`);
     }
     return (await res.json()) as Record<string, unknown>;
   }

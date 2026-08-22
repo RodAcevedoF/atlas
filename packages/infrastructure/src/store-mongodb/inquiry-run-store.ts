@@ -16,8 +16,7 @@ const LIST_PROJECTION = {
   question: 1,
   day: 1,
   window: 1,
-  "distribution.country": 1,
-  "distribution.confidence": 1,
+  places: { $size: { $ifNull: ["$places", []] } },
   status: 1,
   createdAt: 1,
   startedAt: 1,
@@ -27,7 +26,7 @@ const LIST_PROJECTION = {
 type InquiryRunListDoc = Pick<
   InquiryRunDoc,
   "_id" | "question" | "day" | "window" | "status" | "createdAt" | "startedAt" | "completedAt"
-> & { distribution: InquiryRunListRow["distribution"] };
+> & { places: number };
 
 function docToListRow(doc: InquiryRunListDoc): InquiryRunListRow {
   return {
@@ -35,7 +34,7 @@ function docToListRow(doc: InquiryRunListDoc): InquiryRunListRow {
     question: doc.question,
     day: doc.day,
     window: doc.window,
-    distribution: doc.distribution,
+    placeCount: doc.places,
     status: doc.status,
     createdAt: doc.createdAt,
     startedAt: doc.startedAt,
@@ -43,16 +42,27 @@ function docToListRow(doc: InquiryRunListDoc): InquiryRunListRow {
   };
 }
 
-function docToInquiryRun(doc: InquiryRunDoc): InquiryRun {
+type ClaimShapeField = "places" | "claimCount" | "unplacedClaims" | "costUsd";
+
+/**
+ * What a read can actually hand back. A doc written before the claims shape carries none of these
+ * until `2026-08-23-empty-gdelt-era-inquiry-runs` backfills it — the same hole the list projection
+ * fills with `$ifNull`. Writes still owe every field, so `InquiryRunDoc` stays the shape we store.
+ */
+type StoredInquiryRunDoc = Omit<InquiryRunDoc, ClaimShapeField> &
+  Partial<Pick<InquiryRunDoc, ClaimShapeField>>;
+
+function docToInquiryRun(doc: StoredInquiryRunDoc): InquiryRun {
   return {
     id: makeInquiryRunId(doc._id),
     question: doc.question,
     questionKey: doc.questionKey,
     day: doc.day,
-    executedQuery: doc.executedQuery,
     window: doc.window,
-    distribution: doc.distribution,
-    exemplars: doc.exemplars,
+    places: doc.places ?? [],
+    claimCount: doc.claimCount ?? 0,
+    unplacedClaims: doc.unplacedClaims ?? 0,
+    costUsd: doc.costUsd ?? 0,
     synthesis: doc.synthesis,
     status: doc.status,
     error: doc.error,
@@ -72,10 +82,11 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
       question: run.question,
       questionKey: run.questionKey,
       day: run.day,
-      executedQuery: run.executedQuery,
       window: run.window,
-      distribution: run.distribution,
-      exemplars: run.exemplars,
+      places: run.places,
+      claimCount: run.claimCount,
+      unplacedClaims: run.unplacedClaims,
+      costUsd: run.costUsd,
       synthesis: run.synthesis,
       status: run.status,
       error: run.error,
@@ -88,14 +99,16 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
   }
 
   async findInquiryRunById(id: InquiryRunId): Promise<InquiryRun | null> {
-    const doc = await this.db.collection<InquiryRunDoc>(COLLECTION).findOne({ _id: id });
+    const doc = await this.db
+      .collection<InquiryRunDoc>(COLLECTION)
+      .findOne<StoredInquiryRunDoc>({ _id: id });
     return doc ? docToInquiryRun(doc) : null;
   }
 
   async findInquiryRunByQuestionDay(questionKey: string, day: string): Promise<InquiryRun | null> {
     const doc = await this.db
       .collection<InquiryRunDoc>(COLLECTION)
-      .findOne({ questionKey, day }, { sort: { createdAt: -1 } });
+      .findOne<StoredInquiryRunDoc>({ questionKey, day }, { sort: { createdAt: -1 } });
     return doc ? docToInquiryRun(doc) : null;
   }
 
@@ -131,9 +144,10 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
       {
         $set: {
           status: input.status,
-          executedQuery: input.executedQuery,
-          distribution: input.distribution,
-          exemplars: input.exemplars,
+          places: input.places,
+          claimCount: input.claimCount,
+          unplacedClaims: input.unplacedClaims,
+          costUsd: input.costUsd,
           synthesis: input.synthesis,
           error: input.error,
           completedAt: input.completedAt,

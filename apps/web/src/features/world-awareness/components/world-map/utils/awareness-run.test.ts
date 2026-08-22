@@ -3,18 +3,13 @@ import { buildInquiryRunSummary } from "../../../../inquiry/testing/inquiry-buil
 import { selectAwarenessRun } from "./awareness-run.ts";
 
 const UNPLOTTABLE_LATEST_RUNS = [
-  { name: "below_floor", status: "below_floor" as const, measuredCountries: [] },
-  { name: "no_coverage", status: "no_coverage" as const, measuredCountries: [] },
-  { name: "running", status: "running" as const, measuredCountries: [] },
+  { name: "below_floor", status: "below_floor" as const, placeCount: 0 },
+  { name: "no_coverage", status: "no_coverage" as const, placeCount: 0 },
+  { name: "running", status: "running" as const, placeCount: 0 },
   {
-    name: "succeeded measuring only artifact countries",
+    name: "succeeded but every claim failed to place",
     status: "succeeded" as const,
-    measuredCountries: [],
-  },
-  {
-    name: "succeeded measuring only countries this map carries no shape for",
-    status: "succeeded" as const,
-    measuredCountries: ["Monaco"],
+    placeCount: 0,
   },
 ];
 
@@ -47,7 +42,7 @@ describe("selectAwarenessRun", () => {
 
   test("keeps the newest run as the one the notice speaks about, not the one it painted", () => {
     const runs = [
-      buildInquiryRunSummary({ id: "run-new", status: "below_floor", measuredCountries: [] }),
+      buildInquiryRunSummary({ id: "run-new", status: "below_floor", placeCount: 0 }),
       buildInquiryRunSummary({ id: "run-old" }),
     ];
 
@@ -59,8 +54,8 @@ describe("selectAwarenessRun", () => {
 
   test("walks past every empty run rather than stopping at the first miss", () => {
     const runs = [
-      buildInquiryRunSummary({ id: "run-3", measuredCountries: [] }),
-      buildInquiryRunSummary({ id: "run-2", measuredCountries: [] }),
+      buildInquiryRunSummary({ id: "run-3", placeCount: 0 }),
+      buildInquiryRunSummary({ id: "run-2", placeCount: 0 }),
       buildInquiryRunSummary({ id: "run-1" }),
     ];
 
@@ -71,8 +66,8 @@ describe("selectAwarenessRun", () => {
 
   test("reports nothing paintable when no run in the window has coverage", () => {
     const runs = [
-      buildInquiryRunSummary({ id: "run-2", measuredCountries: [] }),
-      buildInquiryRunSummary({ id: "run-1", measuredCountries: [] }),
+      buildInquiryRunSummary({ id: "run-2", placeCount: 0 }),
+      buildInquiryRunSummary({ id: "run-1", placeCount: 0 }),
     ];
 
     const selection = selectAwarenessRun(runs, null);
@@ -101,7 +96,7 @@ describe("selectAwarenessRun", () => {
       name: "the asked-for run was measured but plots nowhere — we know that about it",
       runs: [
         buildInquiryRunSummary({ id: "run-new" }),
-        buildInquiryRunSummary({ id: "run-old", measuredCountries: [] }),
+        buildInquiryRunSummary({ id: "run-old", placeCount: 0 }),
       ],
       requested: "run-old",
       miss: "unpaintable",

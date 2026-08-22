@@ -105,14 +105,14 @@ export function MapCockpit({
           peak={peak}
           selected={selectedRegion}
           events={worldEvents}
-          awareness={awareness.isPainting && awareness.paint ? awareness.paint.points : null}
+          awareness={awareness.isPainting ? awareness.points : null}
           onSelect={selectRegion}
           onSelectEvent={selectEvent}
           onClearSelection={clearSelection}
         />
       </div>
 
-      <div className="pointer-events-none absolute left-1/2 top-4 z-10 flex w-full max-w-[min(32rem,calc(100vw-36rem))] -translate-x-1/2 flex-col items-center gap-2 px-4">
+      <div className="pointer-events-none absolute left-1/2 top-4 z-10 flex w-full max-w-[22rem] -translate-x-1/2 flex-col items-center gap-2 px-4 lg:max-w-[min(32rem,calc(100vw-36rem))]">
         <div className="pointer-events-auto w-full">
           <InquiryAskBox onAsk={clearRequestedRun} />
         </div>
@@ -123,15 +123,15 @@ export function MapCockpit({
             isFallback={awareness.isFallback}
             requestMiss={awareness.requestMiss}
             isPainting={awareness.isPainting}
+            onDismiss={awareness.dismissNotice}
           />
         ) : null}
       </div>
 
-      {awareness.isPainting && awareness.detail && awareness.paint ? (
+      {awareness.isPainting && awareness.detail ? (
         <AwarenessLegend
           run={awareness.detail}
           plotted={awareness.plotted}
-          unmapped={awareness.paint.unmapped}
           onShowAmbient={awareness.showAmbient}
         />
       ) : null}

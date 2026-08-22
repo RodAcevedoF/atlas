@@ -26,14 +26,8 @@ export const AWARENESS_GLOW_RADIUS = [
   14,
 ] as unknown as ExpressionSpecification;
 
-export const AWARENESS_ORB_OPACITY = [
-  "match",
-  ["get", "confidence"],
-  "measured",
-  0.9,
-  0.4,
-] as unknown as ExpressionSpecification;
-export const AWARENESS_LABEL_TEXT = ["get", "country"] as unknown as ExpressionSpecification;
+export const AWARENESS_ORB_OPACITY = 0.9;
+export const AWARENESS_LABEL_TEXT = ["get", "place"] as unknown as ExpressionSpecification;
 
 export const AWARENESS_LABEL_FILTER = [
   ">",

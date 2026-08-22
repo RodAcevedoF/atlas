@@ -1,9 +1,8 @@
 export type {
   InquiryRunId,
   InquiryRunStatus,
-  AwarenessConfidence,
-  CountryAwareness,
-  InquiryExemplar,
+  InquiryClaim,
+  InquiryPlace,
   InquiryRun,
   PublicInquiryRun,
   InquiryRunListRow,
@@ -14,7 +13,7 @@ export {
   toPublicInquiryRun,
   toInquiryRunSummary,
 } from "./entities/inquiry-run.ts";
-export { INQUIRY_RUN_STATUSES, AWARENESS_CONFIDENCES } from "./entities/inquiry-run.ts";
+export { INQUIRY_RUN_STATUSES } from "./entities/inquiry-run.ts";
 
 export type {
   SignalId,

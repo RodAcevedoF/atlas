@@ -1,19 +1,29 @@
 import type {
-  CountryAwarenessRecord,
+  InquiryClaimRecord,
+  InquiryPlaceRecord,
   InquiryRunRecord,
   InquiryRunSummaryRecord,
 } from "../repositories/inquiry-repository.ts";
 
-export function buildCountryAwareness(
-  overrides: Partial<CountryAwarenessRecord> = {},
-): CountryAwarenessRecord {
+export function buildInquiryClaim(overrides: Partial<InquiryClaimRecord> = {}): InquiryClaimRecord {
   return {
+    text: "clashes in and near Geissan displaced 7,800 people",
+    confidence: 0.8,
+    sourceUrl: "https://example.test/article",
+    sourceTitle: "a headline",
+    publishedDate: "2026-08-18T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+export function buildInquiryPlace(overrides: Partial<InquiryPlaceRecord> = {}): InquiryPlaceRecord {
+  return {
+    place: "Khartoum",
     country: "Sudan",
-    awareness: 13.14,
-    peak: 100,
-    coveredBuckets: 120,
-    totalBuckets: 167,
-    confidence: "measured",
+    latitude: 15.5,
+    longitude: 32.56,
+    claimCount: 1,
+    claims: [buildInquiryClaim()],
     ...overrides,
   };
 }
@@ -21,12 +31,12 @@ export function buildCountryAwareness(
 export function buildInquiryRun(overrides: Partial<InquiryRunRecord> = {}): InquiryRunRecord {
   return {
     id: "run-latest",
-    question: "Where is the Sudan conflict being covered?",
+    question: "What is happening in Sudan?",
     day: "2026-08-18",
-    executedQuery: '"sudan" OR "soudan"',
     window: "last 7 days",
-    distribution: [buildCountryAwareness()],
-    exemplars: [],
+    places: [buildInquiryPlace()],
+    claimCount: 1,
+    unplacedClaims: 0,
     synthesis: null,
     status: "succeeded",
     createdAt: "2026-08-18T09:00:00.000Z",
@@ -39,16 +49,14 @@ export function buildInquiryRun(overrides: Partial<InquiryRunRecord> = {}): Inqu
 export function buildInquiryRunSummary(
   overrides: Partial<InquiryRunSummaryRecord> = {},
 ): InquiryRunSummaryRecord {
-  const { id, question, day, window, distribution, status, createdAt, startedAt, completedAt } =
+  const { id, question, day, window, places, status, createdAt, startedAt, completedAt } =
     buildInquiryRun();
   return {
     id,
     question,
     day,
     window,
-    measuredCountries: distribution
-      .filter((country) => country.confidence !== "artifact")
-      .map((country) => country.country),
+    placeCount: places.length,
     status,
     createdAt,
     startedAt,

@@ -17,6 +17,7 @@ export type {
   GraphEvent,
   OrchestrationPort,
 } from "./world/outbound/orchestration.ts";
+export { GraphUnavailableError } from "./world/outbound/orchestration.ts";
 export type { SignalSourceFilter, SignalSourcePort } from "./news/outbound/signal-source.ts";
 export type { UserStorePort } from "./auth/outbound/user-store.ts";
 export type { SessionPort } from "./auth/outbound/session-store.ts";

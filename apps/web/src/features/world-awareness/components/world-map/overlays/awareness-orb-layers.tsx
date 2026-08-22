@@ -11,12 +11,12 @@ import {
   AWARENESS_ORB_RADIUS,
   AWARENESS_SOURCE,
 } from "../constants.ts";
-import type { AwarenessFeatureCollection } from "../utils/awareness-points.ts";
+import type { ClaimFeatureCollection } from "../utils/claim-points.ts";
 import { buildAwarenessRamp } from "../utils/fill-expressions.ts";
 import { orbRimHex, orbShadowHex } from "../utils/theme-colors.ts";
 
 interface AwarenessOrbLayersProps {
-  data: AwarenessFeatureCollection;
+  data: ClaimFeatureCollection;
 }
 
 export function AwarenessOrbLayers({ data }: AwarenessOrbLayersProps) {

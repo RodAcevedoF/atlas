@@ -18,7 +18,7 @@ function RunListItem({
   isSelected: boolean;
   onSelect: () => void;
 }) {
-  const measured = run.measuredCountries.length;
+  const places = run.placeCount;
   return (
     <button
       type="button"
@@ -37,7 +37,7 @@ function RunListItem({
       <span className="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground">
         {formatRelativeTime(run.createdAt)}
         <span className={runStatusClass(run.status)}>· {RUN_STATUS_LABEL[run.status]}</span>
-        {measured > 0 ? <span>· {measured} countries</span> : null}
+        {places > 0 ? <span>· {places} places</span> : null}
       </span>
     </button>
   );
