@@ -5,6 +5,7 @@ from typing import Any, TypedDict, cast
 
 from langgraph.graph import END, START, StateGraph
 
+from app.core.errors import GraphInputError
 from app.core.events import GraphEvent
 from app.graphs.places import (
     PlaceGroup,
@@ -32,6 +33,7 @@ CLAIMS_PER_PLACE_IN_SUMMARY = 3
 class ClaimsState(TypedDict):
     question: str
     limit: int
+    window: str
     retrieval: ClaimsRetrieval
     places: list[PlaceGroup]
     unplaced: int
@@ -106,7 +108,9 @@ class ClaimsLensGraph:
     def _build(self) -> Any:
         async def retrieve_node(state: ClaimsState) -> dict[str, Any]:
             try:
-                retrieval = await self._source.fetch(state["question"], state["limit"])
+                retrieval = await self._source.fetch(
+                    state["question"], state["limit"], state["window"]
+                )
             except ClaimSourceRetryable as error:
                 return {"status": "failed_retryable", "error": str(error)}
             except ClaimSourceUnavailable as error:
@@ -152,9 +156,14 @@ class ClaimsLensGraph:
     async def run(self, run_id: str, input: dict[str, Any]) -> dict[str, Any]:
         question = str(input.get("question") or "").strip()
         if not question:
-            raise ValueError("an inquiry run needs a question")
+            raise GraphInputError("an inquiry run needs a question")
+        window = str(input.get("window") or "").strip()
+        if not window:
+            raise GraphInputError("an inquiry run needs a window")
 
-        final = await self._graph.ainvoke({"question": question, "limit": self._limit})
+        final = await self._graph.ainvoke(
+            {"question": question, "limit": self._limit, "window": window}
+        )
         return _result(cast(ClaimsState, final))
 
     async def stream(self, run_id: str, input: dict[str, Any]) -> AsyncIterator[GraphEvent]:

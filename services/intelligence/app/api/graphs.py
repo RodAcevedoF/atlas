@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
-from app.core.errors import GraphNotFoundError
+from app.core.errors import GraphInputError, GraphNotFoundError
 from app.core.events import GraphEvent
 from app.graphs.registry import registry
 
@@ -33,7 +33,10 @@ async def run_graph(name: str, body: RunBody) -> dict[str, Any]:
     except GraphNotFoundError:
         raise HTTPException(status_code=404, detail="graph not found") from None
     run_id = body.run_id or str(uuid4())
-    return await runner.run(run_id=run_id, input=body.input)
+    try:
+        return await runner.run(run_id=run_id, input=body.input)
+    except GraphInputError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from None
 
 
 @router.post("/{name}/stream")
@@ -64,7 +67,10 @@ async def resume_graph(name: str, run_id: str, body: ResumeBody) -> dict[str, An
         runner = registry.get(name)
     except GraphNotFoundError:
         raise HTTPException(status_code=404, detail="graph not found") from None
-    return await runner.resume(run_id=run_id, input=body.input)
+    try:
+        return await runner.resume(run_id=run_id, input=body.input)
+    except GraphInputError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from None
 
 
 def _sse(event: GraphEvent) -> bytes:

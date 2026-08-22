@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 
+from app.core.errors import GraphInputError
 from app.graphs.claims_lens import ClaimsLensGraph, render_summary, to_place_record
 from app.graphs.places import group_by_place, place_claims
 from app.ports.analyst import InquiryAnalystUnavailable
@@ -61,7 +62,7 @@ class StubSource:
     def __init__(self, result: ClaimsRetrieval | Exception) -> None:
         self._result = result
 
-    async def fetch(self, question: str, limit: int) -> ClaimsRetrieval:
+    async def fetch(self, question: str, limit: int, window: str) -> ClaimsRetrieval:
         if isinstance(self._result, Exception):
             raise self._result
         return self._result
@@ -118,7 +119,7 @@ def build(
 
 
 def run(graph: ClaimsLensGraph, question: str = "what is happening in Sudan") -> dict[str, Any]:
-    return asyncio.run(graph.run("run-1", {"question": question}))
+    return asyncio.run(graph.run("run-1", {"question": question, "window": "1w"}))
 
 
 class TestSuccessfulRun:
@@ -168,18 +169,38 @@ class TestSuccessfulRun:
         assert result["unplacedClaims"] == 1
         assert len(result["places"]) == 1
 
+    def test_the_window_reaches_the_source_so_the_label_is_not_a_promise_alone(self) -> None:
+        class RecordingSource:
+            """Answers with the window it was asked for, so a dropped window shows up."""
+
+            async def fetch(self, question: str, limit: int, window: str) -> ClaimsRetrieval:
+                return retrieval([claim(f"asked for {window}", "Khartoum")])
+
+        graph = ClaimsLensGraph(
+            source=RecordingSource(), normaliser=StubNormaliser(), analyst=StubAnalyst()
+        )
+        result = asyncio.run(graph.run("run-1", {"question": "q", "window": "2w"}))
+
+        assert result["places"][0]["claims"][0]["text"] == "asked for 2w"
+
+    def test_a_run_without_a_window_is_refused_rather_than_silently_unbounded(self) -> None:
+        graph = build(retrieval([claim("something", "Khartoum")]))
+
+        with pytest.raises(GraphInputError):
+            asyncio.run(graph.run("run-1", {"question": "q"}))
+
     def test_the_question_reaches_the_source_verbatim(self) -> None:
         # P2.2 deleted query expansion — Exa is semantic, so nothing rewrites the question.
         class EchoingSource:
             """Answers with the question it was asked, so a rewrite shows up in the result."""
 
-            async def fetch(self, question: str, limit: int) -> ClaimsRetrieval:
+            async def fetch(self, question: str, limit: int, window: str) -> ClaimsRetrieval:
                 return retrieval([claim(question, "Khartoum")])
 
         graph = ClaimsLensGraph(
             source=EchoingSource(), normaliser=StubNormaliser(), analyst=StubAnalyst()
         )
-        result = asyncio.run(graph.run("run-1", {"question": "何が起きているのか"}))
+        result = asyncio.run(graph.run("run-1", {"question": "何が起きているのか", "window": "1w"}))
 
         assert result["places"][0]["claims"][0]["text"] == "何が起きているのか"
 

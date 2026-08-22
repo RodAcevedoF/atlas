@@ -4,3 +4,7 @@ class NotImplementedAdapterError(NotImplementedError):
 
 class GraphNotFoundError(LookupError):
     """Raised when a graph name is not registered."""
+
+
+class GraphInputError(ValueError):
+    """Raised when a run's input is missing something the graph cannot run without."""

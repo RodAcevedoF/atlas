@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -21,6 +22,9 @@ from app.ports.claims import (
 )
 
 SEARCH_URL = "https://api.exa.ai/search"
+
+WINDOW_UNIT_DAYS = {"d": 1, "w": 7}
+MAX_WINDOW_DAYS = 366
 
 BILLED_CONTENT_TYPES = 1
 
@@ -173,12 +177,27 @@ def parse_retrieval(payload: dict[str, Any], question: str, pricing: ExaPricing)
     )
 
 
-def build_request(question: str, limit: int, search_type: str) -> dict[str, Any]:
+def window_start(window: str, now: datetime) -> str:
+    """`1w` -> the instant Exa must not publish-date past. The window is a promise to the reader."""
+    count, unit = window[:-1], window[-1:]
+    days = WINDOW_UNIT_DAYS.get(unit)
+    if days is None or not count.isascii() or not count.isdigit():
+        raise ClaimSourceUnavailable(f"unusable window: {window}")
+    reach = int(count) * days
+    if not 1 <= reach <= MAX_WINDOW_DAYS:
+        raise ClaimSourceUnavailable(f"a window must reach 1 to {MAX_WINDOW_DAYS} days: {window}")
+    return (now - timedelta(days=reach)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+
+def build_request(
+    question: str, limit: int, search_type: str, start_published_date: str
+) -> dict[str, Any]:
     """The question goes verbatim — Exa is semantic, so there is nothing to expand."""
     return {
         "query": question,
         "type": search_type,
         "numResults": limit,
+        "startPublishedDate": start_published_date,
         "contents": {
             "text": True,
             "highlights": True,
@@ -191,11 +210,13 @@ async def fetch_claims(
     question: str,
     limit: int,
     search_type: str,
+    start_published_date: str,
     pricing: ExaPricing,
     client: httpx.AsyncClient,
 ) -> ClaimsRetrieval:
+    request = build_request(question, limit, search_type, start_published_date)
     try:
-        response = await client.post(SEARCH_URL, json=build_request(question, limit, search_type))
+        response = await client.post(SEARCH_URL, json=request)
     except httpx.TransportError as error:
         raise ClaimSourceRetryable(f"transport failure: {error}") from error
 
@@ -229,7 +250,10 @@ class ExaClaimSource:
         self._search_type = search_type
         self._timeout_seconds = timeout_seconds
 
-    async def fetch(self, question: str, limit: int) -> ClaimsRetrieval:
+    async def fetch(self, question: str, limit: int, window: str) -> ClaimsRetrieval:
+        start = window_start(window, datetime.now(UTC))
         headers = {"x-api-key": self._api_key, "Content-Type": "application/json"}
         async with httpx.AsyncClient(timeout=self._timeout_seconds, headers=headers) as client:
-            return await fetch_claims(question, limit, self._search_type, self._pricing, client)
+            return await fetch_claims(
+                question, limit, self._search_type, start, self._pricing, client
+            )
