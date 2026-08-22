@@ -49,7 +49,7 @@ export function VerifyEmailCard() {
       </div>
 
       <p className="text-[12px] leading-relaxed text-muted-foreground">
-        World scans need a verified address. We sent a link to{" "}
+        Confirm your address so we know it's you. We sent a link to{" "}
         <strong className="font-medium text-card-foreground">{user.email}</strong>.
       </p>
 

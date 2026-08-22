@@ -22,7 +22,7 @@ const FORM: Record<Mode, FormCopy> = {
   login: {
     title: "Welcome back",
     step: "Sign in",
-    sub: "Pick up where the scan left off — today's snapshots are waiting.",
+    sub: "Pick up where you left off — your questions and their maps are waiting.",
     submit: "Sign in",
     passwordPlaceholder: "••••••••",
     switchPrompt: "New to Atlas?",
@@ -32,7 +32,7 @@ const FORM: Record<Mode, FormCopy> = {
   register: {
     title: "Create your Atlas",
     step: "Sign up",
-    sub: "Two minutes to set up. Your first snapshot lands the moment you finish.",
+    sub: "Two minutes to set up. Ask your first question the moment you finish.",
     submit: "Create account",
     passwordPlaceholder: "8+ characters",
     switchPrompt: "Already have an account?",
