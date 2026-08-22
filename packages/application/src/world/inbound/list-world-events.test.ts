@@ -1,35 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import type { SignalSource } from "@atlas/domain";
 import { buildSignal } from "../../testing/signal-builder.ts";
 import { recordingSignalStore } from "../../testing/signal-store.fake.ts";
 import { ListWorldEventsUseCase } from "./list-world-events.ts";
 
-interface SourceCase {
-  name: string;
-  input?: { source: SignalSource };
-  expected: SignalSource;
-}
-
 describe("ListWorldEventsUseCase", () => {
   describe("store filter", () => {
-    const sourceCases: SourceCase[] = [
-      {
-        name: "defaults to news-only — the map stays news-scoped until AT-064 decides otherwise",
-        input: undefined,
-        expected: "news",
-      },
-      { name: "honours an explicit source", input: { source: "market" }, expected: "market" },
-    ];
+    test("always asks the store for news — the only source the spine carries", async () => {
+      const { store, listFilters } = recordingSignalStore();
 
-    for (const { name, input, expected } of sourceCases) {
-      test(name, async () => {
-        const { store, listFilters } = recordingSignalStore();
+      await new ListWorldEventsUseCase(store).execute();
 
-        await new ListWorldEventsUseCase(store).execute(input);
-
-        expect(listFilters[0]?.source).toBe(expected);
-      });
-    }
+      expect(listFilters[0]?.source).toBe("news");
+    });
 
     test("reads a wider candidate window than it returns, so ranking has something to rank", async () => {
       const { store, listFilters } = recordingSignalStore();

@@ -1,4 +1,4 @@
-import type { GeoRegion, Market, MarketCategory } from "./market.ts";
+import type { GeoRegion } from "./geography.ts";
 
 export type SignalId = string & { readonly _brand: "SignalId" };
 
@@ -6,7 +6,7 @@ export function makeSignalId(v: string): SignalId {
   return v as SignalId;
 }
 
-export const SIGNAL_SOURCES = ["market", "news", "social"] as const;
+export const SIGNAL_SOURCES = ["news"] as const;
 export type SignalSource = (typeof SIGNAL_SOURCES)[number];
 
 export const TOPICS = [
@@ -23,20 +23,6 @@ export const TOPICS = [
 ] as const;
 export type Topic = (typeof TOPICS)[number];
 
-const MARKET_CATEGORY_TO_TOPIC: Record<MarketCategory, Topic> = {
-  politics: "politics",
-  crypto: "business-finance",
-  sports: "sports",
-  economics: "economy",
-  science: "science-health",
-  culture: "society-culture",
-  other: "other",
-};
-
-export function marketCategoryToTopic(category: MarketCategory): Topic {
-  return MARKET_CATEGORY_TO_TOPIC[category];
-}
-
 export interface Signal {
   id: SignalId;
   source: SignalSource;
@@ -50,25 +36,6 @@ export interface Signal {
   ref: string;
   timestamp: Date;
   createdAt: Date;
-}
-
-export function marketToSignal(market: Market): Signal {
-  return {
-    id: makeSignalId(`market:${market.id}`),
-    source: "market",
-    topic: marketCategoryToTopic(market.category),
-    primaryRegion: market.primaryRegion,
-    regions: market.regions,
-    // markets carry no publisher country
-    sourceCountry: null,
-    weight: market.volumeUsd,
-    // market signals encode price/volume
-    sentiment: 0,
-    title: market.title,
-    ref: market.slug,
-    timestamp: market.updatedAt,
-    createdAt: market.createdAt,
-  };
 }
 
 const RELEVANCE_HALF_LIFE_HOURS = 24;

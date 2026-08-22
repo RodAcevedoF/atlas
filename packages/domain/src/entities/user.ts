@@ -1,4 +1,4 @@
-import type { GeoRegion } from "./market.ts";
+import type { GeoRegion } from "./geography.ts";
 import type { Topic } from "./signal.ts";
 
 export type UserId = string & { readonly _brand: "UserId" };
@@ -9,7 +9,6 @@ export function makeUserId(value: string): UserId {
 export interface UserProfile {
   preferredRegions: GeoRegion[];
   preferredTopics: Topic[];
-  savedReportIds: string[];
 }
 
 export type IdentityProvider = "password" | "github" | "google";
@@ -38,7 +37,7 @@ export interface PublicUser {
 }
 
 export function emptyProfile(): UserProfile {
-  return { preferredRegions: [], preferredTopics: [], savedReportIds: [] };
+  return { preferredRegions: [], preferredTopics: [] };
 }
 
 export function findIdentity(user: User, provider: IdentityProvider): UserIdentity | undefined {

@@ -39,7 +39,7 @@ export class ListWorldEventsUseCase implements ListWorldEvents {
 
   async execute(input: ListWorldEventsInput = {}): Promise<ListWorldEventsOutput> {
     const candidates = await this.store.listSignals({
-      source: input.source ?? "news",
+      source: "news",
       topic: input.topic,
       region: input.region,
       since: input.since,

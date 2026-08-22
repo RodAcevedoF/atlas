@@ -1,44 +1,4 @@
 export type {
-  MarketId,
-  EventId,
-  OutcomeId,
-  MarketStatus,
-  MarketCategory,
-  GeoRegion,
-  RegionSummary,
-  Outcome,
-  Market,
-  PredictionEvent,
-} from "./entities/market.ts";
-export { makeMarketId, makeEventId, makeOutcomeId } from "./entities/market.ts";
-export {
-  MARKET_STATUSES,
-  MARKET_CATEGORIES,
-  GEO_REGIONS,
-} from "./entities/market.ts";
-
-export type {
-  PriceTick,
-  MarketSnapshot,
-  MarketMover,
-  TradeSide,
-  Trade,
-} from "./entities/activity.ts";
-export { marketToSnapshot, topMarketMovers } from "./entities/activity.ts";
-
-export type {
-  InsightKind,
-  EdgeSignal,
-  DiscrepancySignal,
-  Insight,
-} from "./entities/insight.ts";
-
-export type {
-  AnalysisRunStatus,
-  AnalysisRun,
-} from "./entities/analysis-run.ts";
-
-export type {
   InquiryRunId,
   InquiryRunStatus,
   AwarenessConfidence,
@@ -65,14 +25,11 @@ export type {
   RegionTopicBreakdown,
   TopicSentimentSummary,
 } from "./entities/signal.ts";
-export {
-  makeSignalId,
-  marketCategoryToTopic,
-  marketToSignal,
-  scoreSignalRelevance,
-} from "./entities/signal.ts";
+export { makeSignalId, scoreSignalRelevance } from "./entities/signal.ts";
 export { SIGNAL_SOURCES, TOPICS } from "./entities/signal.ts";
 
+export type { GeoRegion } from "./entities/geography.ts";
+export { GEO_REGIONS } from "./entities/geography.ts";
 export {
   deriveRegionsFromText,
   deriveTopicFromText,

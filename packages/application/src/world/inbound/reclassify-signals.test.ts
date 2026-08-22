@@ -82,24 +82,6 @@ describe("ReclassifySignalsUseCase", () => {
     expect(result.regions).toEqual({ divergent: 0, wouldNarrowToGlobal: 0 });
   });
 
-  test("never touches market signals, whose topic comes from the market category", async () => {
-    const market = buildSignal({
-      ref: "ai-chip-war",
-      source: "market",
-      title: "Will the AI chip war escalate?",
-      topic: "business-finance",
-      sentiment: 0,
-    });
-    const { store, signals } = inMemorySignalStore([...staleCorpus(), market]);
-
-    const result = await new ReclassifySignalsUseCase(store).execute();
-
-    const stored = signals().find((signal) => signal.id === market.id);
-    expect(result.scanned).toBe(3);
-    expect(stored?.topic).toBe("business-finance");
-    expect(stored?.sentiment).toBe(0);
-  });
-
   test("a dry run reports the same numbers but writes nothing", async () => {
     const { store, signals } = inMemorySignalStore(staleCorpus());
 

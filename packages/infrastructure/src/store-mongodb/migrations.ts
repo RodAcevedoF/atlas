@@ -35,3 +35,24 @@ export function renameResearchRunsToInquiryRuns(db: Db): Migration {
     },
   };
 }
+
+export function dropSavedReportIds(db: Db): Migration {
+  return {
+    id: "2026-08-22-drop-saved-report-ids",
+    async execute({ dryRun }) {
+      const holding = await db
+        .collection("users")
+        .countDocuments({ "profile.savedReportIds": { $exists: true } });
+      if (holding === 0) return "no profile still carries savedReportIds";
+      if (dryRun) return `would unset savedReportIds on ${holding} profiles`;
+
+      const result = await db
+        .collection("users")
+        .updateMany(
+          { "profile.savedReportIds": { $exists: true } },
+          { $unset: { "profile.savedReportIds": "" } },
+        );
+      return `unset savedReportIds on ${result.modifiedCount} profiles`;
+    },
+  };
+}

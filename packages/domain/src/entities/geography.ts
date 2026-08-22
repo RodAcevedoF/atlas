@@ -1,5 +1,16 @@
-import type { GeoRegion } from "./market.ts";
 import type { Topic } from "./signal.ts";
+
+export const GEO_REGIONS = [
+  "north-america",
+  "latin-america",
+  "europe",
+  "middle-east",
+  "africa",
+  "asia",
+  "oceania",
+  "global",
+] as const;
+export type GeoRegion = (typeof GEO_REGIONS)[number];
 
 const DEFAULT_REGION: GeoRegion = "global";
 
