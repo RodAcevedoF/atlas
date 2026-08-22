@@ -6,6 +6,8 @@ import {
   deriveTopicFromText,
   makeSignalId,
 } from "@atlas/domain";
+import { capToLimit } from "@atlas/shared";
+import { dedupeByRef } from "./dedupe-by-ref.ts";
 import { fetchExaSearch } from "./exa-client.ts";
 import type { ExaResult, ExaSearchRequest } from "./exa-types.ts";
 
@@ -63,8 +65,10 @@ export class ExaNewsAdapter implements SignalSourcePort {
       ...publishedWindow(filter),
     });
 
-    return (response.results ?? [])
+    const signals = (response.results ?? [])
       .map(resultToSignal)
       .filter((signal): signal is Signal => signal !== null);
+
+    return capToLimit(dedupeByRef(signals), filter?.limit);
   }
 }

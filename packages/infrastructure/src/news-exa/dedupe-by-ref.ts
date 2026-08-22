@@ -1,6 +1,4 @@
-import type { SignalSourceFilter, SignalSourcePort } from "@atlas/application";
 import type { Signal } from "@atlas/domain";
-import { capToLimit, failOverAcrossSources } from "@atlas/shared";
 
 const TRACKING_PARAM_PREFIX = "utm_";
 const TRACKING_PARAMS = new Set(["fbclid", "gclid", "mc_cid", "mc_eid", "igshid"]);
@@ -31,31 +29,11 @@ function normalizeRef(ref: string): string {
   return query ? `${host}${path}?${query}` : `${host}${path}`;
 }
 
-function dedupeByRef(signals: Signal[]): Signal[] {
+export function dedupeByRef(signals: Signal[]): Signal[] {
   const byRef = new Map<string, Signal>();
   for (const signal of signals) {
     const key = normalizeRef(signal.ref);
     if (!byRef.has(key)) byRef.set(key, signal);
   }
   return [...byRef.values()];
-}
-
-export class CompositeSignalSourceAdapter implements SignalSourcePort {
-  constructor(
-    private readonly adapters: readonly SignalSourcePort[],
-    private readonly timeoutMs?: number,
-  ) {}
-
-  async fetchSignals(filter?: SignalSourceFilter): Promise<Signal[]> {
-    const answered = await failOverAcrossSources(
-      "news-composite",
-      this.adapters.map((adapter) => ({
-        source: adapter.constructor.name,
-        run: () => adapter.fetchSignals(filter),
-      })),
-      this.timeoutMs,
-    );
-
-    return capToLimit(dedupeByRef(answered), filter?.limit);
-  }
 }

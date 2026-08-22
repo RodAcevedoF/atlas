@@ -5,7 +5,6 @@ export {
   type FetchRetryOptions,
 } from "./http-retry.ts";
 export {
-  failOverAcrossSources,
   fanOutToSources,
   SourceTimeoutError,
   type FanOutTask,

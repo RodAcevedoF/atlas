@@ -5,6 +5,8 @@ const SEARCH_URL = "https://api.exa.ai/search";
 
 const RETRY_OPTIONS = { maxRetries: 5, baseDelayMs: 1_000, maxDelayMs: 30_000 };
 
+const REQUEST_BUDGET_MS = 15_000;
+
 export async function fetchExaSearch(
   apiKey: string,
   request: ExaSearchRequest,
@@ -18,6 +20,7 @@ export async function fetchExaSearch(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(request),
+      signal: AbortSignal.timeout(REQUEST_BUDGET_MS),
     },
     RETRY_OPTIONS,
   );

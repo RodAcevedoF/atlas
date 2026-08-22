@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { type FanOutTask, failOverAcrossSources, fanOutToSources } from "./fan-out.ts";
+import { type FanOutTask, fanOutToSources } from "./fan-out.ts";
 
 function answering<T>(source: string, value: T, delayMs = 0): FanOutTask<T> {
   return {
@@ -161,121 +161,6 @@ describe("fanOutToSources", () => {
       );
 
       await expect(fanOut).rejects.toThrow("[test] every source failed");
-    });
-  });
-});
-
-describe("failOverAcrossSources", () => {
-  describe("order", () => {
-    test("returns the first source's value and never reaches the rest", async () => {
-      const value = await failOverAcrossSources("test", [
-        answering("first", "a"),
-        failing("second", new Error("must not be reached")),
-      ]);
-
-      expect(value).toBe("a");
-      expect(warnings).toEqual([]);
-    });
-
-    test("moves to the next source only once the earlier one failed", async () => {
-      const value = await failOverAcrossSources("test", [
-        failing("first", new Error("boom")),
-        answering("second", "b"),
-      ]);
-
-      expect(value).toBe("b");
-    });
-
-    test("stops at the first source that answers, however many follow", async () => {
-      const value = await failOverAcrossSources("test", [
-        failing("first", new Error("boom")),
-        answering("second", "b"),
-        answering("third", "c"),
-      ]);
-
-      expect(value).toBe("b");
-    });
-
-    test("logs each source it had to give up on", async () => {
-      await failOverAcrossSources("test", [
-        failing("first", new Error("boom")),
-        answering("second", "b"),
-      ]);
-
-      expect(warnings).toHaveLength(1);
-      expect(warnings[0]).toContain("first");
-      expect(warnings[0]).toContain("boom");
-    });
-  });
-
-  describe("deadlines", () => {
-    test("gives up on a stalled source and falls through to the next", async () => {
-      const value = await failOverAcrossSources(
-        "test",
-        [answering("slow", "a", 200), answering("fast", "b")],
-        10,
-      );
-
-      expect(value).toBe("b");
-    });
-
-    test("reports a timed-out source by name", async () => {
-      await failOverAcrossSources(
-        "test",
-        [answering("slow", "a", 200), answering("fast", "b")],
-        10,
-      );
-
-      expect(warnings[0]).toContain("slow did not answer within 10ms");
-    });
-
-    test("caps the whole attempt with the budget rather than letting deadlines add up", async () => {
-      const startedAt = Date.now();
-
-      const failOver = failOverAcrossSources(
-        "test",
-        [answering("slow", "a", 500), answering("slower", "b", 500)],
-        60,
-        80,
-      );
-
-      await expect(failOver).rejects.toThrow("[test] every source failed");
-      expect(Date.now() - startedAt).toBeLessThan(120);
-    });
-
-    test("leaves the first source its full deadline and squeezes the later one", async () => {
-      const value = await failOverAcrossSources(
-        "test",
-        [answering("slow", "a", 500), answering("second", "b", 5)],
-        60,
-        80,
-      );
-
-      expect(value).toBe("b");
-    });
-  });
-
-  describe("total failure", () => {
-    test("throws rather than returning nothing", async () => {
-      const failOver = failOverAcrossSources("test", [
-        failing("first", new Error("boom")),
-        failing("second", new Error("bang")),
-      ]);
-
-      await expect(failOver).rejects.toThrow("[test] every source failed: first, second");
-    });
-
-    test("carries every underlying reason", async () => {
-      const error = await failOverAcrossSources("test", [
-        failing("first", new Error("boom")),
-        failing("second", new Error("bang")),
-      ]).catch((thrown: unknown) => thrown);
-
-      expect(error).toBeInstanceOf(AggregateError);
-      expect((error as AggregateError).errors.map((reason) => String(reason))).toEqual([
-        "Error: boom",
-        "Error: bang",
-      ]);
     });
   });
 });

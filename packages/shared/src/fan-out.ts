@@ -1,5 +1,4 @@
 const DEFAULT_SOURCE_TIMEOUT_MS = 15_000;
-const DEFAULT_FAILOVER_BUDGET_MS = 20_000;
 
 export class SourceTimeoutError extends Error {
   constructor(source: string, timeoutMs: number) {
@@ -43,36 +42,6 @@ function everySourceFailed(
   reasons: readonly unknown[],
 ): AggregateError {
   return new AggregateError(reasons, `[${label}] every source failed: ${sources.join(", ")}`);
-}
-
-export async function failOverAcrossSources<T>(
-  label: string,
-  tasks: readonly FanOutTask<T>[],
-  timeoutMs: number = DEFAULT_SOURCE_TIMEOUT_MS,
-  budgetMs: number = DEFAULT_FAILOVER_BUDGET_MS,
-): Promise<T> {
-  const reasons: unknown[] = [];
-  const startedAt = Date.now();
-
-  for (const task of tasks) {
-    const remainingMs = Math.max(0, budgetMs - (Date.now() - startedAt));
-    try {
-      return await withDeadline(
-        task.source,
-        Promise.resolve().then(() => task.run()),
-        Math.min(timeoutMs, remainingMs),
-      );
-    } catch (reason) {
-      console.warn(`[${label}] ${task.source} failed`, reason);
-      reasons.push(reason);
-    }
-  }
-
-  throw everySourceFailed(
-    label,
-    tasks.map((task) => task.source),
-    reasons,
-  );
 }
 
 export async function fanOutToSources<T>(

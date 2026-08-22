@@ -13,32 +13,32 @@ import {
   RequestResearchRunUseCase,
 } from "@atlas/application";
 
-export interface ResearchDeps {
-  executeResearchRun: ExecuteResearchRun;
-  requestResearchRun: RequestResearchRun;
-  getResearchRun: GetResearchRun;
-  listResearchRuns: ListResearchRuns;
+export interface InquiryDeps {
+  executeInquiryRun: ExecuteResearchRun;
+  requestInquiryRun: RequestResearchRun;
+  getInquiryRun: GetResearchRun;
+  listInquiryRuns: ListResearchRuns;
   pollIntervalMs: number;
 }
 
-export function makeResearchDependencies(deps: {
+export function makeInquiryDependencies(deps: {
   store: ResearchRunStorePort;
   orchestration: OrchestrationPort;
   retryAfterMs: number;
   runTimeoutMs: number;
   pollIntervalMs: number;
   dailyCap: number;
-}): ResearchDeps {
+}): InquiryDeps {
   return {
-    executeResearchRun: new ExecuteResearchRunUseCase(
+    executeInquiryRun: new ExecuteResearchRunUseCase(
       deps.store,
       deps.orchestration,
       deps.retryAfterMs,
       deps.runTimeoutMs,
     ),
-    requestResearchRun: new RequestResearchRunUseCase(deps.store, deps.dailyCap),
-    getResearchRun: new GetResearchRunUseCase(deps.store),
-    listResearchRuns: new ListResearchRunsUseCase(deps.store),
+    requestInquiryRun: new RequestResearchRunUseCase(deps.store, deps.dailyCap),
+    getInquiryRun: new GetResearchRunUseCase(deps.store),
+    listInquiryRuns: new ListResearchRunsUseCase(deps.store),
     pollIntervalMs: deps.pollIntervalMs,
   };
 }

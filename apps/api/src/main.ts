@@ -5,12 +5,12 @@ import { bootstrap } from "./core/bootstrap.ts";
 import { registerErrorHandler } from "./core/error-handler.ts";
 import { loggerRedactPaths, registerSecurity } from "./core/security.ts";
 import { oauthPublicRoutes, readOAuthConfigs, registerOAuthRoutes } from "./modules/auth/oauth.ts";
-import { registerResearchWorker } from "./modules/research/worker.ts";
+import { registerInquiryWorker } from "./modules/inquiry/worker.ts";
 import { registerAuthRoutes } from "./routes/auth.ts";
+import { registerInquiryRoutes } from "./routes/inquiry.ts";
 import { registerMarketsRoutes } from "./routes/markets.ts";
 import { registerNewsRoutes } from "./routes/news.ts";
 import { registerProfileRoutes } from "./routes/profile.ts";
-import { registerResearchRoutes } from "./routes/research.ts";
 import { registerWorldRoutes } from "./routes/world.ts";
 
 const app = Fastify({ logger: { redact: loggerRedactPaths } });
@@ -32,9 +32,9 @@ await registerProfileRoutes(app, deps.profile);
 await registerMarketsRoutes(app, deps.markets);
 await registerNewsRoutes(app, deps.news);
 await registerWorldRoutes(app, deps.world);
-await registerResearchRoutes(app, deps.research);
+await registerInquiryRoutes(app, deps.inquiry);
 
-registerResearchWorker(app, deps.research);
+registerInquiryWorker(app, deps.inquiry);
 
 const port = Number(process.env.PORT ?? 3100);
 await app.listen({ port, host: "0.0.0.0" });

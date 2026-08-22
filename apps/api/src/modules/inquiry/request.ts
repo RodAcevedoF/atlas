@@ -4,20 +4,20 @@ import { makeResearchRunId } from "@atlas/domain";
 import { InvalidInputError } from "../../core/errors.ts";
 import { type RawQuery, parseLimit } from "../../core/parsing.ts";
 
-export function parseResearchRunBody(
+export function parseInquiryRunBody(
   body: Record<string, unknown> | undefined,
 ): RequestResearchRunInput {
   const source = body ?? {};
   return { question: typeof source.question === "string" ? source.question : "" };
 }
 
-export function parseResearchRunId(value: unknown): ResearchRunId {
+export function parseInquiryRunId(value: unknown): ResearchRunId {
   if (typeof value !== "string" || value.trim().length === 0) {
-    throw new InvalidInputError("A research run id is required");
+    throw new InvalidInputError("An inquiry run id is required");
   }
   return makeResearchRunId(value);
 }
 
-export function parseResearchRunsQuery(query: RawQuery): ResearchRunFilter {
+export function parseInquiryRunsQuery(query: RawQuery): ResearchRunFilter {
   return { limit: parseLimit(query.limit) };
 }
