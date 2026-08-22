@@ -1,28 +1,28 @@
 import type {
-  ExecuteResearchRun,
-  GetResearchRun,
-  ListResearchRuns,
+  ExecuteInquiryRun,
+  GetInquiryRun,
+  InquiryRunStorePort,
+  ListInquiryRuns,
   OrchestrationPort,
-  RequestResearchRun,
-  ResearchRunStorePort,
+  RequestInquiryRun,
 } from "@atlas/application";
 import {
-  ExecuteResearchRunUseCase,
-  GetResearchRunUseCase,
-  ListResearchRunsUseCase,
-  RequestResearchRunUseCase,
+  ExecuteInquiryRunUseCase,
+  GetInquiryRunUseCase,
+  ListInquiryRunsUseCase,
+  RequestInquiryRunUseCase,
 } from "@atlas/application";
 
 export interface InquiryDeps {
-  executeInquiryRun: ExecuteResearchRun;
-  requestInquiryRun: RequestResearchRun;
-  getInquiryRun: GetResearchRun;
-  listInquiryRuns: ListResearchRuns;
+  executeInquiryRun: ExecuteInquiryRun;
+  requestInquiryRun: RequestInquiryRun;
+  getInquiryRun: GetInquiryRun;
+  listInquiryRuns: ListInquiryRuns;
   pollIntervalMs: number;
 }
 
 export function makeInquiryDependencies(deps: {
-  store: ResearchRunStorePort;
+  store: InquiryRunStorePort;
   orchestration: OrchestrationPort;
   retryAfterMs: number;
   runTimeoutMs: number;
@@ -30,15 +30,15 @@ export function makeInquiryDependencies(deps: {
   dailyCap: number;
 }): InquiryDeps {
   return {
-    executeInquiryRun: new ExecuteResearchRunUseCase(
+    executeInquiryRun: new ExecuteInquiryRunUseCase(
       deps.store,
       deps.orchestration,
       deps.retryAfterMs,
       deps.runTimeoutMs,
     ),
-    requestInquiryRun: new RequestResearchRunUseCase(deps.store, deps.dailyCap),
-    getInquiryRun: new GetResearchRunUseCase(deps.store),
-    listInquiryRuns: new ListResearchRunsUseCase(deps.store),
+    requestInquiryRun: new RequestInquiryRunUseCase(deps.store, deps.dailyCap),
+    getInquiryRun: new GetInquiryRunUseCase(deps.store),
+    listInquiryRuns: new ListInquiryRunsUseCase(deps.store),
     pollIntervalMs: deps.pollIntervalMs,
   };
 }

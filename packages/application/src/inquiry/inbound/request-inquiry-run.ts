@@ -1,36 +1,36 @@
 import type { ResearchRun, ResearchRunId, ResearchRunStatus } from "@atlas/domain";
 import { makeResearchRunId } from "@atlas/domain";
-import type { ResearchRunStorePort } from "../outbound/research-run-store.ts";
+import type { InquiryRunStorePort } from "../outbound/inquiry-run-store.ts";
 
-const RESEARCH_WINDOW = "1w";
+const INQUIRY_WINDOW = "1w";
 const MAX_QUESTION_CHARS = 500;
 
-export class InvalidResearchQuestionError extends Error {
+export class InvalidInquiryQuestionError extends Error {
   constructor(reason: string) {
     super(reason);
-    this.name = "InvalidResearchQuestionError";
+    this.name = "InvalidInquiryQuestionError";
   }
 }
 
-export class ResearchDailyCapReachedError extends Error {
+export class InquiryDailyCapReachedError extends Error {
   constructor(dailyCap: number) {
-    super(`Daily research limit reached — ${dailyCap} runs today. Stored runs are still readable.`);
-    this.name = "ResearchDailyCapReachedError";
+    super(`Daily inquiry limit reached — ${dailyCap} runs today. Stored runs are still readable.`);
+    this.name = "InquiryDailyCapReachedError";
   }
 }
 
-export interface RequestResearchRunInput {
+export interface RequestInquiryRunInput {
   question: string;
 }
 
-export interface RequestResearchRunOutput {
+export interface RequestInquiryRunOutput {
   runId: ResearchRunId;
   status: ResearchRunStatus;
   deduped: boolean;
 }
 
-export interface RequestResearchRun {
-  execute(input: RequestResearchRunInput): Promise<RequestResearchRunOutput>;
+export interface RequestInquiryRun {
+  execute(input: RequestInquiryRunInput): Promise<RequestInquiryRunOutput>;
 }
 
 function toQuestionKey(question: string): string {
@@ -58,7 +58,7 @@ function queuedRun(input: {
     questionKey: input.questionKey,
     day: input.day,
     executedQuery: null,
-    window: RESEARCH_WINDOW,
+    window: INQUIRY_WINDOW,
     distribution: [],
     exemplars: [],
     synthesis: null,
@@ -71,18 +71,18 @@ function queuedRun(input: {
   };
 }
 
-export class RequestResearchRunUseCase implements RequestResearchRun {
+export class RequestInquiryRunUseCase implements RequestInquiryRun {
   constructor(
-    private readonly store: ResearchRunStorePort,
+    private readonly store: InquiryRunStorePort,
     private readonly dailyCap: number,
   ) {}
 
-  async execute(input: RequestResearchRunInput): Promise<RequestResearchRunOutput> {
+  async execute(input: RequestInquiryRunInput): Promise<RequestInquiryRunOutput> {
     const question = input.question.trim();
-    if (!question) throw new InvalidResearchQuestionError("A research question is required");
+    if (!question) throw new InvalidInquiryQuestionError("An inquiry question is required");
     if (question.length > MAX_QUESTION_CHARS) {
-      throw new InvalidResearchQuestionError(
-        `A research question must be at most ${MAX_QUESTION_CHARS} characters`,
+      throw new InvalidInquiryQuestionError(
+        `An inquiry question must be at most ${MAX_QUESTION_CHARS} characters`,
       );
     }
 
@@ -90,16 +90,16 @@ export class RequestResearchRunUseCase implements RequestResearchRun {
     const day = toDay(now);
     const questionKey = toQuestionKey(question);
 
-    const stored = await this.store.findResearchRunByQuestionDay(questionKey, day);
+    const stored = await this.store.findInquiryRunByQuestionDay(questionKey, day);
     if (stored && isReusable(stored)) {
       return { runId: stored.id, status: stored.status, deduped: true };
     }
 
-    const used = await this.store.countResearchRunsForDay(day);
-    if (used >= this.dailyCap) throw new ResearchDailyCapReachedError(this.dailyCap);
+    const used = await this.store.countInquiryRunsForDay(day);
+    if (used >= this.dailyCap) throw new InquiryDailyCapReachedError(this.dailyCap);
 
     const run = queuedRun({ question, questionKey, day, now });
-    await this.store.saveResearchRun(run);
+    await this.store.saveInquiryRun(run);
     return { runId: run.id, status: run.status, deduped: false };
   }
 }

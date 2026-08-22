@@ -7,10 +7,10 @@ import type {
 import { AWARENESS_CONFIDENCES, RESEARCH_RUN_STATUSES } from "@atlas/domain";
 import type { OrchestrationPort } from "../../world/outbound/orchestration.ts";
 import type {
-  CompleteResearchRunInput,
-  ResearchRunStorePort,
-} from "../outbound/research-run-store.ts";
-import { RESEARCH_MAX_ATTEMPTS } from "../outbound/research-run-store.ts";
+  CompleteInquiryRunInput,
+  InquiryRunStorePort,
+} from "../outbound/inquiry-run-store.ts";
+import { INQUIRY_MAX_ATTEMPTS } from "../outbound/inquiry-run-store.ts";
 
 const GRAPH_NAME = "awareness";
 const ERROR_SAMPLE_CHARS = 200;
@@ -18,16 +18,16 @@ const ERROR_SAMPLE_CHARS = 200;
 const STALE_TIMEOUT_MULTIPLE = 2;
 const IN_FLIGHT_STATUSES = ["queued", "running"] as const satisfies readonly ResearchRunStatus[];
 
-export interface ExecuteResearchRunOutput {
+export interface ExecuteInquiryRunOutput {
   runId: ResearchRunId | null;
   status: ResearchRunStatus | null;
 }
 
-export interface ExecuteResearchRun {
-  execute(): Promise<ExecuteResearchRunOutput>;
+export interface ExecuteInquiryRun {
+  execute(): Promise<ExecuteInquiryRunOutput>;
 }
 
-type RunOutcome = Omit<CompleteResearchRunInput, "id" | "completedAt">;
+type RunOutcome = Omit<CompleteInquiryRunInput, "id" | "completedAt">;
 type FailedStatus = Extract<ResearchRunStatus, "failed_retryable" | "failed_permanent">;
 
 class GraphTimeoutError extends Error {
@@ -86,7 +86,7 @@ function sample(value: unknown): string {
 }
 
 function isExhausted(status: ResearchRunStatus, attempts: number): boolean {
-  return status === "failed_retryable" && attempts >= RESEARCH_MAX_ATTEMPTS;
+  return status === "failed_retryable" && attempts >= INQUIRY_MAX_ATTEMPTS;
 }
 
 function failure(status: FailedStatus, error: string, attempts: number): RunOutcome {
@@ -124,17 +124,17 @@ function toOutcome(body: Record<string, unknown>, attempts: number): RunOutcome 
   };
 }
 
-export class ExecuteResearchRunUseCase implements ExecuteResearchRun {
+export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
   constructor(
-    private readonly store: ResearchRunStorePort,
+    private readonly store: InquiryRunStorePort,
     private readonly orchestration: OrchestrationPort,
     private readonly retryAfterMs: number,
     private readonly runTimeoutMs: number,
   ) {}
 
-  async execute(): Promise<ExecuteResearchRunOutput> {
+  async execute(): Promise<ExecuteInquiryRunOutput> {
     const now = new Date();
-    const run = await this.store.claimNextResearchRun({
+    const run = await this.store.claimNextInquiryRun({
       now,
       completedBefore: new Date(now.getTime() - this.retryAfterMs),
       startedBefore: new Date(now.getTime() - this.runTimeoutMs * STALE_TIMEOUT_MULTIPLE),
@@ -142,15 +142,15 @@ export class ExecuteResearchRunUseCase implements ExecuteResearchRun {
     if (!run) return { runId: null, status: null };
 
     const outcome = await this.outcomeFor(run, now);
-    await this.store.completeResearchRun({ ...outcome, id: run.id, completedAt: new Date() });
+    await this.store.completeInquiryRun({ ...outcome, id: run.id, completedAt: new Date() });
     return { runId: run.id, status: outcome.status };
   }
 
   private async outcomeFor(run: ResearchRun, now: Date): Promise<RunOutcome> {
-    if (run.attempts > RESEARCH_MAX_ATTEMPTS) {
+    if (run.attempts > INQUIRY_MAX_ATTEMPTS) {
       return failure(
         "failed_permanent",
-        `abandoned after ${RESEARCH_MAX_ATTEMPTS} interrupted attempts`,
+        `abandoned after ${INQUIRY_MAX_ATTEMPTS} interrupted attempts`,
         run.attempts,
       );
     }
@@ -162,7 +162,7 @@ export class ExecuteResearchRunUseCase implements ExecuteResearchRun {
 
   /** a live run cannot outlast its own retries, so an older re-claim is a restart reclaiming a corpse */
   private outlivedRetryBudget(run: ResearchRun, now: Date): boolean {
-    const budgetMs = RESEARCH_MAX_ATTEMPTS * (this.runTimeoutMs + this.retryAfterMs);
+    const budgetMs = INQUIRY_MAX_ATTEMPTS * (this.runTimeoutMs + this.retryAfterMs);
     return now.getTime() - run.createdAt.getTime() > budgetMs;
   }
 

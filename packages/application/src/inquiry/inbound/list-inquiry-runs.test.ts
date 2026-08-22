@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import type { CountryAwareness, ResearchRun } from "@atlas/domain";
 import { makeResearchRunId } from "@atlas/domain";
-import { inMemoryResearchRunStore } from "../../testing/research-run-store.fake.ts";
-import { ListResearchRunsUseCase } from "./list-research-runs.ts";
+import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
+import { ListInquiryRunsUseCase } from "./list-inquiry-runs.ts";
 
 const SEEDED = 130;
 
@@ -30,14 +30,14 @@ function country(name: string, confidence: CountryAwareness["confidence"]): Coun
   return { country: name, awareness: 4.5, peak: 9, coveredBuckets: 3, totalBuckets: 4, confidence };
 }
 
-function useCaseOverSeeded(): ListResearchRunsUseCase {
-  const { store } = inMemoryResearchRunStore(
+function useCaseOverSeeded(): ListInquiryRunsUseCase {
+  const { store } = inMemoryInquiryRunStore(
     Array.from({ length: SEEDED }, (_unused, index) => run(index)),
   );
-  return new ListResearchRunsUseCase(store);
+  return new ListInquiryRunsUseCase(store);
 }
 
-describe("ListResearchRunsUseCase", () => {
+describe("ListInquiryRunsUseCase", () => {
   const cases = [
     { name: "an unbounded limit cannot pull the whole collection", asked: 100_000, expected: 100 },
     { name: "no limit serves one page", asked: undefined, expected: 20 },
@@ -64,8 +64,8 @@ describe("ListResearchRunsUseCase", () => {
       country("Spain", "thin"),
       country("Chad", "artifact"),
     ];
-    const { store } = inMemoryResearchRunStore([measured]);
-    const useCase = new ListResearchRunsUseCase(store);
+    const { store } = inMemoryInquiryRunStore([measured]);
+    const useCase = new ListInquiryRunsUseCase(store);
 
     const [listed] = await useCase.execute();
 

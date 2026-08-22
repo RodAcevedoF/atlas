@@ -13,12 +13,12 @@ export type {
 export type { MigrationLedgerPort } from "./migrations/outbound/migration-ledger.ts";
 export type { WorldScanReportStorePort } from "./world/outbound/world-scan-report-store.ts";
 export type {
-  ClaimResearchRunInput,
-  CompleteResearchRunInput,
-  ResearchRunPage,
-  ResearchRunStorePort,
-} from "./research/outbound/research-run-store.ts";
-export { RESEARCH_MAX_ATTEMPTS } from "./research/outbound/research-run-store.ts";
+  ClaimInquiryRunInput,
+  CompleteInquiryRunInput,
+  InquiryRunPage,
+  InquiryRunStorePort,
+} from "./inquiry/outbound/inquiry-run-store.ts";
+export { INQUIRY_MAX_ATTEMPTS } from "./inquiry/outbound/inquiry-run-store.ts";
 export type {
   GraphRunInput,
   GraphEventType,
@@ -133,29 +133,29 @@ export type {
 } from "./world/inbound/reclassify-signals.ts";
 export { ReclassifySignalsUseCase } from "./world/inbound/reclassify-signals.ts";
 
-// research
+// inquiry
 export type {
-  ExecuteResearchRun,
-  ExecuteResearchRunOutput,
-} from "./research/inbound/execute-research-run.ts";
-export { ExecuteResearchRunUseCase } from "./research/inbound/execute-research-run.ts";
+  ExecuteInquiryRun,
+  ExecuteInquiryRunOutput,
+} from "./inquiry/inbound/execute-inquiry-run.ts";
+export { ExecuteInquiryRunUseCase } from "./inquiry/inbound/execute-inquiry-run.ts";
 export type {
-  RequestResearchRun,
-  RequestResearchRunInput,
-  RequestResearchRunOutput,
-} from "./research/inbound/request-research-run.ts";
+  RequestInquiryRun,
+  RequestInquiryRunInput,
+  RequestInquiryRunOutput,
+} from "./inquiry/inbound/request-inquiry-run.ts";
 export {
-  InvalidResearchQuestionError,
-  RequestResearchRunUseCase,
-  ResearchDailyCapReachedError,
-} from "./research/inbound/request-research-run.ts";
-export type { GetResearchRun } from "./research/inbound/get-research-run.ts";
-export { GetResearchRunUseCase } from "./research/inbound/get-research-run.ts";
+  InvalidInquiryQuestionError,
+  RequestInquiryRunUseCase,
+  InquiryDailyCapReachedError,
+} from "./inquiry/inbound/request-inquiry-run.ts";
+export type { GetInquiryRun } from "./inquiry/inbound/get-inquiry-run.ts";
+export { GetInquiryRunUseCase } from "./inquiry/inbound/get-inquiry-run.ts";
 export type {
-  ListResearchRuns,
-  ResearchRunFilter,
-} from "./research/inbound/list-research-runs.ts";
-export { ListResearchRunsUseCase } from "./research/inbound/list-research-runs.ts";
+  ListInquiryRuns,
+  InquiryRunFilter,
+} from "./inquiry/inbound/list-inquiry-runs.ts";
+export { ListInquiryRunsUseCase } from "./inquiry/inbound/list-inquiry-runs.ts";
 
 // migrations
 export type {

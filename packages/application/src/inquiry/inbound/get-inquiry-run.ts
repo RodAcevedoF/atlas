@@ -1,16 +1,16 @@
 import type { PublicResearchRun, ResearchRunId } from "@atlas/domain";
 import { toPublicResearchRun } from "@atlas/domain";
-import type { ResearchRunStorePort } from "../outbound/research-run-store.ts";
+import type { InquiryRunStorePort } from "../outbound/inquiry-run-store.ts";
 
-export interface GetResearchRun {
+export interface GetInquiryRun {
   execute(id: ResearchRunId): Promise<PublicResearchRun | null>;
 }
 
-export class GetResearchRunUseCase implements GetResearchRun {
-  constructor(private readonly store: ResearchRunStorePort) {}
+export class GetInquiryRunUseCase implements GetInquiryRun {
+  constructor(private readonly store: InquiryRunStorePort) {}
 
   async execute(id: ResearchRunId): Promise<PublicResearchRun | null> {
-    const run = await this.store.findResearchRunById(id);
+    const run = await this.store.findInquiryRunById(id);
     return run ? toPublicResearchRun(run) : null;
   }
 }

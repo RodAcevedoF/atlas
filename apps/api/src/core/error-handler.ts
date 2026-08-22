@@ -1,9 +1,9 @@
 import {
   EmailInUseError,
+  InquiryDailyCapReachedError,
   InvalidCredentialsError,
-  InvalidResearchQuestionError,
+  InvalidInquiryQuestionError,
   InvalidVerificationTokenError,
-  ResearchDailyCapReachedError,
   UnknownProviderError,
   UserNotFoundError,
 } from "@atlas/application";
@@ -21,9 +21,9 @@ export function registerErrorHandler(app: FastifyInstance): void {
     if (error instanceof InvalidCredentialsError) {
       return reply.code(401).send({ error: error.message });
     }
-    if (error instanceof InvalidResearchQuestionError)
+    if (error instanceof InvalidInquiryQuestionError)
       return reply.code(400).send({ error: error.message });
-    if (error instanceof ResearchDailyCapReachedError)
+    if (error instanceof InquiryDailyCapReachedError)
       return reply.code(429).send({ error: error.message });
     if (error instanceof EmailInUseError) return reply.code(409).send({ error: error.message });
     if (error instanceof UserNotFoundError) return reply.code(404).send({ error: error.message });

@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import type { ResearchRun } from "@atlas/domain";
 import { makeResearchRunId } from "@atlas/domain";
-import { inMemoryResearchRunStore } from "../../testing/research-run-store.fake.ts";
+import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import type { OrchestrationPort } from "../../world/outbound/orchestration.ts";
-import { ExecuteResearchRunUseCase } from "./execute-research-run.ts";
+import { ExecuteInquiryRunUseCase } from "./execute-inquiry-run.ts";
 
 const RETRY_AFTER_MS = 11 * 60 * 1000;
 const RUN_TIMEOUT_MS = 60 * 1000;
@@ -72,10 +72,10 @@ const SUCCESS_BODY = {
   synthesis: "Regional press carries it; Western press does not.",
 };
 
-describe("ExecuteResearchRunUseCase", () => {
+describe("ExecuteInquiryRunUseCase", () => {
   test("an empty queue executes nothing", async () => {
-    const { store } = inMemoryResearchRunStore();
-    const useCase = new ExecuteResearchRunUseCase(
+    const { store } = inMemoryInquiryRunStore();
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
@@ -88,8 +88,8 @@ describe("ExecuteResearchRunUseCase", () => {
   });
 
   test("a queued run is measured and its answer persisted", async () => {
-    const { store, runs } = inMemoryResearchRunStore([run()]);
-    const useCase = new ExecuteResearchRunUseCase(
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
@@ -108,9 +108,9 @@ describe("ExecuteResearchRunUseCase", () => {
   });
 
   test("a first retryable failure stays retryable, so the run waits rather than dying", async () => {
-    const { store, runs } = inMemoryResearchRunStore([run()]);
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
     const body = { status: "failed_retryable", error: "Please limit requests" };
-    const useCase = new ExecuteResearchRunUseCase(
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       answering(body),
       RETRY_AFTER_MS,
@@ -132,9 +132,9 @@ describe("ExecuteResearchRunUseCase", () => {
       error: "Please limit requests",
       completedAt: new Date(CREATED_AT.getTime() - RETRY_AFTER_MS - 1),
     });
-    const { store, runs } = inMemoryResearchRunStore([exhausting]);
+    const { store, runs } = inMemoryInquiryRunStore([exhausting]);
     const body = { status: "failed_retryable", error: "Please limit requests" };
-    const useCase = new ExecuteResearchRunUseCase(
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       answering(body),
       RETRY_AFTER_MS,
@@ -154,8 +154,8 @@ describe("ExecuteResearchRunUseCase", () => {
       attempts: 1,
       completedAt: new Date(),
     });
-    const { store } = inMemoryResearchRunStore([waiting]);
-    const useCase = new ExecuteResearchRunUseCase(
+    const { store } = inMemoryInquiryRunStore([waiting]);
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
@@ -168,8 +168,8 @@ describe("ExecuteResearchRunUseCase", () => {
   });
 
   test("a thrown transport error is permanent, not retryable", async () => {
-    const { store, runs } = inMemoryResearchRunStore([run()]);
-    const useCase = new ExecuteResearchRunUseCase(
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       failing(new Error("POST /graphs/awareness/run 500")),
       RETRY_AFTER_MS,
@@ -184,8 +184,8 @@ describe("ExecuteResearchRunUseCase", () => {
   });
 
   test("a status the domain does not know is permanent, not silently accepted", async () => {
-    const { store, runs } = inMemoryResearchRunStore([run()]);
-    const useCase = new ExecuteResearchRunUseCase(
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       answering({ status: "kinda_worked" }),
       RETRY_AFTER_MS,
@@ -200,8 +200,8 @@ describe("ExecuteResearchRunUseCase", () => {
   });
 
   test("an unfinished status is permanent, so no completed run is left unclaimable", async () => {
-    const { store, runs } = inMemoryResearchRunStore([run()]);
-    const useCase = new ExecuteResearchRunUseCase(
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       answering({ status: "running" }),
       RETRY_AFTER_MS,
@@ -216,12 +216,12 @@ describe("ExecuteResearchRunUseCase", () => {
   });
 
   test("a malformed distribution row is permanent, not persisted as an answer", async () => {
-    const { store, runs } = inMemoryResearchRunStore([run()]);
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
     const body = {
       ...SUCCESS_BODY,
       distribution: [{ country: "Sudan", awareness: 4.2, covered_buckets: 20 }],
     };
-    const useCase = new ExecuteResearchRunUseCase(
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       answering(body),
       RETRY_AFTER_MS,
@@ -242,8 +242,8 @@ describe("ExecuteResearchRunUseCase", () => {
       attempts: 1,
       startedAt: new Date(Date.now() - RUN_TIMEOUT_MS * 3),
     });
-    const { store, runs } = inMemoryResearchRunStore([stranded]);
-    const useCase = new ExecuteResearchRunUseCase(
+    const { store, runs } = inMemoryInquiryRunStore([stranded]);
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
@@ -259,8 +259,8 @@ describe("ExecuteResearchRunUseCase", () => {
 
   test("a run still inside its timeout is left to the worker holding it", async () => {
     const live = run({ status: "running", attempts: 1, startedAt: new Date() });
-    const { store } = inMemoryResearchRunStore([live]);
-    const useCase = new ExecuteResearchRunUseCase(
+    const { store } = inMemoryInquiryRunStore([live]);
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
@@ -278,8 +278,8 @@ describe("ExecuteResearchRunUseCase", () => {
       attempts: 2,
       startedAt: new Date(Date.now() - RUN_TIMEOUT_MS * 3),
     });
-    const { store, runs } = inMemoryResearchRunStore([exhausted]);
-    const useCase = new ExecuteResearchRunUseCase(
+    const { store, runs } = inMemoryInquiryRunStore([exhausted]);
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       failing(new Error("the graph must not be called for an abandoned run")),
       RETRY_AFTER_MS,
@@ -301,8 +301,8 @@ describe("ExecuteResearchRunUseCase", () => {
       createdAt: LONG_AGO,
       completedAt: new Date(LONG_AGO.getTime() + RETRY_AFTER_MS),
     });
-    const { store, runs } = inMemoryResearchRunStore([stale]);
-    const useCase = new ExecuteResearchRunUseCase(
+    const { store, runs } = inMemoryInquiryRunStore([stale]);
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       failing(new Error("the graph must not be called for a run this old")),
       RETRY_AFTER_MS,
@@ -318,8 +318,8 @@ describe("ExecuteResearchRunUseCase", () => {
 
   test("a question queued while the worker was down is measured, not abandoned", async () => {
     const waiting = run({ createdAt: LONG_AGO });
-    const { store, runs } = inMemoryResearchRunStore([waiting]);
-    const useCase = new ExecuteResearchRunUseCase(
+    const { store, runs } = inMemoryInquiryRunStore([waiting]);
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
@@ -341,8 +341,8 @@ describe("ExecuteResearchRunUseCase", () => {
       completedAt: new Date(LONG_AGO.getTime() + RETRY_AFTER_MS),
     });
     const fresh = run({ id: makeResearchRunId("run-fresh") });
-    const { store } = inMemoryResearchRunStore([stranded, fresh]);
-    const useCase = new ExecuteResearchRunUseCase(
+    const { store } = inMemoryInquiryRunStore([stranded, fresh]);
+    const useCase = new ExecuteInquiryRunUseCase(
       store,
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
@@ -355,8 +355,8 @@ describe("ExecuteResearchRunUseCase", () => {
   });
 
   test("a graph that never answers gives up and stays retryable, freeing the worker", async () => {
-    const { store, runs } = inMemoryResearchRunStore([run()]);
-    const useCase = new ExecuteResearchRunUseCase(store, hanging(), RETRY_AFTER_MS, 5);
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
+    const useCase = new ExecuteInquiryRunUseCase(store, hanging(), RETRY_AFTER_MS, 5);
 
     const result = await useCase.execute();
 

@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import type { ResearchRun, ResearchRunStatus } from "@atlas/domain";
 import { makeResearchRunId } from "@atlas/domain";
-import { inMemoryResearchRunStore } from "../../testing/research-run-store.fake.ts";
+import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import {
-  InvalidResearchQuestionError,
-  RequestResearchRunUseCase,
-  ResearchDailyCapReachedError,
-} from "./request-research-run.ts";
+  InquiryDailyCapReachedError,
+  InvalidInquiryQuestionError,
+  RequestInquiryRunUseCase,
+} from "./request-inquiry-run.ts";
 
 const DAILY_CAP = 3;
 const QUESTION = "who is covering the Sudan famine";
@@ -37,10 +37,10 @@ function run(overrides: Partial<ResearchRun> = {}): ResearchRun {
   };
 }
 
-describe("RequestResearchRunUseCase", () => {
+describe("RequestInquiryRunUseCase", () => {
   test("a new question is queued for the worker", async () => {
-    const { store, runs } = inMemoryResearchRunStore();
-    const useCase = new RequestResearchRunUseCase(store, DAILY_CAP);
+    const { store, runs } = inMemoryInquiryRunStore();
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({ question: QUESTION });
 
@@ -68,8 +68,8 @@ describe("RequestResearchRunUseCase", () => {
 
   for (const { name, status } of reused) {
     test(name, async () => {
-      const { store, runs } = inMemoryResearchRunStore([run({ status })]);
-      const useCase = new RequestResearchRunUseCase(store, DAILY_CAP);
+      const { store, runs } = inMemoryInquiryRunStore([run({ status })]);
+      const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
       const result = await useCase.execute({ question: QUESTION });
 
@@ -79,8 +79,8 @@ describe("RequestResearchRunUseCase", () => {
   }
 
   test("a permanently failed question can be asked again, because it never answered", async () => {
-    const { store, runs } = inMemoryResearchRunStore([run({ status: "failed_permanent" })]);
-    const useCase = new RequestResearchRunUseCase(store, DAILY_CAP);
+    const { store, runs } = inMemoryInquiryRunStore([run({ status: "failed_permanent" })]);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({ question: QUESTION });
 
@@ -96,8 +96,8 @@ describe("RequestResearchRunUseCase", () => {
       createdAt: new Date(Date.now() - 60_000),
     });
     const retried = run({ id: makeResearchRunId("run-new"), status: "queued" });
-    const { store } = inMemoryResearchRunStore([failed, retried]);
-    const useCase = new RequestResearchRunUseCase(store, DAILY_CAP);
+    const { store } = inMemoryInquiryRunStore([failed, retried]);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({ question: QUESTION });
 
@@ -106,8 +106,8 @@ describe("RequestResearchRunUseCase", () => {
   });
 
   test("a differently typed repeat of the same question is the same question", async () => {
-    const { store, runs } = inMemoryResearchRunStore([run()]);
-    const useCase = new RequestResearchRunUseCase(store, DAILY_CAP);
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({ question: "  Who is COVERING   the Sudan\nfamine  " });
 
@@ -117,8 +117,8 @@ describe("RequestResearchRunUseCase", () => {
 
   test("yesterday's answer does not satisfy today's question", async () => {
     const stale = run({ day: "2020-01-01" });
-    const { store, runs } = inMemoryResearchRunStore([stale]);
-    const useCase = new RequestResearchRunUseCase(store, DAILY_CAP);
+    const { store, runs } = inMemoryInquiryRunStore([stale]);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({ question: QUESTION });
 
@@ -130,12 +130,12 @@ describe("RequestResearchRunUseCase", () => {
     const seed = [1, 2, 3].map((index) =>
       run({ id: makeResearchRunId(`run-${index}`), questionKey: `question ${index}` }),
     );
-    const { store, runs } = inMemoryResearchRunStore(seed);
-    const useCase = new RequestResearchRunUseCase(store, DAILY_CAP);
+    const { store, runs } = inMemoryInquiryRunStore(seed);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const request = useCase.execute({ question: QUESTION });
 
-    await expect(request).rejects.toBeInstanceOf(ResearchDailyCapReachedError);
+    await expect(request).rejects.toBeInstanceOf(InquiryDailyCapReachedError);
     expect(runs()).toHaveLength(DAILY_CAP);
   });
 
@@ -143,8 +143,8 @@ describe("RequestResearchRunUseCase", () => {
     const seed = [1, 2, 3].map((index) =>
       run({ id: makeResearchRunId(`run-${index}`), questionKey: `question ${index}` }),
     );
-    const { store } = inMemoryResearchRunStore([...seed, run({ id: makeResearchRunId("run-4") })]);
-    const useCase = new RequestResearchRunUseCase(store, DAILY_CAP);
+    const { store } = inMemoryInquiryRunStore([...seed, run({ id: makeResearchRunId("run-4") })]);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({ question: QUESTION });
 
@@ -163,8 +163,8 @@ describe("RequestResearchRunUseCase", () => {
         day: "2020-01-01",
       }),
     );
-    const { store } = inMemoryResearchRunStore(seed);
-    const useCase = new RequestResearchRunUseCase(store, DAILY_CAP);
+    const { store } = inMemoryInquiryRunStore(seed);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({ question: QUESTION });
 
@@ -181,12 +181,12 @@ describe("RequestResearchRunUseCase", () => {
 
   for (const { name, question } of rejected) {
     test(name, async () => {
-      const { store, runs } = inMemoryResearchRunStore();
-      const useCase = new RequestResearchRunUseCase(store, DAILY_CAP);
+      const { store, runs } = inMemoryInquiryRunStore();
+      const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
       const request = useCase.execute({ question });
 
-      await expect(request).rejects.toBeInstanceOf(InvalidResearchQuestionError);
+      await expect(request).rejects.toBeInstanceOf(InvalidInquiryQuestionError);
       expect(runs()).toHaveLength(0);
     });
   }
