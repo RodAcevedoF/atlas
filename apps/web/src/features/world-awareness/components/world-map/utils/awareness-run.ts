@@ -1,34 +1,34 @@
-import type { ResearchRunSummaryRecord } from "@/features/research/repositories/research-repository.ts";
+import type { InquiryRunSummaryRecord } from "@/features/inquiry/repositories/inquiry-repository.ts";
 import { hasPlottableCountry } from "./awareness-points.ts";
 
 /** Why a `?run=` request went unhonoured — "unknown" means it never reached this window at all. */
 export type AwarenessRequestMiss = "unpaintable" | "unknown";
 
 export interface AwarenessSelection {
-  latest: ResearchRunSummaryRecord | null;
-  run: ResearchRunSummaryRecord | null;
+  latest: InquiryRunSummaryRecord | null;
+  run: InquiryRunSummaryRecord | null;
   isFallback: boolean;
   requestMiss: AwarenessRequestMiss | null;
 }
 
-function isPaintable(run: ResearchRunSummaryRecord): boolean {
+function isPaintable(run: InquiryRunSummaryRecord): boolean {
   return hasPlottableCountry(run.measuredCountries);
 }
 
-function firstPaintable(runs: ResearchRunSummaryRecord[]): ResearchRunSummaryRecord | null {
+function firstPaintable(runs: InquiryRunSummaryRecord[]): InquiryRunSummaryRecord | null {
   return runs.find(isPaintable) ?? null;
 }
 
 function missFor(
   requestedId: string | null,
-  requested: ResearchRunSummaryRecord | null,
+  requested: InquiryRunSummaryRecord | null,
 ): AwarenessRequestMiss | null {
   if (!requestedId) return null;
   return requested ? "unpaintable" : "unknown";
 }
 
 export function selectAwarenessRun(
-  runs: ResearchRunSummaryRecord[],
+  runs: InquiryRunSummaryRecord[],
   requestedId: string | null,
 ): AwarenessSelection {
   const latest = runs[0] ?? null;

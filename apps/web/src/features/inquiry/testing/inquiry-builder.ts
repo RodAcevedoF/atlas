@@ -1,8 +1,8 @@
 import type {
   CountryAwarenessRecord,
-  ResearchRunRecord,
-  ResearchRunSummaryRecord,
-} from "../repositories/research-repository.ts";
+  InquiryRunRecord,
+  InquiryRunSummaryRecord,
+} from "../repositories/inquiry-repository.ts";
 
 export function buildCountryAwareness(
   overrides: Partial<CountryAwarenessRecord> = {},
@@ -18,7 +18,7 @@ export function buildCountryAwareness(
   };
 }
 
-export function buildResearchRun(overrides: Partial<ResearchRunRecord> = {}): ResearchRunRecord {
+export function buildInquiryRun(overrides: Partial<InquiryRunRecord> = {}): InquiryRunRecord {
   return {
     id: "run-latest",
     question: "Where is the Sudan conflict being covered?",
@@ -36,11 +36,11 @@ export function buildResearchRun(overrides: Partial<ResearchRunRecord> = {}): Re
   };
 }
 
-export function buildResearchRunSummary(
-  overrides: Partial<ResearchRunSummaryRecord> = {},
-): ResearchRunSummaryRecord {
+export function buildInquiryRunSummary(
+  overrides: Partial<InquiryRunSummaryRecord> = {},
+): InquiryRunSummaryRecord {
   const { id, question, day, window, distribution, status, createdAt, startedAt, completedAt } =
-    buildResearchRun();
+    buildInquiryRun();
   return {
     id,
     question,

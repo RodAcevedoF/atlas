@@ -1,5 +1,5 @@
-import { ResearchAskBox } from "@/features/research/components/research-ask-box.tsx";
-import type { ResearchRunSummaryRecord } from "@/features/research/repositories/research-repository.ts";
+import { InquiryAskBox } from "@/features/inquiry/components/inquiry-ask-box.tsx";
+import type { InquiryRunSummaryRecord } from "@/features/inquiry/repositories/inquiry-repository.ts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAwarenessLayer } from "../../hooks/use-awareness-layer.ts";
@@ -38,7 +38,7 @@ interface MapCockpitProps {
   topic: TopicFilter;
   onTopicChange: (topic: TopicFilter) => void;
   stats: MapStatsValues;
-  researchRuns: ResearchRunSummaryRecord[];
+  inquiryRuns: InquiryRunSummaryRecord[];
   error: string | null;
 }
 
@@ -49,14 +49,14 @@ export function MapCockpit({
   topic,
   onTopicChange,
   stats,
-  researchRuns,
+  inquiryRuns,
   error,
 }: MapCockpitProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedRunId = searchParams.get("run");
   const byRegion = useMemo(() => indexByRegion(worldTopics), [worldTopics]);
-  const awareness = useAwarenessLayer(researchRuns, requestedRunId);
+  const awareness = useAwarenessLayer(inquiryRuns, requestedRunId);
   const mapError = error ?? awareness.error;
   const topicCounts = useMemo(() => countTopicSignals(worldTopics), [worldTopics]);
   const peak = useMemo(
@@ -141,7 +141,7 @@ export function MapCockpit({
 
       <div className="pointer-events-none absolute left-1/2 top-4 z-10 flex w-full max-w-[min(32rem,calc(100vw-36rem))] -translate-x-1/2 flex-col items-center gap-2 px-4">
         <div className="pointer-events-auto w-full">
-          <ResearchAskBox onAsk={clearRequestedRun} />
+          <InquiryAskBox onAsk={clearRequestedRun} />
         </div>
         {mapError ? <MapError message={mapError} /> : null}
         {awareness.showsNotice && awareness.latest ? (

@@ -1,11 +1,11 @@
 import type {
-  ResearchRunRecord,
-  ResearchRunSummaryRecord,
-} from "@/features/research/repositories/research-repository.ts";
+  InquiryRunRecord,
+  InquiryRunSummaryRecord,
+} from "@/features/inquiry/repositories/inquiry-repository.ts";
 import { Eyebrow } from "@/shared/ui";
 import type { AwarenessRequestMiss } from "../utils/awareness-run.ts";
 
-const LATEST_RUN_OUTCOME: Record<ResearchRunSummaryRecord["status"], string> = {
+const LATEST_RUN_OUTCOME: Record<InquiryRunSummaryRecord["status"], string> = {
   queued: "Your latest question is queued.",
   running: "Your latest question is still running.",
   succeeded: "Your latest run measured no country this map can plot.",
@@ -27,7 +27,7 @@ const SHOWING_INSTEAD = {
 } as const;
 
 interface AwarenessRunNoticeProps {
-  latest: ResearchRunSummaryRecord;
+  latest: InquiryRunSummaryRecord;
   isFallback: boolean;
   requestMiss: AwarenessRequestMiss | null;
   isPainting: boolean;
@@ -55,20 +55,20 @@ export function AwarenessRunNotice({
 export function AwarenessRunPill({
   run,
   onShowRun,
-}: { run: ResearchRunSummaryRecord; onShowRun: () => void }) {
+}: { run: InquiryRunSummaryRecord; onShowRun: () => void }) {
   return (
     <button
       type="button"
       onClick={onShowRun}
       className="absolute bottom-4 left-4 z-5 max-w-64 truncate rounded-xl border border-border bg-card/70 px-3 py-2 text-[11px] text-muted-foreground backdrop-blur-md hover:text-card-foreground"
     >
-      Show research run · {run.question}
+      Show inquiry run · {run.question}
     </button>
   );
 }
 
 interface AwarenessLegendProps {
-  run: ResearchRunRecord;
+  run: InquiryRunRecord;
   plotted: number;
   unmapped: string[];
   onShowAmbient: () => void;

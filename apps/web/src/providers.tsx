@@ -1,8 +1,8 @@
 import { AuthProvider } from "@/features/auth/auth-provider.tsx";
+import { HttpInquiryRepository } from "@/features/inquiry/repositories/http-inquiry-repository.ts";
+import type { InquiryRepository } from "@/features/inquiry/repositories/inquiry-repository.ts";
 import { HttpSavedReportsRepository } from "@/features/intelligence/repositories/http-saved-reports-repository.ts";
 import type { SavedReportsRepository } from "@/features/intelligence/repositories/saved-reports-repository.ts";
-import { HttpResearchRepository } from "@/features/research/repositories/http-research-repository.ts";
-import type { ResearchRepository } from "@/features/research/repositories/research-repository.ts";
 import { HttpMarketRepository } from "@/features/world-awareness/repositories/http-market-repository.ts";
 import type { MarketRepository } from "@/features/world-awareness/repositories/market-repository.ts";
 import { makeStore } from "@/store/index.ts";
@@ -15,9 +15,9 @@ export function AppProviders({ children }: PropsWithChildren) {
   const [savedReportsRepository] = useState<SavedReportsRepository>(
     () => new HttpSavedReportsRepository(),
   );
-  const [researchRepository] = useState<ResearchRepository>(() => new HttpResearchRepository());
+  const [inquiryRepository] = useState<InquiryRepository>(() => new HttpInquiryRepository());
   const [store] = useState(() =>
-    makeStore({ marketRepository, savedReportsRepository, researchRepository }),
+    makeStore({ marketRepository, savedReportsRepository, inquiryRepository }),
   );
 
   return (

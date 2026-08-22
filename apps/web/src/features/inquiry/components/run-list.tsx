@@ -1,10 +1,10 @@
 import { formatRelativeTime } from "@/shared/utils/index.ts";
 import { cn } from "@atlas/ui";
-import type { ResearchRunSummaryRecord } from "../repositories/research-repository.ts";
+import type { InquiryRunSummaryRecord } from "../repositories/inquiry-repository.ts";
 import { RUN_STATUS_LABEL, runStatusClass } from "./run-status.ts";
 
 interface RunListProps {
-  runs: ResearchRunSummaryRecord[];
+  runs: InquiryRunSummaryRecord[];
   selectedId: string | null;
   onSelect: (runId: string) => void;
 }
@@ -14,7 +14,7 @@ function RunListItem({
   isSelected,
   onSelect,
 }: {
-  run: ResearchRunSummaryRecord;
+  run: InquiryRunSummaryRecord;
   isSelected: boolean;
   onSelect: () => void;
 }) {

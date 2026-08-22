@@ -5,19 +5,19 @@ import { SegmentedControl } from "@/shared/ui";
 import { Button, cn } from "@atlas/ui";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ResearchRunsBoard } from "./components/research-runs-board.tsx";
+import { InquiryRunsBoard } from "./components/inquiry-runs-board.tsx";
 import { WorldScanBoard } from "./components/world-scan-board.tsx";
 import { parseScanScope } from "./scan-scope.ts";
 
-type IntelligenceView = "research" | "scan";
+type IntelligenceView = "inquiry" | "scan";
 
 const VIEWS: ReadonlyArray<{ id: IntelligenceView; label: string }> = [
-  { id: "research", label: "Research" },
+  { id: "inquiry", label: "Inquiry" },
   { id: "scan", label: "World scan" },
 ];
 
 function toView(value: string | null): IntelligenceView {
-  return value === "scan" ? "scan" : "research";
+  return value === "scan" ? "scan" : "inquiry";
 }
 
 export function IntelligencePage() {
@@ -70,7 +70,7 @@ export function IntelligencePage() {
       <main
         className={cn("min-h-0 flex-1", view === "scan" ? "overflow-y-auto" : "overflow-hidden")}
       >
-        {view === "scan" ? <WorldScanBoard scope={scope} /> : <ResearchRunsBoard />}
+        {view === "scan" ? <WorldScanBoard scope={scope} /> : <InquiryRunsBoard />}
       </main>
     </div>
   );

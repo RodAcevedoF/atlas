@@ -1,9 +1,9 @@
 import { cn } from "@atlas/ui";
 import { type FormEvent, useState } from "react";
-import { useResearchAsk } from "../hooks/use-research-ask.ts";
-import type { ResearchAskState } from "../infra/store/research.slice.ts";
-import type { ResearchRunStatus } from "../repositories/research-repository.ts";
-import { RESEARCH_QUESTION_MAX_CHARS } from "../use-cases/request-research-run.ts";
+import { useInquiryAsk } from "../hooks/use-inquiry-ask.ts";
+import type { InquiryAskState } from "../infra/store/inquiry.slice.ts";
+import type { InquiryRunStatus } from "../repositories/inquiry-repository.ts";
+import { INQUIRY_QUESTION_MAX_CHARS } from "../use-cases/request-inquiry-run.ts";
 
 const SENDING = "Sending your question…";
 const STILL_RUNNING =
@@ -12,7 +12,7 @@ const LOST_WATCH =
   "Lost track of your run — it keeps going in the background. Reload to pick it up.";
 const DEDUPED = "You already asked this today — showing the run you already have.";
 
-const WATCHED_STATUS: Record<ResearchRunStatus, string> = {
+const WATCHED_STATUS: Record<InquiryRunStatus, string> = {
   queued: "Queued — waiting for the worker to pick it up.",
   running: "Running — measuring coverage across GDELT.",
   succeeded: "Measured — painting the map.",
@@ -27,7 +27,7 @@ interface AskMessage {
   isError: boolean;
 }
 
-function askMessage(state: ResearchAskState): AskMessage | null {
+function askMessage(state: InquiryAskState): AskMessage | null {
   if (state.isStillRunning && state.error) {
     return { text: `${LOST_WATCH} ${state.error}`, isError: true };
   }
@@ -39,8 +39,8 @@ function askMessage(state: ResearchAskState): AskMessage | null {
   return null;
 }
 
-export function ResearchAskBox({ onAsk }: { onAsk: () => void }) {
-  const { ask, ...state } = useResearchAsk();
+export function InquiryAskBox({ onAsk }: { onAsk: () => void }) {
+  const { ask, ...state } = useInquiryAsk();
   const [question, setQuestion] = useState("");
   const message = askMessage(state);
 
@@ -56,10 +56,10 @@ export function ResearchAskBox({ onAsk }: { onAsk: () => void }) {
     <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-card/80 p-1.5 backdrop-blur-md">
       <form onSubmit={submit} className="flex items-center gap-1.5">
         <input
-          aria-label="Research question"
+          aria-label="Inquiry question"
           placeholder="Ask the map — who is covering the Sudan conflict?"
           value={question}
-          maxLength={RESEARCH_QUESTION_MAX_CHARS}
+          maxLength={INQUIRY_QUESTION_MAX_CHARS}
           onChange={(event) => setQuestion(event.target.value)}
           className="min-w-0 flex-1 rounded-[9px] bg-transparent px-2.5 py-1.5 text-[12.5px] text-card-foreground outline-none placeholder:text-muted-foreground"
         />

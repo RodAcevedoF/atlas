@@ -1,7 +1,7 @@
-import type { ResearchRunSummaryRecord } from "../repositories/research-repository.ts";
+import type { InquiryRunSummaryRecord } from "../repositories/inquiry-repository.ts";
 
 export function resolveSelectedRunId(
-  runs: ResearchRunSummaryRecord[],
+  runs: InquiryRunSummaryRecord[],
   requestedId: string | null,
 ): string | null {
   const requested = runs.find((run) => run.id === requestedId);

@@ -6,8 +6,8 @@ import { Link } from "react-router-dom";
 import type {
   AwarenessConfidence,
   CountryAwarenessRecord,
-  ResearchRunRecord,
-} from "../repositories/research-repository.ts";
+  InquiryRunRecord,
+} from "../repositories/inquiry-repository.ts";
 import { RUN_STATUS_LABEL, runStatusClass } from "./run-status.ts";
 
 const NO_QUERY = "No query was produced for this run.";
@@ -59,7 +59,7 @@ function Distribution({ distribution }: { distribution: CountryAwarenessRecord[]
   );
 }
 
-export function RunDetail({ run }: { run: ResearchRunRecord }) {
+export function RunDetail({ run }: { run: InquiryRunRecord }) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-start justify-between gap-4">

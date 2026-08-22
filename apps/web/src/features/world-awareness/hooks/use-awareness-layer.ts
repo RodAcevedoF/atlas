@@ -1,8 +1,8 @@
-import { useResearchRun } from "@/features/research/hooks/use-research-run.ts";
+import { useInquiryRun } from "@/features/inquiry/hooks/use-inquiry-run.ts";
 import type {
-  ResearchRunRecord,
-  ResearchRunSummaryRecord,
-} from "@/features/research/repositories/research-repository.ts";
+  InquiryRunRecord,
+  InquiryRunSummaryRecord,
+} from "@/features/inquiry/repositories/inquiry-repository.ts";
 import { useCallback, useMemo, useState } from "react";
 import {
   type AwarenessPaint,
@@ -14,9 +14,9 @@ import {
 } from "../components/world-map/utils/awareness-run.ts";
 
 export interface AwarenessLayer {
-  latest: ResearchRunSummaryRecord | null;
-  run: ResearchRunSummaryRecord | null;
-  detail: ResearchRunRecord | null;
+  latest: InquiryRunSummaryRecord | null;
+  run: InquiryRunSummaryRecord | null;
+  detail: InquiryRunRecord | null;
   paint: AwarenessPaint | null;
   plotted: number;
   isPainting: boolean;
@@ -29,11 +29,11 @@ export interface AwarenessLayer {
 }
 
 export function useAwarenessLayer(
-  runs: ResearchRunSummaryRecord[],
+  runs: InquiryRunSummaryRecord[],
   requestedRunId: string | null,
 ): AwarenessLayer {
   const selection = useMemo(() => selectAwarenessRun(runs, requestedRunId), [runs, requestedRunId]);
-  const detail = useResearchRun(selection.run?.id ?? null);
+  const detail = useInquiryRun(selection.run?.id ?? null);
   const paint = useMemo(
     () => (detail.run ? buildAwarenessPaint(detail.run.distribution) : null),
     [detail.run],

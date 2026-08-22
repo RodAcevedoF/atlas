@@ -1,15 +1,15 @@
-import { ResearchHistory } from "@/features/research/components/research-history.tsx";
-import { resolveSelectedRunId } from "@/features/research/components/selected-run.ts";
-import { useRecentResearchRuns } from "@/features/research/hooks/use-recent-research-runs.ts";
-import { useResearchRun } from "@/features/research/hooks/use-research-run.ts";
+import { InquiryHistory } from "@/features/inquiry/components/inquiry-history.tsx";
+import { resolveSelectedRunId } from "@/features/inquiry/components/selected-run.ts";
+import { useInquiryRun } from "@/features/inquiry/hooks/use-inquiry-run.ts";
+import { useRecentInquiryRuns } from "@/features/inquiry/hooks/use-recent-inquiry-runs.ts";
 import { useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 
-export function ResearchRunsBoard() {
+export function InquiryRunsBoard() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { runs, isLoading, error } = useRecentResearchRuns();
+  const { runs, isLoading, error } = useRecentInquiryRuns();
   const selectedId = resolveSelectedRunId(runs, searchParams.get("run"));
-  const detail = useResearchRun(selectedId);
+  const detail = useInquiryRun(selectedId);
 
   const selectRun = useCallback(
     (runId: string) => {
@@ -26,7 +26,7 @@ export function ResearchRunsBoard() {
   );
 
   return (
-    <ResearchHistory
+    <InquiryHistory
       runs={runs}
       isLoading={isLoading}
       error={error}

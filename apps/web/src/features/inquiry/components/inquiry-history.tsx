@@ -2,22 +2,22 @@ import { Eyebrow } from "@/shared/ui";
 import { Card } from "@atlas/ui";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import type { UseResearchRunResult } from "../hooks/use-research-run.ts";
-import type { ResearchRunSummaryRecord } from "../repositories/research-repository.ts";
+import type { UseInquiryRunResult } from "../hooks/use-inquiry-run.ts";
+import type { InquiryRunSummaryRecord } from "../repositories/inquiry-repository.ts";
 import { RunDetail } from "./run-detail.tsx";
 import { RunList } from "./run-list.tsx";
 
-const LOADING = "Loading your research runs…";
+const LOADING = "Loading your inquiry runs…";
 const LOADING_RUN = "Loading this run…";
-const EMPTY = "No research runs yet.";
+const EMPTY = "No inquiry runs yet.";
 
-interface ResearchHistoryProps {
-  runs: ResearchRunSummaryRecord[];
+interface InquiryHistoryProps {
+  runs: InquiryRunSummaryRecord[];
   isLoading: boolean;
   error: string | null;
   selectedId: string | null;
   onSelect: (runId: string) => void;
-  detail: UseResearchRunResult;
+  detail: UseInquiryRunResult;
 }
 
 function Notice({ children }: { children: ReactNode }) {
@@ -28,20 +28,20 @@ function Notice({ children }: { children: ReactNode }) {
   );
 }
 
-function DetailPane({ detail }: { detail: UseResearchRunResult }) {
+function DetailPane({ detail }: { detail: UseInquiryRunResult }) {
   if (detail.run) return <RunDetail run={detail.run} />;
   if (detail.error) return <p className="text-[12.5px] text-destructive">{detail.error}</p>;
   return <p className="text-[12.5px] text-muted-foreground">{LOADING_RUN}</p>;
 }
 
-export function ResearchHistory({
+export function InquiryHistory({
   runs,
   isLoading,
   error,
   selectedId,
   onSelect,
   detail,
-}: ResearchHistoryProps) {
+}: InquiryHistoryProps) {
   if (runs.length === 0 && error) {
     return (
       <Notice>
@@ -70,7 +70,7 @@ export function ResearchHistory({
 
       <div className="flex min-h-0 flex-1 gap-3.5">
         <Card className="flex w-72 shrink-0 flex-col gap-2.5 overflow-y-auto p-3.5">
-          <Eyebrow>Research runs</Eyebrow>
+          <Eyebrow>Inquiry runs</Eyebrow>
           <RunList runs={runs} selectedId={selectedId} onSelect={onSelect} />
         </Card>
 

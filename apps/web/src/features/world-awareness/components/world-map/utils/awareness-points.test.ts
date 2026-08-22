@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildCountryAwareness } from "../../../../research/testing/research-builder.ts";
+import { buildCountryAwareness } from "../../../../inquiry/testing/inquiry-builder.ts";
 import { buildAwarenessPaint, canPaintDistribution } from "./awareness-points.ts";
 
 const GDELT_NAMES_THE_BASEMAP_SPELLS_DIFFERENTLY = [

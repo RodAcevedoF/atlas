@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildResearchRunSummary } from "../../../../research/testing/research-builder.ts";
+import { buildInquiryRunSummary } from "../../../../inquiry/testing/inquiry-builder.ts";
 import { selectAwarenessRun } from "./awareness-run.ts";
 
 const UNPLOTTABLE_LATEST_RUNS = [
@@ -21,8 +21,8 @@ const UNPLOTTABLE_LATEST_RUNS = [
 describe("selectAwarenessRun", () => {
   test("paints the newest run when it has coverage, and calls it no fallback", () => {
     const runs = [
-      buildResearchRunSummary({ id: "run-new" }),
-      buildResearchRunSummary({ id: "run-old", question: "An older question" }),
+      buildInquiryRunSummary({ id: "run-new" }),
+      buildInquiryRunSummary({ id: "run-old", question: "An older question" }),
     ];
 
     const selection = selectAwarenessRun(runs, null);
@@ -34,8 +34,8 @@ describe("selectAwarenessRun", () => {
   for (const { name, ...latest } of UNPLOTTABLE_LATEST_RUNS) {
     test(`falls back to the last run with coverage when the newest is ${name}`, () => {
       const runs = [
-        buildResearchRunSummary({ id: "run-new", ...latest }),
-        buildResearchRunSummary({ id: "run-old", question: "An older question" }),
+        buildInquiryRunSummary({ id: "run-new", ...latest }),
+        buildInquiryRunSummary({ id: "run-old", question: "An older question" }),
       ];
 
       const selection = selectAwarenessRun(runs, null);
@@ -47,8 +47,8 @@ describe("selectAwarenessRun", () => {
 
   test("keeps the newest run as the one the notice speaks about, not the one it painted", () => {
     const runs = [
-      buildResearchRunSummary({ id: "run-new", status: "below_floor", measuredCountries: [] }),
-      buildResearchRunSummary({ id: "run-old" }),
+      buildInquiryRunSummary({ id: "run-new", status: "below_floor", measuredCountries: [] }),
+      buildInquiryRunSummary({ id: "run-old" }),
     ];
 
     const selection = selectAwarenessRun(runs, null);
@@ -59,9 +59,9 @@ describe("selectAwarenessRun", () => {
 
   test("walks past every empty run rather than stopping at the first miss", () => {
     const runs = [
-      buildResearchRunSummary({ id: "run-3", measuredCountries: [] }),
-      buildResearchRunSummary({ id: "run-2", measuredCountries: [] }),
-      buildResearchRunSummary({ id: "run-1" }),
+      buildInquiryRunSummary({ id: "run-3", measuredCountries: [] }),
+      buildInquiryRunSummary({ id: "run-2", measuredCountries: [] }),
+      buildInquiryRunSummary({ id: "run-1" }),
     ];
 
     const selection = selectAwarenessRun(runs, null);
@@ -71,8 +71,8 @@ describe("selectAwarenessRun", () => {
 
   test("reports nothing paintable when no run in the window has coverage", () => {
     const runs = [
-      buildResearchRunSummary({ id: "run-2", measuredCountries: [] }),
-      buildResearchRunSummary({ id: "run-1", measuredCountries: [] }),
+      buildInquiryRunSummary({ id: "run-2", measuredCountries: [] }),
+      buildInquiryRunSummary({ id: "run-1", measuredCountries: [] }),
     ];
 
     const selection = selectAwarenessRun(runs, null);
@@ -84,8 +84,8 @@ describe("selectAwarenessRun", () => {
 
   test("paints the run the caller asked for, and does not call that a fallback", () => {
     const runs = [
-      buildResearchRunSummary({ id: "run-new" }),
-      buildResearchRunSummary({ id: "run-old", question: "An older question" }),
+      buildInquiryRunSummary({ id: "run-new" }),
+      buildInquiryRunSummary({ id: "run-old", question: "An older question" }),
     ];
 
     const selection = selectAwarenessRun(runs, "run-old");
@@ -100,15 +100,15 @@ describe("selectAwarenessRun", () => {
     {
       name: "the asked-for run was measured but plots nowhere — we know that about it",
       runs: [
-        buildResearchRunSummary({ id: "run-new" }),
-        buildResearchRunSummary({ id: "run-old", measuredCountries: [] }),
+        buildInquiryRunSummary({ id: "run-new" }),
+        buildInquiryRunSummary({ id: "run-old", measuredCountries: [] }),
       ],
       requested: "run-old",
       miss: "unpaintable",
     },
     {
       name: "the asked-for run aged out of the window — we know nothing about what it measured",
-      runs: [buildResearchRunSummary({ id: "run-new" })],
+      runs: [buildInquiryRunSummary({ id: "run-new" })],
       requested: "run-gone",
       miss: "unknown",
     },

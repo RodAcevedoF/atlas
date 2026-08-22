@@ -1,7 +1,7 @@
 import type {
   AwarenessConfidence,
   CountryAwarenessRecord,
-} from "@/features/research/repositories/research-repository.ts";
+} from "@/features/inquiry/repositories/inquiry-repository.ts";
 import { COUNTRY_CENTROIDS } from "./country-centroids.ts";
 
 const BASEMAP_NAMES: Record<string, string> = {

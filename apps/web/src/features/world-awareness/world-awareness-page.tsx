@@ -1,4 +1,4 @@
-import { useRecentResearchRuns } from "@/features/research/hooks/use-recent-research-runs.ts";
+import { useRecentInquiryRuns } from "@/features/inquiry/hooks/use-recent-inquiry-runs.ts";
 import { useMemo } from "react";
 import { TopBar } from "./components/dashboard/top-bar.tsx";
 import { MapCockpit } from "./components/world-map/map-cockpit.tsx";
@@ -9,8 +9,8 @@ const EMPTY_STATS: MapStatsValues = { signals: 0, regions: 0, topics: 0 };
 
 export function WorldAwarenessPage() {
   const { topic, setTopic, dashboard, isSyncing, error, handleSync } = useMarketDashboard();
-  const { runs: researchRuns, error: researchError } = useRecentResearchRuns();
-  const mapError = error ?? researchError;
+  const { runs: inquiryRuns, error: inquiryError } = useRecentInquiryRuns();
+  const mapError = error ?? inquiryError;
 
   const { markets, worldTopics, worldEvents } = useMemo(
     () => ({
@@ -45,7 +45,7 @@ export function WorldAwarenessPage() {
           topic={topic}
           onTopicChange={setTopic}
           stats={stats}
-          researchRuns={researchRuns}
+          inquiryRuns={inquiryRuns}
           error={mapError}
         />
       </div>

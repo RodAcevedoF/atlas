@@ -1,23 +1,23 @@
 import { describe, expect, test } from "bun:test";
 import type {
-  ResearchRunRequestRecord,
-  ResearchRunStatus,
-} from "../repositories/research-repository.ts";
-import { inMemoryResearchRepository } from "../testing/research-repository.fake.ts";
-import { type PollSchedule, makePollResearchRun } from "./poll-research-run.ts";
+  InquiryRunRequestRecord,
+  InquiryRunStatus,
+} from "../repositories/inquiry-repository.ts";
+import { inMemoryInquiryRepository } from "../testing/inquiry-repository.fake.ts";
+import { type PollSchedule, makePollInquiryRun } from "./poll-inquiry-run.ts";
 
 const FAST: PollSchedule = { intervalMs: 1, limitMs: 200 };
 
-function requested(status: ResearchRunStatus): ResearchRunRequestRecord {
+function requested(status: InquiryRunStatus): InquiryRunRequestRecord {
   return { runId: "run-1", status, deduped: false };
 }
 
-describe("pollResearchRun", () => {
+describe("pollInquiryRun", () => {
   test("stops before the first poll when the requested run is already settled, so a deduped ask costs nothing", async () => {
-    const researchRepository = inMemoryResearchRepository({ statuses: [] });
-    const reported: ResearchRunStatus[] = [];
+    const inquiryRepository = inMemoryInquiryRepository({ statuses: [] });
+    const reported: InquiryRunStatus[] = [];
 
-    const outcome = await makePollResearchRun({ researchRepository }, FAST)(
+    const outcome = await makePollInquiryRun({ inquiryRepository }, FAST)(
       requested("succeeded"),
       (status) => reported.push(status),
     );
@@ -27,10 +27,10 @@ describe("pollResearchRun", () => {
   });
 
   test("reports every status it walks through, so the wait is never a blind spinner", async () => {
-    const researchRepository = inMemoryResearchRepository({ statuses: ["running", "succeeded"] });
-    const reported: ResearchRunStatus[] = [];
+    const inquiryRepository = inMemoryInquiryRepository({ statuses: ["running", "succeeded"] });
+    const reported: InquiryRunStatus[] = [];
 
-    const outcome = await makePollResearchRun({ researchRepository }, FAST)(
+    const outcome = await makePollInquiryRun({ inquiryRepository }, FAST)(
       requested("queued"),
       (status) => reported.push(status),
     );
@@ -39,7 +39,7 @@ describe("pollResearchRun", () => {
     expect(reported).toEqual(["queued", "running", "succeeded"]);
   });
 
-  const settlingCases: { name: string; status: ResearchRunStatus }[] = [
+  const settlingCases: { name: string; status: InquiryRunStatus }[] = [
     { name: "no_coverage is an answer, not a reason to keep waiting", status: "no_coverage" },
     { name: "below_floor is an answer, not a reason to keep waiting", status: "below_floor" },
     {
@@ -51,9 +51,9 @@ describe("pollResearchRun", () => {
 
   for (const settlingCase of settlingCases) {
     test(settlingCase.name, async () => {
-      const researchRepository = inMemoryResearchRepository({ statuses: [settlingCase.status] });
+      const inquiryRepository = inMemoryInquiryRepository({ statuses: [settlingCase.status] });
 
-      const outcome = await makePollResearchRun({ researchRepository }, FAST)(
+      const outcome = await makePollInquiryRun({ inquiryRepository }, FAST)(
         requested("queued"),
         () => {},
       );
@@ -63,9 +63,9 @@ describe("pollResearchRun", () => {
   }
 
   test("gives up at the watch limit and says the run is still going, rather than polling forever", async () => {
-    const researchRepository = inMemoryResearchRepository({ statuses: ["running"] });
+    const inquiryRepository = inMemoryInquiryRepository({ statuses: ["running"] });
 
-    const outcome = await makePollResearchRun({ researchRepository }, FAST)(
+    const outcome = await makePollInquiryRun({ inquiryRepository }, FAST)(
       requested("queued"),
       () => {},
     );

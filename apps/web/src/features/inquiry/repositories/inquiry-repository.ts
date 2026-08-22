@@ -1,7 +1,7 @@
 export const AWARENESS_CONFIDENCES = ["measured", "thin", "artifact"] as const;
 export type AwarenessConfidence = (typeof AWARENESS_CONFIDENCES)[number];
 
-export type ResearchRunStatus =
+export type InquiryRunStatus =
   | "queued"
   | "running"
   | "succeeded"
@@ -19,7 +19,7 @@ export interface CountryAwarenessRecord {
   confidence: AwarenessConfidence;
 }
 
-export interface ResearchExemplarRecord {
+export interface InquiryExemplarRecord {
   country: string | null;
   title: string;
   url: string;
@@ -27,41 +27,41 @@ export interface ResearchExemplarRecord {
   seenAt: string;
 }
 
-export interface ResearchRunRecord {
+export interface InquiryRunRecord {
   id: string;
   question: string;
   day: string;
   executedQuery: string | null;
   window: string;
   distribution: CountryAwarenessRecord[];
-  exemplars: ResearchExemplarRecord[];
+  exemplars: InquiryExemplarRecord[];
   synthesis: string | null;
-  status: ResearchRunStatus;
+  status: InquiryRunStatus;
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
 }
 
-export interface ResearchRunSummaryRecord {
+export interface InquiryRunSummaryRecord {
   id: string;
   question: string;
   day: string;
   window: string;
   measuredCountries: string[];
-  status: ResearchRunStatus;
+  status: InquiryRunStatus;
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
 }
 
-export interface ResearchRunRequestRecord {
+export interface InquiryRunRequestRecord {
   runId: string;
-  status: ResearchRunStatus;
+  status: InquiryRunStatus;
   deduped: boolean;
 }
 
-export interface ResearchRepository {
-  recentRuns(limit: number): Promise<ResearchRunSummaryRecord[]>;
-  runById(runId: string): Promise<ResearchRunRecord>;
-  requestRun(question: string): Promise<ResearchRunRequestRecord>;
+export interface InquiryRepository {
+  recentRuns(limit: number): Promise<InquiryRunSummaryRecord[]>;
+  runById(runId: string): Promise<InquiryRunRecord>;
+  requestRun(question: string): Promise<InquiryRunRequestRecord>;
 }
