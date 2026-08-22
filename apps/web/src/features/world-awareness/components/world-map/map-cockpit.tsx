@@ -1,7 +1,8 @@
 import { ResearchAskBox } from "@/features/research/components/research-ask-box.tsx";
-import type { ResearchRunRecord } from "@/features/research/repositories/research-repository.ts";
+import type { ResearchRunSummaryRecord } from "@/features/research/repositories/research-repository.ts";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAwarenessLayer } from "../../hooks/use-awareness-layer.ts";
 import type { TopicFilter } from "../../infra/store/dashboard.filters.ts";
 import type {
   GeoRegion,
@@ -21,7 +22,6 @@ import { TopicPicker } from "./overlays/topic-picker.tsx";
 import { FloatingPanel } from "./panels/floating-panel.tsx";
 import { PinDetail } from "./panels/pin-detail.tsx";
 import { RegionDetailPanel } from "./panels/region-detail-panel.tsx";
-import { selectAwarenessRun } from "./utils/awareness-run.ts";
 import { countTopicSignals } from "./utils/topic-counts.ts";
 import { WorldMap } from "./world-map.tsx";
 
@@ -38,7 +38,7 @@ interface MapCockpitProps {
   topic: TopicFilter;
   onTopicChange: (topic: TopicFilter) => void;
   stats: MapStatsValues;
-  researchRuns: ResearchRunRecord[];
+  researchRuns: ResearchRunSummaryRecord[];
   error: string | null;
 }
 
@@ -53,13 +53,11 @@ export function MapCockpit({
   error,
 }: MapCockpitProps) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedRunId = searchParams.get("run");
   const byRegion = useMemo(() => indexByRegion(worldTopics), [worldTopics]);
-  const awareness = useMemo(() => selectAwarenessRun(researchRuns), [researchRuns]);
-  const [ambientForRunId, setAmbientForRunId] = useState<string | null>(null);
-  const plotted = awareness.paint?.points.features.length ?? 0;
-  const showsAmbient = awareness.run !== null && ambientForRunId === awareness.run.id;
-  const paintsRun = plotted > 0 && !showsAmbient;
-  const showsFallback = paintsRun && awareness.isFallback;
+  const awareness = useAwarenessLayer(researchRuns, requestedRunId);
+  const mapError = error ?? awareness.error;
   const topicCounts = useMemo(() => countTopicSignals(worldTopics), [worldTopics]);
   const peak = useMemo(
     () => worldTopics.reduce((max, breakdown) => Math.max(max, breakdown.signalCount), 0),
@@ -92,8 +90,17 @@ export function MapCockpit({
     setSelectedEvent(event);
   }, []);
 
-  const showAmbient = useCallback(() => setAmbientForRunId(awareness.run?.id ?? null), [awareness]);
-  const showRun = useCallback(() => setAmbientForRunId(null), []);
+  const clearRequestedRun = useCallback(() => {
+    if (!requestedRunId) return;
+    setSearchParams(
+      (current) => {
+        const params = new URLSearchParams(current);
+        params.delete("run");
+        return params;
+      },
+      { replace: true },
+    );
+  }, [requestedRunId, setSearchParams]);
 
   const clearRegion = useCallback(() => setSelectedRegion(null), []);
   const clearEvent = useCallback(() => setSelectedEvent(null), []);
@@ -103,11 +110,10 @@ export function MapCockpit({
   }, []);
 
   const openScan = useCallback(() => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams({ view: "scan" });
     if (topic) params.set("topic", topic);
     if (selectedRegion) params.set("region", selectedRegion);
-    const query = params.toString();
-    navigate(query ? `/intelligence?${query}` : "/intelligence");
+    navigate(`/intelligence?${params.toString()}`);
   }, [selectedRegion, topic, navigate]);
 
   useEffect(() => {
@@ -126,7 +132,7 @@ export function MapCockpit({
           peak={peak}
           selected={selectedRegion}
           events={worldEvents}
-          awareness={paintsRun && awareness.paint ? awareness.paint.points : null}
+          awareness={awareness.isPainting && awareness.paint ? awareness.paint.points : null}
           onSelect={selectRegion}
           onSelectEvent={selectEvent}
           onClearSelection={clearSelection}
@@ -135,29 +141,34 @@ export function MapCockpit({
 
       <div className="pointer-events-none absolute left-1/2 top-4 z-10 flex w-full max-w-[min(32rem,calc(100vw-36rem))] -translate-x-1/2 flex-col items-center gap-2 px-4">
         <div className="pointer-events-auto w-full">
-          <ResearchAskBox />
+          <ResearchAskBox onAsk={clearRequestedRun} />
         </div>
-        {error ? <MapError message={error} /> : null}
-        {awareness.latest && (plotted === 0 || showsFallback) ? (
-          <AwarenessRunNotice latest={awareness.latest} isFallback={showsFallback} />
+        {mapError ? <MapError message={mapError} /> : null}
+        {awareness.showsNotice && awareness.latest ? (
+          <AwarenessRunNotice
+            latest={awareness.latest}
+            isFallback={awareness.isFallback}
+            requestMiss={awareness.requestMiss}
+            isPainting={awareness.isPainting}
+          />
         ) : null}
       </div>
 
-      {paintsRun && awareness.run && awareness.paint ? (
+      {awareness.isPainting && awareness.detail && awareness.paint ? (
         <AwarenessLegend
-          run={awareness.run}
-          plotted={plotted}
+          run={awareness.detail}
+          plotted={awareness.plotted}
           unmapped={awareness.paint.unmapped}
-          onShowAmbient={showAmbient}
+          onShowAmbient={awareness.showAmbient}
         />
       ) : null}
 
-      {paintsRun ? null : (
+      {awareness.isPainting ? null : (
         <>
           <TopicPicker topic={topic} counts={topicCounts} onTopicChange={onTopicChange} />
           <MapStats {...stats} />
-          {awareness.run && plotted > 0 ? (
-            <AwarenessRunPill run={awareness.run} onShowRun={showRun} />
+          {awareness.run && awareness.plotted > 0 ? (
+            <AwarenessRunPill run={awareness.run} onShowRun={awareness.showRun} />
           ) : null}
         </>
       )}

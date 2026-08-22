@@ -52,12 +52,28 @@ function centroidFor(country: string): [number, number] | undefined {
   return COUNTRY_CENTROIDS[name] ?? OFF_BASEMAP_CENTROIDS[name];
 }
 
+function isPlottableCountry(country: string): boolean {
+  return centroidFor(country) !== undefined;
+}
+
+function measuredCountries(distribution: CountryAwarenessRecord[]): CountryAwarenessRecord[] {
+  return distribution.filter((country) => country.confidence !== "artifact");
+}
+
+export function hasPlottableCountry(countries: string[]): boolean {
+  return countries.some(isPlottableCountry);
+}
+
+export function canPaintDistribution(distribution: CountryAwarenessRecord[]): boolean {
+  return measuredCountries(distribution).some((country) => isPlottableCountry(country.country));
+}
+
 function intensityOf(awareness: number, peak: number): number {
   return peak > 0 ? Math.sqrt(awareness / peak) : 0;
 }
 
 export function buildAwarenessPaint(distribution: CountryAwarenessRecord[]): AwarenessPaint {
-  const ranked = distribution.filter((country) => country.confidence !== "artifact");
+  const ranked = measuredCountries(distribution);
   if (ranked.length === 0) return EMPTY_PAINT;
 
   const peak = ranked.reduce((max, country) => Math.max(max, country.awareness), 0);

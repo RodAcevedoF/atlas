@@ -1,6 +1,7 @@
 import type {
   CountryAwarenessRecord,
   ResearchRunRecord,
+  ResearchRunSummaryRecord,
 } from "../repositories/research-repository.ts";
 
 export function buildCountryAwareness(
@@ -31,6 +32,27 @@ export function buildResearchRun(overrides: Partial<ResearchRunRecord> = {}): Re
     createdAt: "2026-08-18T09:00:00.000Z",
     startedAt: "2026-08-18T09:00:01.000Z",
     completedAt: "2026-08-18T09:00:30.000Z",
+    ...overrides,
+  };
+}
+
+export function buildResearchRunSummary(
+  overrides: Partial<ResearchRunSummaryRecord> = {},
+): ResearchRunSummaryRecord {
+  const { id, question, day, window, distribution, status, createdAt, startedAt, completedAt } =
+    buildResearchRun();
+  return {
+    id,
+    question,
+    day,
+    window,
+    measuredCountries: distribution
+      .filter((country) => country.confidence !== "artifact")
+      .map((country) => country.country),
+    status,
+    createdAt,
+    startedAt,
+    completedAt,
     ...overrides,
   };
 }

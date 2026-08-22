@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { buildCountryAwareness } from "../../../../research/testing/research-builder.ts";
-import { buildAwarenessPaint } from "./awareness-points.ts";
+import { buildAwarenessPaint, canPaintDistribution } from "./awareness-points.ts";
 
 const GDELT_NAMES_THE_BASEMAP_SPELLS_DIFFERENTLY = [
   "Bosnia-Herzegovina",
@@ -137,5 +137,25 @@ describe("buildAwarenessPaint", () => {
 
       expect(paint.points.features[0]?.properties.intensity).toBe(1);
     });
+  });
+});
+
+describe("canPaintDistribution", () => {
+  test("offers the map to a run whose measured country the basemap can place", () => {
+    const distribution = [buildCountryAwareness({ country: "Sudan" })];
+
+    expect(canPaintDistribution(distribution)).toBe(true);
+  });
+
+  test("withholds the map from a run whose only country is an artifact the paint would drop", () => {
+    const distribution = [buildCountryAwareness({ country: "Sudan", confidence: "artifact" })];
+
+    expect(canPaintDistribution(distribution)).toBe(false);
+  });
+
+  test("withholds the map when every measured country falls off the basemap", () => {
+    const distribution = [buildCountryAwareness({ country: "Atlantis" })];
+
+    expect(canPaintDistribution(distribution)).toBe(false);
   });
 });

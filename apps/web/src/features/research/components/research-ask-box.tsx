@@ -39,7 +39,7 @@ function askMessage(state: ResearchAskState): AskMessage | null {
   return null;
 }
 
-export function ResearchAskBox() {
+export function ResearchAskBox({ onAsk }: { onAsk: () => void }) {
   const { ask, ...state } = useResearchAsk();
   const [question, setQuestion] = useState("");
   const message = askMessage(state);
@@ -48,6 +48,7 @@ export function ResearchAskBox() {
     event.preventDefault();
     if (state.isAsking || !question.trim()) return;
     ask(question);
+    onAsk();
     setQuestion("");
   };
 

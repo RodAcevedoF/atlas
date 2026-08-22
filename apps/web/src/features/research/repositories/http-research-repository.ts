@@ -3,11 +3,12 @@ import type {
   ResearchRepository,
   ResearchRunRecord,
   ResearchRunRequestRecord,
+  ResearchRunSummaryRecord,
 } from "./research-repository.ts";
 
 export class HttpResearchRepository implements ResearchRepository {
-  recentRuns(limit: number): Promise<ResearchRunRecord[]> {
-    return fetchJson<ResearchRunRecord[]>(`/api/research/runs?limit=${limit}`);
+  recentRuns(limit: number): Promise<ResearchRunSummaryRecord[]> {
+    return fetchJson<ResearchRunSummaryRecord[]>(`/api/research/runs?limit=${limit}`);
   }
 
   runById(runId: string): Promise<ResearchRunRecord> {

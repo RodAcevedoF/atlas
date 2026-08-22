@@ -1,7 +1,11 @@
-import type { ResearchRunRecord } from "@/features/research/repositories/research-repository.ts";
+import type {
+  ResearchRunRecord,
+  ResearchRunSummaryRecord,
+} from "@/features/research/repositories/research-repository.ts";
 import { Eyebrow } from "@/shared/ui";
+import type { AwarenessRequestMiss } from "../utils/awareness-run.ts";
 
-const LATEST_RUN_OUTCOME: Record<ResearchRunRecord["status"], string> = {
+const LATEST_RUN_OUTCOME: Record<ResearchRunSummaryRecord["status"], string> = {
   queued: "Your latest question is queued.",
   running: "Your latest question is still running.",
   succeeded: "Your latest run measured no country this map can plot.",
@@ -11,21 +15,39 @@ const LATEST_RUN_OUTCOME: Record<ResearchRunRecord["status"], string> = {
   failed_permanent: "Your latest run failed and will not retry.",
 };
 
+const REQUEST_MISS: Record<AwarenessRequestMiss, string> = {
+  unpaintable: "That run has nothing this map can plot.",
+  unknown: "That run isn't in your recent history.",
+};
+
 const SHOWING_INSTEAD = {
   fallback: "Showing your last run with measurable coverage.",
+  latest: "Showing your most recent run with coverage.",
   ambient: "The map is showing ambient coverage.",
 } as const;
 
 interface AwarenessRunNoticeProps {
-  latest: ResearchRunRecord;
+  latest: ResearchRunSummaryRecord;
   isFallback: boolean;
+  requestMiss: AwarenessRequestMiss | null;
+  isPainting: boolean;
 }
 
-export function AwarenessRunNotice({ latest, isFallback }: AwarenessRunNoticeProps) {
+function showingInstead(isPainting: boolean, isFallback: boolean): string {
+  if (!isPainting) return SHOWING_INSTEAD.ambient;
+  return isFallback ? SHOWING_INSTEAD.fallback : SHOWING_INSTEAD.latest;
+}
+
+export function AwarenessRunNotice({
+  latest,
+  isFallback,
+  requestMiss,
+  isPainting,
+}: AwarenessRunNoticeProps) {
   return (
     <div className="max-w-md rounded-xl border border-border bg-card/86 px-4 py-2 text-center text-[12.5px] text-muted-foreground backdrop-blur-md">
-      {LATEST_RUN_OUTCOME[latest.status]}{" "}
-      {isFallback ? SHOWING_INSTEAD.fallback : SHOWING_INSTEAD.ambient}
+      {requestMiss ? REQUEST_MISS[requestMiss] : LATEST_RUN_OUTCOME[latest.status]}{" "}
+      {showingInstead(isPainting, isFallback)}
     </div>
   );
 }
@@ -33,7 +55,7 @@ export function AwarenessRunNotice({ latest, isFallback }: AwarenessRunNoticePro
 export function AwarenessRunPill({
   run,
   onShowRun,
-}: { run: ResearchRunRecord; onShowRun: () => void }) {
+}: { run: ResearchRunSummaryRecord; onShowRun: () => void }) {
   return (
     <button
       type="button"

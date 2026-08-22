@@ -42,6 +42,18 @@ export interface ResearchRunRecord {
   completedAt: string | null;
 }
 
+export interface ResearchRunSummaryRecord {
+  id: string;
+  question: string;
+  day: string;
+  window: string;
+  measuredCountries: string[];
+  status: ResearchRunStatus;
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
 export interface ResearchRunRequestRecord {
   runId: string;
   status: ResearchRunStatus;
@@ -49,7 +61,7 @@ export interface ResearchRunRequestRecord {
 }
 
 export interface ResearchRepository {
-  recentRuns(limit: number): Promise<ResearchRunRecord[]>;
+  recentRuns(limit: number): Promise<ResearchRunSummaryRecord[]>;
   runById(runId: string): Promise<ResearchRunRecord>;
   requestRun(question: string): Promise<ResearchRunRequestRecord>;
 }
