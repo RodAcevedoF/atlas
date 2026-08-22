@@ -1,7 +1,7 @@
 import { RunMigrationsUseCase } from "@atlas/application";
 import {
-  MongoMarketStore,
   MongoMigrationLedger,
+  MongoSignalStore,
   createMongoClient,
   renameResearchRunsToInquiryRuns,
 } from "@atlas/infra/store-mongodb";
@@ -17,7 +17,7 @@ async function migrate(): Promise<void> {
   await client.connect();
   try {
     const db = client.db(dbName);
-    const store = new MongoMarketStore(db);
+    const store = new MongoSignalStore(db);
     const ledger = new MongoMigrationLedger(db);
 
     const result = await new RunMigrationsUseCase(

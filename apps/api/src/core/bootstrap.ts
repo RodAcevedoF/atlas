@@ -5,7 +5,7 @@ import { BunPasswordHasher } from "@atlas/infra/password-bun";
 import { RedisSessionStore, createRedisClient } from "@atlas/infra/session-redis";
 import {
   MongoInquiryRunStore,
-  MongoMarketStore,
+  MongoSignalStore,
   createMongoClient,
   ensureIndexes,
 } from "@atlas/infra/store-mongodb";
@@ -63,7 +63,7 @@ export async function bootstrap(): Promise<AppDeps> {
   const redis = createRedisClient(process.env.REDIS_URL ?? "redis://127.0.0.1:6379");
 
   const signalSource = new ExaNewsAdapter(exaApiKey);
-  const store = new MongoMarketStore(db);
+  const store = new MongoSignalStore(db);
   const userStore = new MongoUserStore(db);
   const sessionStore = new RedisSessionStore(redis);
   const hasher = new BunPasswordHasher();
