@@ -56,3 +56,25 @@ export function dropSavedReportIds(db: Db): Migration {
     },
   };
 }
+
+export function emptyGdeltEraInquiryRuns(db: Db): Migration {
+  return {
+    id: "2026-08-23-empty-gdelt-era-inquiry-runs",
+    async execute({ dryRun }) {
+      if (!(await hasCollection(db, INQUIRY_RUNS))) {
+        return `${INQUIRY_RUNS} absent — nothing to empty`;
+      }
+
+      const stale = { places: { $exists: false } };
+      const holding = await db.collection(INQUIRY_RUNS).countDocuments(stale);
+      if (holding === 0) return "every run already carries the claims shape";
+      if (dryRun) return `would empty ${holding} GDELT-era runs`;
+
+      const result = await db.collection(INQUIRY_RUNS).updateMany(stale, {
+        $set: { places: [], claimCount: 0, unplacedClaims: 0, costUsd: 0 },
+        $unset: { distribution: "", exemplars: "", executedQuery: "" },
+      });
+      return `emptied ${result.modifiedCount} GDELT-era runs`;
+    },
+  };
+}

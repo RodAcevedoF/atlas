@@ -5,11 +5,7 @@ from app.core.config import Settings
 
 
 def make_chat_model(settings: Settings) -> BaseChatModel:
-    """Provider factory brick — returns a LangChain chat model chosen by config.
-
-    Both OpenAI and Cerebras speak the OpenAI-compatible surface, so downstream graph
-    nodes call `.with_structured_output(...)` uniformly regardless of which is selected.
-    Swap providers by setting `INTELLIGENCE_LLM_PROVIDER`; add a new one by adding a branch.
+    """Provider factory returns a LangChain chat model chosen by config.
     """
     provider = settings.llm_provider.lower()
     if provider == "openai":
@@ -31,6 +27,16 @@ def make_chat_model(settings: Settings) -> BaseChatModel:
     raise ValueError(f"unknown llm provider: {settings.llm_provider!r}")
 
 
+class LazyChatModel:
+    def __init__(self, settings: Settings) -> None:
+        self._settings = settings
+        self._model: BaseChatModel | None = None
+
+    def get(self) -> BaseChatModel:
+        if self._model is None:
+            self._model = make_chat_model(self._settings)
+        return self._model
+
+
 def _secret(value: str | None) -> SecretStr | None:
-    """Wrap a key for the LangChain client; None lets the client fall back to its own env var."""
     return SecretStr(value) if value else None
