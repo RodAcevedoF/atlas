@@ -1,4 +1,4 @@
-import type { ResearchRun, ResearchRunId, ResearchRunListRow } from "@atlas/domain";
+import type { InquiryRun, InquiryRunId, InquiryRunListRow } from "@atlas/domain";
 
 export const INQUIRY_MAX_ATTEMPTS = 2;
 
@@ -9,7 +9,7 @@ export interface ClaimInquiryRunInput {
 }
 
 export type CompleteInquiryRunInput = Pick<
-  ResearchRun,
+  InquiryRun,
   "id" | "status" | "executedQuery" | "distribution" | "exemplars" | "synthesis" | "error"
 > & { completedAt: Date };
 
@@ -18,11 +18,11 @@ export interface InquiryRunPage {
 }
 
 export interface InquiryRunStorePort {
-  saveInquiryRun(run: ResearchRun): Promise<void>;
-  findInquiryRunById(id: ResearchRunId): Promise<ResearchRun | null>;
-  findInquiryRunByQuestionDay(questionKey: string, day: string): Promise<ResearchRun | null>;
+  saveInquiryRun(run: InquiryRun): Promise<void>;
+  findInquiryRunById(id: InquiryRunId): Promise<InquiryRun | null>;
+  findInquiryRunByQuestionDay(questionKey: string, day: string): Promise<InquiryRun | null>;
   countInquiryRunsForDay(day: string): Promise<number>;
-  claimNextInquiryRun(input: ClaimInquiryRunInput): Promise<ResearchRun | null>;
+  claimNextInquiryRun(input: ClaimInquiryRunInput): Promise<InquiryRun | null>;
   completeInquiryRun(input: CompleteInquiryRunInput): Promise<void>;
-  listInquiryRuns(page: InquiryRunPage): Promise<ResearchRunListRow[]>;
+  listInquiryRuns(page: InquiryRunPage): Promise<InquiryRunListRow[]>;
 }

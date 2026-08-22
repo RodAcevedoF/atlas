@@ -1,4 +1,4 @@
-import type { ResearchRun, ResearchRunId, ResearchRunListRow } from "@atlas/domain";
+import type { InquiryRun, InquiryRunId, InquiryRunListRow } from "@atlas/domain";
 import type {
   ClaimInquiryRunInput,
   InquiryRunStorePort,
@@ -7,10 +7,10 @@ import { INQUIRY_MAX_ATTEMPTS } from "../inquiry/outbound/inquiry-run-store.ts";
 
 export interface InMemoryInquiryRunStore {
   store: InquiryRunStorePort;
-  runs(): ResearchRun[];
+  runs(): InquiryRun[];
 }
 
-function isClaimable(run: ResearchRun, input: ClaimInquiryRunInput): boolean {
+function isClaimable(run: InquiryRun, input: ClaimInquiryRunInput): boolean {
   if (run.status === "queued") return true;
   if (run.status === "running") {
     return run.startedAt !== null && run.startedAt < input.startedBefore;
@@ -20,7 +20,7 @@ function isClaimable(run: ResearchRun, input: ClaimInquiryRunInput): boolean {
   return run.completedAt !== null && run.completedAt < input.completedBefore;
 }
 
-function toListRow(run: ResearchRun): ResearchRunListRow {
+function toListRow(run: InquiryRun): InquiryRunListRow {
   return {
     id: run.id,
     question: run.question,
@@ -37,12 +37,12 @@ function toListRow(run: ResearchRun): ResearchRunListRow {
   };
 }
 
-function newestFirst(left: ResearchRun, right: ResearchRun): number {
+function newestFirst(left: InquiryRun, right: InquiryRun): number {
   return right.createdAt.getTime() - left.createdAt.getTime();
 }
 
-export function inMemoryInquiryRunStore(seed: ResearchRun[] = []): InMemoryInquiryRunStore {
-  const held = new Map<ResearchRunId, ResearchRun>(seed.map((run) => [run.id, run]));
+export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquiryRunStore {
+  const held = new Map<InquiryRunId, InquiryRun>(seed.map((run) => [run.id, run]));
 
   const store: InquiryRunStorePort = {
     saveInquiryRun(run) {
@@ -66,7 +66,7 @@ export function inMemoryInquiryRunStore(seed: ResearchRun[] = []): InMemoryInqui
       const [next] = [...held.values()].filter((run) => isClaimable(run, input)).sort(newestFirst);
       if (!next) return Promise.resolve(null);
 
-      const claimed: ResearchRun = {
+      const claimed: InquiryRun = {
         ...next,
         status: "running",
         startedAt: input.now,

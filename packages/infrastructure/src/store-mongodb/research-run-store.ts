@@ -5,8 +5,8 @@ import type {
   InquiryRunStorePort,
 } from "@atlas/application";
 import { INQUIRY_MAX_ATTEMPTS } from "@atlas/application";
-import type { ResearchRun, ResearchRunId, ResearchRunListRow } from "@atlas/domain";
-import { makeResearchRunId } from "@atlas/domain";
+import type { InquiryRun, InquiryRunId, InquiryRunListRow } from "@atlas/domain";
+import { makeInquiryRunId } from "@atlas/domain";
 import type { Db } from "mongodb";
 import type { ResearchRunDoc } from "./collections.ts";
 
@@ -27,11 +27,11 @@ const LIST_PROJECTION = {
 type ResearchRunListDoc = Pick<
   ResearchRunDoc,
   "_id" | "question" | "day" | "window" | "status" | "createdAt" | "startedAt" | "completedAt"
-> & { distribution: ResearchRunListRow["distribution"] };
+> & { distribution: InquiryRunListRow["distribution"] };
 
-function docToListRow(doc: ResearchRunListDoc): ResearchRunListRow {
+function docToListRow(doc: ResearchRunListDoc): InquiryRunListRow {
   return {
-    id: makeResearchRunId(doc._id),
+    id: makeInquiryRunId(doc._id),
     question: doc.question,
     day: doc.day,
     window: doc.window,
@@ -43,9 +43,9 @@ function docToListRow(doc: ResearchRunListDoc): ResearchRunListRow {
   };
 }
 
-function docToResearchRun(doc: ResearchRunDoc): ResearchRun {
+function docToResearchRun(doc: ResearchRunDoc): InquiryRun {
   return {
-    id: makeResearchRunId(doc._id),
+    id: makeInquiryRunId(doc._id),
     question: doc.question,
     questionKey: doc.questionKey,
     day: doc.day,
@@ -66,7 +66,7 @@ function docToResearchRun(doc: ResearchRunDoc): ResearchRun {
 export class MongoResearchRunStore implements InquiryRunStorePort {
   constructor(private readonly db: Db) {}
 
-  async saveInquiryRun(run: ResearchRun): Promise<void> {
+  async saveInquiryRun(run: InquiryRun): Promise<void> {
     const doc: ResearchRunDoc = {
       _id: run.id,
       question: run.question,
@@ -87,12 +87,12 @@ export class MongoResearchRunStore implements InquiryRunStorePort {
     await this.db.collection<ResearchRunDoc>(COLLECTION).insertOne(doc);
   }
 
-  async findInquiryRunById(id: ResearchRunId): Promise<ResearchRun | null> {
+  async findInquiryRunById(id: InquiryRunId): Promise<InquiryRun | null> {
     const doc = await this.db.collection<ResearchRunDoc>(COLLECTION).findOne({ _id: id });
     return doc ? docToResearchRun(doc) : null;
   }
 
-  async findInquiryRunByQuestionDay(questionKey: string, day: string): Promise<ResearchRun | null> {
+  async findInquiryRunByQuestionDay(questionKey: string, day: string): Promise<InquiryRun | null> {
     const doc = await this.db
       .collection<ResearchRunDoc>(COLLECTION)
       .findOne({ questionKey, day }, { sort: { createdAt: -1 } });
@@ -103,7 +103,7 @@ export class MongoResearchRunStore implements InquiryRunStorePort {
     return this.db.collection<ResearchRunDoc>(COLLECTION).countDocuments({ day });
   }
 
-  async claimNextInquiryRun(input: ClaimInquiryRunInput): Promise<ResearchRun | null> {
+  async claimNextInquiryRun(input: ClaimInquiryRunInput): Promise<InquiryRun | null> {
     const doc = await this.db.collection<ResearchRunDoc>(COLLECTION).findOneAndUpdate(
       {
         $or: [
@@ -142,7 +142,7 @@ export class MongoResearchRunStore implements InquiryRunStorePort {
     );
   }
 
-  async listInquiryRuns(page: InquiryRunPage): Promise<ResearchRunListRow[]> {
+  async listInquiryRuns(page: InquiryRunPage): Promise<InquiryRunListRow[]> {
     const docs = await this.db
       .collection<ResearchRunDoc>(COLLECTION)
       .find<ResearchRunListDoc>({}, { projection: LIST_PROJECTION })

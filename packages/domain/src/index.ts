@@ -39,22 +39,22 @@ export type {
 } from "./entities/analysis-run.ts";
 
 export type {
-  ResearchRunId,
-  ResearchRunStatus,
+  InquiryRunId,
+  InquiryRunStatus,
   AwarenessConfidence,
   CountryAwareness,
-  ResearchExemplar,
-  ResearchRun,
-  PublicResearchRun,
-  ResearchRunListRow,
-  ResearchRunSummary,
-} from "./entities/research-run.ts";
+  InquiryExemplar,
+  InquiryRun,
+  PublicInquiryRun,
+  InquiryRunListRow,
+  InquiryRunSummary,
+} from "./entities/inquiry-run.ts";
 export {
-  makeResearchRunId,
-  toPublicResearchRun,
-  toResearchRunSummary,
-} from "./entities/research-run.ts";
-export { RESEARCH_RUN_STATUSES, AWARENESS_CONFIDENCES } from "./entities/research-run.ts";
+  makeInquiryRunId,
+  toPublicInquiryRun,
+  toInquiryRunSummary,
+} from "./entities/inquiry-run.ts";
+export { INQUIRY_RUN_STATUSES, AWARENESS_CONFIDENCES } from "./entities/inquiry-run.ts";
 
 export type {
   SignalId,

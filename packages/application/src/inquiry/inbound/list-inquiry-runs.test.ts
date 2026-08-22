@@ -1,14 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import type { CountryAwareness, ResearchRun } from "@atlas/domain";
-import { makeResearchRunId } from "@atlas/domain";
+import type { CountryAwareness, InquiryRun } from "@atlas/domain";
+import { makeInquiryRunId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import { ListInquiryRunsUseCase } from "./list-inquiry-runs.ts";
 
 const SEEDED = 130;
 
-function run(index: number): ResearchRun {
+function run(index: number): InquiryRun {
   return {
-    id: makeResearchRunId(`run-${index}`),
+    id: makeInquiryRunId(`run-${index}`),
     question: `question ${index}`,
     questionKey: `question ${index}`,
     day: "2026-08-17",
@@ -70,7 +70,7 @@ describe("ListInquiryRunsUseCase", () => {
     const [listed] = await useCase.execute();
 
     expect(listed).toEqual({
-      id: makeResearchRunId("run-0"),
+      id: makeInquiryRunId("run-0"),
       question: "question 0",
       day: "2026-08-17",
       window: "1w",
@@ -88,9 +88,9 @@ describe("ListInquiryRunsUseCase", () => {
     const runs = await useCase.execute({ limit: 3 });
 
     expect(runs.map((entry) => entry.id)).toEqual([
-      makeResearchRunId("run-129"),
-      makeResearchRunId("run-128"),
-      makeResearchRunId("run-127"),
+      makeInquiryRunId("run-129"),
+      makeInquiryRunId("run-128"),
+      makeInquiryRunId("run-127"),
     ]);
   });
 });

@@ -1,6 +1,6 @@
 import type { InquiryRunFilter, RequestInquiryRunInput } from "@atlas/application";
-import type { ResearchRunId } from "@atlas/domain";
-import { makeResearchRunId } from "@atlas/domain";
+import type { InquiryRunId } from "@atlas/domain";
+import { makeInquiryRunId } from "@atlas/domain";
 import { InvalidInputError } from "../../core/errors.ts";
 import { type RawQuery, parseLimit } from "../../core/parsing.ts";
 
@@ -11,11 +11,11 @@ export function parseInquiryRunBody(
   return { question: typeof source.question === "string" ? source.question : "" };
 }
 
-export function parseInquiryRunId(value: unknown): ResearchRunId {
+export function parseInquiryRunId(value: unknown): InquiryRunId {
   if (typeof value !== "string" || value.trim().length === 0) {
     throw new InvalidInputError("An inquiry run id is required");
   }
-  return makeResearchRunId(value);
+  return makeInquiryRunId(value);
 }
 
 export function parseInquiryRunsQuery(query: RawQuery): InquiryRunFilter {

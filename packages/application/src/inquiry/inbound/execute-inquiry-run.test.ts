@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { ResearchRun } from "@atlas/domain";
-import { makeResearchRunId } from "@atlas/domain";
+import type { InquiryRun } from "@atlas/domain";
+import { makeInquiryRunId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import type { OrchestrationPort } from "../../world/outbound/orchestration.ts";
 import { ExecuteInquiryRunUseCase } from "./execute-inquiry-run.ts";
@@ -10,9 +10,9 @@ const RUN_TIMEOUT_MS = 60 * 1000;
 const CREATED_AT = new Date();
 const LONG_AGO = new Date(CREATED_AT.getTime() - 48 * 60 * 60 * 1000);
 
-function run(overrides: Partial<ResearchRun> = {}): ResearchRun {
+function run(overrides: Partial<InquiryRun> = {}): InquiryRun {
   return {
-    id: makeResearchRunId("run-1"),
+    id: makeInquiryRunId("run-1"),
     question: "who is covering the Sudan famine",
     questionKey: "who-is-covering-the-sudan-famine",
     day: "2026-08-16",
@@ -334,13 +334,13 @@ describe("ExecuteInquiryRunUseCase", () => {
 
   test("the freshest question is claimed first, so it never waits behind a stranded run", async () => {
     const stranded = run({
-      id: makeResearchRunId("run-stranded"),
+      id: makeInquiryRunId("run-stranded"),
       status: "failed_retryable",
       attempts: 1,
       createdAt: LONG_AGO,
       completedAt: new Date(LONG_AGO.getTime() + RETRY_AFTER_MS),
     });
-    const fresh = run({ id: makeResearchRunId("run-fresh") });
+    const fresh = run({ id: makeInquiryRunId("run-fresh") });
     const { store } = inMemoryInquiryRunStore([stranded, fresh]);
     const useCase = new ExecuteInquiryRunUseCase(
       store,

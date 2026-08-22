@@ -1,10 +1,5 @@
-import type {
-  CountryAwareness,
-  ResearchRun,
-  ResearchRunId,
-  ResearchRunStatus,
-} from "@atlas/domain";
-import { AWARENESS_CONFIDENCES, RESEARCH_RUN_STATUSES } from "@atlas/domain";
+import type { CountryAwareness, InquiryRun, InquiryRunId, InquiryRunStatus } from "@atlas/domain";
+import { AWARENESS_CONFIDENCES, INQUIRY_RUN_STATUSES } from "@atlas/domain";
 import type { OrchestrationPort } from "../../world/outbound/orchestration.ts";
 import type {
   CompleteInquiryRunInput,
@@ -16,11 +11,11 @@ const GRAPH_NAME = "awareness";
 const ERROR_SAMPLE_CHARS = 200;
 /** a live run cannot outlast its own timeout, so an older `running` row belongs to a dead process */
 const STALE_TIMEOUT_MULTIPLE = 2;
-const IN_FLIGHT_STATUSES = ["queued", "running"] as const satisfies readonly ResearchRunStatus[];
+const IN_FLIGHT_STATUSES = ["queued", "running"] as const satisfies readonly InquiryRunStatus[];
 
 export interface ExecuteInquiryRunOutput {
-  runId: ResearchRunId | null;
-  status: ResearchRunStatus | null;
+  runId: InquiryRunId | null;
+  status: InquiryRunStatus | null;
 }
 
 export interface ExecuteInquiryRun {
@@ -28,7 +23,7 @@ export interface ExecuteInquiryRun {
 }
 
 type RunOutcome = Omit<CompleteInquiryRunInput, "id" | "completedAt">;
-type FailedStatus = Extract<ResearchRunStatus, "failed_retryable" | "failed_permanent">;
+type FailedStatus = Extract<InquiryRunStatus, "failed_retryable" | "failed_permanent">;
 
 class GraphTimeoutError extends Error {
   constructor(timeoutMs: number) {
@@ -50,9 +45,9 @@ async function withTimeout<T>(work: Promise<T>, timeoutMs: number): Promise<T> {
   }
 }
 
-function isTerminalStatus(value: unknown): value is ResearchRunStatus {
+function isTerminalStatus(value: unknown): value is InquiryRunStatus {
   if (typeof value !== "string") return false;
-  if (!(RESEARCH_RUN_STATUSES as readonly string[]).includes(value)) return false;
+  if (!(INQUIRY_RUN_STATUSES as readonly string[]).includes(value)) return false;
   return !(IN_FLIGHT_STATUSES as readonly string[]).includes(value);
 }
 
@@ -85,7 +80,7 @@ function sample(value: unknown): string {
   return String(JSON.stringify(value)).slice(0, ERROR_SAMPLE_CHARS);
 }
 
-function isExhausted(status: ResearchRunStatus, attempts: number): boolean {
+function isExhausted(status: InquiryRunStatus, attempts: number): boolean {
   return status === "failed_retryable" && attempts >= INQUIRY_MAX_ATTEMPTS;
 }
 
@@ -146,7 +141,7 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
     return { runId: run.id, status: outcome.status };
   }
 
-  private async outcomeFor(run: ResearchRun, now: Date): Promise<RunOutcome> {
+  private async outcomeFor(run: InquiryRun, now: Date): Promise<RunOutcome> {
     if (run.attempts > INQUIRY_MAX_ATTEMPTS) {
       return failure(
         "failed_permanent",
@@ -161,12 +156,12 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
   }
 
   /** a live run cannot outlast its own retries, so an older re-claim is a restart reclaiming a corpse */
-  private outlivedRetryBudget(run: ResearchRun, now: Date): boolean {
+  private outlivedRetryBudget(run: InquiryRun, now: Date): boolean {
     const budgetMs = INQUIRY_MAX_ATTEMPTS * (this.runTimeoutMs + this.retryAfterMs);
     return now.getTime() - run.createdAt.getTime() > budgetMs;
   }
 
-  private async measure(run: ResearchRun): Promise<RunOutcome> {
+  private async measure(run: InquiryRun): Promise<RunOutcome> {
     try {
       const body = await withTimeout(
         this.orchestration.run({

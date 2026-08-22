@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { ResearchRun, ResearchRunStatus } from "@atlas/domain";
-import { makeResearchRunId } from "@atlas/domain";
+import type { InquiryRun, InquiryRunStatus } from "@atlas/domain";
+import { makeInquiryRunId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import {
   InquiryDailyCapReachedError,
@@ -16,9 +16,9 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function run(overrides: Partial<ResearchRun> = {}): ResearchRun {
+function run(overrides: Partial<InquiryRun> = {}): InquiryRun {
   return {
-    id: makeResearchRunId("run-1"),
+    id: makeInquiryRunId("run-1"),
     question: QUESTION,
     questionKey: QUESTION_KEY,
     day: today(),
@@ -55,7 +55,7 @@ describe("RequestInquiryRunUseCase", () => {
     expect(stored?.window).toBe("1w");
   });
 
-  const reused: { name: string; status: ResearchRunStatus }[] = [
+  const reused: { name: string; status: InquiryRunStatus }[] = [
     { name: "an answer already paid for is served, not re-measured", status: "succeeded" },
     { name: "an honest empty answer is still an answer", status: "no_coverage" },
     { name: "a run already waiting for the worker is not queued twice", status: "queued" },
@@ -73,7 +73,7 @@ describe("RequestInquiryRunUseCase", () => {
 
       const result = await useCase.execute({ question: QUESTION });
 
-      expect(result).toEqual({ runId: makeResearchRunId("run-1"), status, deduped: true });
+      expect(result).toEqual({ runId: makeInquiryRunId("run-1"), status, deduped: true });
       expect(runs()).toHaveLength(1);
     });
   }
@@ -91,17 +91,17 @@ describe("RequestInquiryRunUseCase", () => {
 
   test("the newest run of the day decides, so a re-ask after a failure serves the retry", async () => {
     const failed = run({
-      id: makeResearchRunId("run-old"),
+      id: makeInquiryRunId("run-old"),
       status: "failed_permanent",
       createdAt: new Date(Date.now() - 60_000),
     });
-    const retried = run({ id: makeResearchRunId("run-new"), status: "queued" });
+    const retried = run({ id: makeInquiryRunId("run-new"), status: "queued" });
     const { store } = inMemoryInquiryRunStore([failed, retried]);
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({ question: QUESTION });
 
-    expect(result.runId).toBe(makeResearchRunId("run-new"));
+    expect(result.runId).toBe(makeInquiryRunId("run-new"));
     expect(result.deduped).toBe(true);
   });
 
@@ -128,7 +128,7 @@ describe("RequestInquiryRunUseCase", () => {
 
   test("the day's cap rejects a new question honestly", async () => {
     const seed = [1, 2, 3].map((index) =>
-      run({ id: makeResearchRunId(`run-${index}`), questionKey: `question ${index}` }),
+      run({ id: makeInquiryRunId(`run-${index}`), questionKey: `question ${index}` }),
     );
     const { store, runs } = inMemoryInquiryRunStore(seed);
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
@@ -141,15 +141,15 @@ describe("RequestInquiryRunUseCase", () => {
 
   test("a repeat is served past the cap, so the cheapest path is never the punished one", async () => {
     const seed = [1, 2, 3].map((index) =>
-      run({ id: makeResearchRunId(`run-${index}`), questionKey: `question ${index}` }),
+      run({ id: makeInquiryRunId(`run-${index}`), questionKey: `question ${index}` }),
     );
-    const { store } = inMemoryInquiryRunStore([...seed, run({ id: makeResearchRunId("run-4") })]);
+    const { store } = inMemoryInquiryRunStore([...seed, run({ id: makeInquiryRunId("run-4") })]);
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({ question: QUESTION });
 
     expect(result).toEqual({
-      runId: makeResearchRunId("run-4"),
+      runId: makeInquiryRunId("run-4"),
       status: "succeeded",
       deduped: true,
     });
@@ -158,7 +158,7 @@ describe("RequestInquiryRunUseCase", () => {
   test("yesterday's runs do not spend today's cap", async () => {
     const seed = [1, 2, 3].map((index) =>
       run({
-        id: makeResearchRunId(`run-${index}`),
+        id: makeInquiryRunId(`run-${index}`),
         questionKey: `question ${index}`,
         day: "2020-01-01",
       }),

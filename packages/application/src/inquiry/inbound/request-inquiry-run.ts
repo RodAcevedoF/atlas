@@ -1,5 +1,5 @@
-import type { ResearchRun, ResearchRunId, ResearchRunStatus } from "@atlas/domain";
-import { makeResearchRunId } from "@atlas/domain";
+import type { InquiryRun, InquiryRunId, InquiryRunStatus } from "@atlas/domain";
+import { makeInquiryRunId } from "@atlas/domain";
 import type { InquiryRunStorePort } from "../outbound/inquiry-run-store.ts";
 
 const INQUIRY_WINDOW = "1w";
@@ -24,8 +24,8 @@ export interface RequestInquiryRunInput {
 }
 
 export interface RequestInquiryRunOutput {
-  runId: ResearchRunId;
-  status: ResearchRunStatus;
+  runId: InquiryRunId;
+  status: InquiryRunStatus;
   deduped: boolean;
 }
 
@@ -42,7 +42,7 @@ function toDay(now: Date): string {
 }
 
 /** a permanent failure is not an answer, so asking again is a new run rather than a replay */
-function isReusable(run: ResearchRun): boolean {
+function isReusable(run: InquiryRun): boolean {
   return run.status !== "failed_permanent";
 }
 
@@ -51,9 +51,9 @@ function queuedRun(input: {
   questionKey: string;
   day: string;
   now: Date;
-}): ResearchRun {
+}): InquiryRun {
   return {
-    id: makeResearchRunId(crypto.randomUUID()),
+    id: makeInquiryRunId(crypto.randomUUID()),
     question: input.question,
     questionKey: input.questionKey,
     day: input.day,

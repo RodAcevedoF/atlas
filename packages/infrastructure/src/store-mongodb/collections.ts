@@ -3,11 +3,11 @@ import type {
   AnalysisRunStatus,
   CountryAwareness,
   GeoRegion,
+  InquiryExemplar,
+  InquiryRunStatus,
   InsightKind,
   MarketCategory,
   MarketStatus,
-  ResearchExemplar,
-  ResearchRunStatus,
   SignalSource,
   Topic,
   TradeSide,
@@ -144,9 +144,9 @@ export interface ResearchRunDoc {
   executedQuery: string | null;
   window: string;
   distribution: CountryAwareness[];
-  exemplars: ResearchExemplar[];
+  exemplars: InquiryExemplar[];
   synthesis: string | null;
-  status: ResearchRunStatus;
+  status: InquiryRunStatus;
   error: string | null;
   attempts: number;
   createdAt: Date;

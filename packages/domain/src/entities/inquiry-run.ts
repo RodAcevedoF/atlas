@@ -1,10 +1,10 @@
-export type ResearchRunId = string & { readonly _brand: "ResearchRunId" };
+export type InquiryRunId = string & { readonly _brand: "InquiryRunId" };
 
-export function makeResearchRunId(v: string): ResearchRunId {
-  return v as ResearchRunId;
+export function makeInquiryRunId(v: string): InquiryRunId {
+  return v as InquiryRunId;
 }
 
-export const RESEARCH_RUN_STATUSES = [
+export const INQUIRY_RUN_STATUSES = [
   "queued",
   "running",
   "succeeded",
@@ -13,7 +13,7 @@ export const RESEARCH_RUN_STATUSES = [
   "failed_retryable",
   "failed_permanent",
 ] as const;
-export type ResearchRunStatus = (typeof RESEARCH_RUN_STATUSES)[number];
+export type InquiryRunStatus = (typeof INQUIRY_RUN_STATUSES)[number];
 
 export const AWARENESS_CONFIDENCES = ["measured", "thin", "artifact"] as const;
 export type AwarenessConfidence = (typeof AWARENESS_CONFIDENCES)[number];
@@ -28,7 +28,7 @@ export interface CountryAwareness {
   confidence: AwarenessConfidence;
 }
 
-export interface ResearchExemplar {
+export interface InquiryExemplar {
   country: string | null;
   title: string;
   url: string;
@@ -36,17 +36,17 @@ export interface ResearchExemplar {
   seenAt: Date;
 }
 
-export interface ResearchRun {
-  id: ResearchRunId;
+export interface InquiryRun {
+  id: InquiryRunId;
   question: string;
   questionKey: string;
   day: string;
   executedQuery: string | null;
   window: string;
   distribution: CountryAwareness[];
-  exemplars: ResearchExemplar[];
+  exemplars: InquiryExemplar[];
   synthesis: string | null;
-  status: ResearchRunStatus;
+  status: InquiryRunStatus;
   error: string | null;
   attempts: number;
   createdAt: Date;
@@ -54,39 +54,39 @@ export interface ResearchRun {
   completedAt: Date | null;
 }
 
-export interface PublicResearchRun {
-  id: ResearchRunId;
+export interface PublicInquiryRun {
+  id: InquiryRunId;
   question: string;
   day: string;
   executedQuery: string | null;
   window: string;
   distribution: CountryAwareness[];
-  exemplars: ResearchExemplar[];
+  exemplars: InquiryExemplar[];
   synthesis: string | null;
-  status: ResearchRunStatus;
+  status: InquiryRunStatus;
   createdAt: Date;
   startedAt: Date | null;
   completedAt: Date | null;
 }
 
-export interface ResearchRunSummary {
-  id: ResearchRunId;
+export interface InquiryRunSummary {
+  id: InquiryRunId;
   question: string;
   day: string;
   window: string;
   measuredCountries: string[];
-  status: ResearchRunStatus;
+  status: InquiryRunStatus;
   createdAt: Date;
   startedAt: Date | null;
   completedAt: Date | null;
 }
 
-export type ResearchRunListRow = Pick<
-  ResearchRun,
+export type InquiryRunListRow = Pick<
+  InquiryRun,
   "id" | "question" | "day" | "window" | "status" | "createdAt" | "startedAt" | "completedAt"
 > & { distribution: Pick<CountryAwareness, "country" | "confidence">[] };
 
-export function toResearchRunSummary(run: ResearchRunListRow): ResearchRunSummary {
+export function toInquiryRunSummary(run: InquiryRunListRow): InquiryRunSummary {
   return {
     id: run.id,
     question: run.question,
@@ -102,7 +102,7 @@ export function toResearchRunSummary(run: ResearchRunListRow): ResearchRunSummar
   };
 }
 
-export function toPublicResearchRun(run: ResearchRun): PublicResearchRun {
+export function toPublicInquiryRun(run: InquiryRun): PublicInquiryRun {
   return {
     id: run.id,
     question: run.question,
