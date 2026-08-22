@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { ResearchRun } from "@atlas/domain";
+import type { CountryAwareness, ResearchRun } from "@atlas/domain";
 import { makeResearchRunId } from "@atlas/domain";
 import { inMemoryResearchRunStore } from "../../testing/research-run-store.fake.ts";
 import { ListResearchRunsUseCase } from "./list-research-runs.ts";
@@ -26,6 +26,10 @@ function run(index: number): ResearchRun {
   };
 }
 
+function country(name: string, confidence: CountryAwareness["confidence"]): CountryAwareness {
+  return { country: name, awareness: 4.5, peak: 9, coveredBuckets: 3, totalBuckets: 4, confidence };
+}
+
 function useCaseOverSeeded(): ListResearchRunsUseCase {
   const { store } = inMemoryResearchRunStore(
     Array.from({ length: SEEDED }, (_unused, index) => run(index)),
@@ -50,6 +54,33 @@ describe("ListResearchRunsUseCase", () => {
       expect(runs).toHaveLength(expected);
     });
   }
+
+  test("a listed run carries its measured country names, never the tables behind them", async () => {
+    const measured = run(0);
+    measured.executedQuery = "france OR spain";
+    measured.synthesis = "a long synthesis the list has no use for";
+    measured.distribution = [
+      country("France", "measured"),
+      country("Spain", "thin"),
+      country("Chad", "artifact"),
+    ];
+    const { store } = inMemoryResearchRunStore([measured]);
+    const useCase = new ListResearchRunsUseCase(store);
+
+    const [listed] = await useCase.execute();
+
+    expect(listed).toEqual({
+      id: makeResearchRunId("run-0"),
+      question: "question 0",
+      day: "2026-08-17",
+      window: "1w",
+      measuredCountries: ["France", "Spain"],
+      status: "succeeded",
+      createdAt: measured.createdAt,
+      startedAt: null,
+      completedAt: null,
+    });
+  });
 
   test("the newest run is served first", async () => {
     const useCase = useCaseOverSeeded();

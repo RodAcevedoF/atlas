@@ -69,6 +69,39 @@ export interface PublicResearchRun {
   completedAt: Date | null;
 }
 
+export interface ResearchRunSummary {
+  id: ResearchRunId;
+  question: string;
+  day: string;
+  window: string;
+  measuredCountries: string[];
+  status: ResearchRunStatus;
+  createdAt: Date;
+  startedAt: Date | null;
+  completedAt: Date | null;
+}
+
+export type ResearchRunListRow = Pick<
+  ResearchRun,
+  "id" | "question" | "day" | "window" | "status" | "createdAt" | "startedAt" | "completedAt"
+> & { distribution: Pick<CountryAwareness, "country" | "confidence">[] };
+
+export function toResearchRunSummary(run: ResearchRunListRow): ResearchRunSummary {
+  return {
+    id: run.id,
+    question: run.question,
+    day: run.day,
+    window: run.window,
+    measuredCountries: run.distribution
+      .filter((country) => country.confidence !== "artifact")
+      .map((country) => country.country),
+    status: run.status,
+    createdAt: run.createdAt,
+    startedAt: run.startedAt,
+    completedAt: run.completedAt,
+  };
+}
+
 export function toPublicResearchRun(run: ResearchRun): PublicResearchRun {
   return {
     id: run.id,

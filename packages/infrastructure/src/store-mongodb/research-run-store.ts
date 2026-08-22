@@ -5,12 +5,43 @@ import type {
   ResearchRunStorePort,
 } from "@atlas/application";
 import { RESEARCH_MAX_ATTEMPTS } from "@atlas/application";
-import type { ResearchRun, ResearchRunId } from "@atlas/domain";
+import type { ResearchRun, ResearchRunId, ResearchRunListRow } from "@atlas/domain";
 import { makeResearchRunId } from "@atlas/domain";
 import type { Db } from "mongodb";
 import type { ResearchRunDoc } from "./collections.ts";
 
 const COLLECTION = "research_runs";
+
+const LIST_PROJECTION = {
+  question: 1,
+  day: 1,
+  window: 1,
+  "distribution.country": 1,
+  "distribution.confidence": 1,
+  status: 1,
+  createdAt: 1,
+  startedAt: 1,
+  completedAt: 1,
+} as const;
+
+type ResearchRunListDoc = Pick<
+  ResearchRunDoc,
+  "_id" | "question" | "day" | "window" | "status" | "createdAt" | "startedAt" | "completedAt"
+> & { distribution: ResearchRunListRow["distribution"] };
+
+function docToListRow(doc: ResearchRunListDoc): ResearchRunListRow {
+  return {
+    id: makeResearchRunId(doc._id),
+    question: doc.question,
+    day: doc.day,
+    window: doc.window,
+    distribution: doc.distribution,
+    status: doc.status,
+    createdAt: doc.createdAt,
+    startedAt: doc.startedAt,
+    completedAt: doc.completedAt,
+  };
+}
 
 function docToResearchRun(doc: ResearchRunDoc): ResearchRun {
   return {
@@ -92,7 +123,7 @@ export class MongoResearchRunStore implements ResearchRunStorePort {
         $set: { status: "running", startedAt: input.now, completedAt: null, error: null },
         $inc: { attempts: 1 },
       },
-      { sort: { createdAt: 1 }, returnDocument: "after" },
+      { sort: { createdAt: -1 }, returnDocument: "after" },
     );
     return doc ? docToResearchRun(doc) : null;
   }
@@ -114,13 +145,13 @@ export class MongoResearchRunStore implements ResearchRunStorePort {
     );
   }
 
-  async listResearchRuns(page: ResearchRunPage): Promise<ResearchRun[]> {
+  async listResearchRuns(page: ResearchRunPage): Promise<ResearchRunListRow[]> {
     const docs = await this.db
       .collection<ResearchRunDoc>(COLLECTION)
-      .find({})
+      .find<ResearchRunListDoc>({}, { projection: LIST_PROJECTION })
       .sort({ createdAt: -1 })
       .limit(page.limit)
       .toArray();
-    return docs.map(docToResearchRun);
+    return docs.map(docToListRow);
   }
 }

@@ -46,8 +46,14 @@ export type {
   ResearchExemplar,
   ResearchRun,
   PublicResearchRun,
+  ResearchRunListRow,
+  ResearchRunSummary,
 } from "./entities/research-run.ts";
-export { makeResearchRunId, toPublicResearchRun } from "./entities/research-run.ts";
+export {
+  makeResearchRunId,
+  toPublicResearchRun,
+  toResearchRunSummary,
+} from "./entities/research-run.ts";
 export { RESEARCH_RUN_STATUSES, AWARENESS_CONFIDENCES } from "./entities/research-run.ts";
 
 export type {

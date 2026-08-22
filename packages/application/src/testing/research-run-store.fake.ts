@@ -1,4 +1,4 @@
-import type { ResearchRun, ResearchRunId } from "@atlas/domain";
+import type { ResearchRun, ResearchRunId, ResearchRunListRow } from "@atlas/domain";
 import type {
   ClaimResearchRunInput,
   ResearchRunStorePort,
@@ -18,6 +18,23 @@ function isClaimable(run: ResearchRun, input: ClaimResearchRunInput): boolean {
   if (run.status !== "failed_retryable") return false;
   if (run.attempts >= RESEARCH_MAX_ATTEMPTS) return false;
   return run.completedAt !== null && run.completedAt < input.completedBefore;
+}
+
+function toListRow(run: ResearchRun): ResearchRunListRow {
+  return {
+    id: run.id,
+    question: run.question,
+    day: run.day,
+    window: run.window,
+    distribution: run.distribution.map((country) => ({
+      country: country.country,
+      confidence: country.confidence,
+    })),
+    status: run.status,
+    createdAt: run.createdAt,
+    startedAt: run.startedAt,
+    completedAt: run.completedAt,
+  };
 }
 
 function newestFirst(left: ResearchRun, right: ResearchRun): number {
@@ -46,9 +63,7 @@ export function inMemoryResearchRunStore(seed: ResearchRun[] = []): InMemoryRese
       return Promise.resolve([...held.values()].filter((run) => run.day === day).length);
     },
     claimNextResearchRun(input) {
-      const [next] = [...held.values()]
-        .filter((run) => isClaimable(run, input))
-        .sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime());
+      const [next] = [...held.values()].filter((run) => isClaimable(run, input)).sort(newestFirst);
       if (!next) return Promise.resolve(null);
 
       const claimed: ResearchRun = {
@@ -69,7 +84,9 @@ export function inMemoryResearchRunStore(seed: ResearchRun[] = []): InMemoryRese
       return Promise.resolve();
     },
     listResearchRuns(page) {
-      return Promise.resolve([...held.values()].sort(newestFirst).slice(0, page.limit));
+      return Promise.resolve(
+        [...held.values()].sort(newestFirst).slice(0, page.limit).map(toListRow),
+      );
     },
   };
 

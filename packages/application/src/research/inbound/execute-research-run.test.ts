@@ -7,7 +7,8 @@ import { ExecuteResearchRunUseCase } from "./execute-research-run.ts";
 
 const RETRY_AFTER_MS = 11 * 60 * 1000;
 const RUN_TIMEOUT_MS = 60 * 1000;
-const CREATED_AT = new Date("2026-08-16T09:00:00.000Z");
+const CREATED_AT = new Date();
+const LONG_AGO = new Date(CREATED_AT.getTime() - 48 * 60 * 60 * 1000);
 
 function run(overrides: Partial<ResearchRun> = {}): ResearchRun {
   return {
@@ -291,6 +292,66 @@ describe("ExecuteResearchRunUseCase", () => {
     expect(stored?.status).toBe("failed_permanent");
     expect(stored?.error).toBe("abandoned after 2 interrupted attempts");
     expect(stored?.completedAt).not.toBeNull();
+  });
+
+  test("a run stranded across a restart is abandoned rather than measured cold", async () => {
+    const stale = run({
+      status: "failed_retryable",
+      attempts: 1,
+      createdAt: LONG_AGO,
+      completedAt: new Date(LONG_AGO.getTime() + RETRY_AFTER_MS),
+    });
+    const { store, runs } = inMemoryResearchRunStore([stale]);
+    const useCase = new ExecuteResearchRunUseCase(
+      store,
+      failing(new Error("the graph must not be called for a run this old")),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    await useCase.execute();
+
+    const [stored] = runs();
+    expect(stored?.status).toBe("failed_permanent");
+    expect(stored?.error).toBe("abandoned: outlived its retry budget");
+  });
+
+  test("a question queued while the worker was down is measured, not abandoned", async () => {
+    const waiting = run({ createdAt: LONG_AGO });
+    const { store, runs } = inMemoryResearchRunStore([waiting]);
+    const useCase = new ExecuteResearchRunUseCase(
+      store,
+      answering(SUCCESS_BODY),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    await useCase.execute();
+
+    const [stored] = runs();
+    expect(stored?.status).toBe("succeeded");
+  });
+
+  test("the freshest question is claimed first, so it never waits behind a stranded run", async () => {
+    const stranded = run({
+      id: makeResearchRunId("run-stranded"),
+      status: "failed_retryable",
+      attempts: 1,
+      createdAt: LONG_AGO,
+      completedAt: new Date(LONG_AGO.getTime() + RETRY_AFTER_MS),
+    });
+    const fresh = run({ id: makeResearchRunId("run-fresh") });
+    const { store } = inMemoryResearchRunStore([stranded, fresh]);
+    const useCase = new ExecuteResearchRunUseCase(
+      store,
+      answering(SUCCESS_BODY),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    const result = await useCase.execute();
+
+    expect(result).toEqual({ runId: fresh.id, status: "succeeded" });
   });
 
   test("a graph that never answers gives up and stays retryable, freeing the worker", async () => {

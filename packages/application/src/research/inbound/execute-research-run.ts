@@ -141,12 +141,12 @@ export class ExecuteResearchRunUseCase implements ExecuteResearchRun {
     });
     if (!run) return { runId: null, status: null };
 
-    const outcome = await this.outcomeFor(run);
+    const outcome = await this.outcomeFor(run, now);
     await this.store.completeResearchRun({ ...outcome, id: run.id, completedAt: new Date() });
     return { runId: run.id, status: outcome.status };
   }
 
-  private async outcomeFor(run: ResearchRun): Promise<RunOutcome> {
+  private async outcomeFor(run: ResearchRun, now: Date): Promise<RunOutcome> {
     if (run.attempts > RESEARCH_MAX_ATTEMPTS) {
       return failure(
         "failed_permanent",
@@ -154,7 +154,16 @@ export class ExecuteResearchRunUseCase implements ExecuteResearchRun {
         run.attempts,
       );
     }
+    if (run.attempts > 1 && this.outlivedRetryBudget(run, now)) {
+      return failure("failed_permanent", "abandoned: outlived its retry budget", run.attempts);
+    }
     return this.measure(run);
+  }
+
+  /** a live run cannot outlast its own retries, so an older re-claim is a restart reclaiming a corpse */
+  private outlivedRetryBudget(run: ResearchRun, now: Date): boolean {
+    const budgetMs = RESEARCH_MAX_ATTEMPTS * (this.runTimeoutMs + this.retryAfterMs);
+    return now.getTime() - run.createdAt.getTime() > budgetMs;
   }
 
   private async measure(run: ResearchRun): Promise<RunOutcome> {
