@@ -5,7 +5,7 @@ function percent(share: number): string {
   return `${(share * 100).toFixed(1)}%`;
 }
 
-export function buildMigrations(store: SignalStorePort): Migration[] {
+export function buildMigrations(store: SignalStorePort, mongo: Migration[]): Migration[] {
   return [
     {
       id: "2026-08-16-reclassify-news-signals",
@@ -19,5 +19,6 @@ export function buildMigrations(store: SignalStorePort): Migration[] {
         ].join("; ");
       },
     },
+    ...mongo,
   ];
 }

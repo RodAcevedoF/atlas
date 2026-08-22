@@ -136,7 +136,7 @@ export interface AnalysisRunDoc {
   error: string | null;
 }
 
-export interface ResearchRunDoc {
+export interface InquiryRunDoc {
   _id: string;
   question: string;
   questionKey: string;

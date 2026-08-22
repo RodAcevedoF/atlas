@@ -8,9 +8,9 @@ import { INQUIRY_MAX_ATTEMPTS } from "@atlas/application";
 import type { InquiryRun, InquiryRunId, InquiryRunListRow } from "@atlas/domain";
 import { makeInquiryRunId } from "@atlas/domain";
 import type { Db } from "mongodb";
-import type { ResearchRunDoc } from "./collections.ts";
+import type { InquiryRunDoc } from "./collections.ts";
 
-const COLLECTION = "research_runs";
+const COLLECTION = "inquiry_runs";
 
 const LIST_PROJECTION = {
   question: 1,
@@ -24,12 +24,12 @@ const LIST_PROJECTION = {
   completedAt: 1,
 } as const;
 
-type ResearchRunListDoc = Pick<
-  ResearchRunDoc,
+type InquiryRunListDoc = Pick<
+  InquiryRunDoc,
   "_id" | "question" | "day" | "window" | "status" | "createdAt" | "startedAt" | "completedAt"
 > & { distribution: InquiryRunListRow["distribution"] };
 
-function docToListRow(doc: ResearchRunListDoc): InquiryRunListRow {
+function docToListRow(doc: InquiryRunListDoc): InquiryRunListRow {
   return {
     id: makeInquiryRunId(doc._id),
     question: doc.question,
@@ -43,7 +43,7 @@ function docToListRow(doc: ResearchRunListDoc): InquiryRunListRow {
   };
 }
 
-function docToResearchRun(doc: ResearchRunDoc): InquiryRun {
+function docToInquiryRun(doc: InquiryRunDoc): InquiryRun {
   return {
     id: makeInquiryRunId(doc._id),
     question: doc.question,
@@ -63,11 +63,11 @@ function docToResearchRun(doc: ResearchRunDoc): InquiryRun {
   };
 }
 
-export class MongoResearchRunStore implements InquiryRunStorePort {
+export class MongoInquiryRunStore implements InquiryRunStorePort {
   constructor(private readonly db: Db) {}
 
   async saveInquiryRun(run: InquiryRun): Promise<void> {
-    const doc: ResearchRunDoc = {
+    const doc: InquiryRunDoc = {
       _id: run.id,
       question: run.question,
       questionKey: run.questionKey,
@@ -84,27 +84,27 @@ export class MongoResearchRunStore implements InquiryRunStorePort {
       startedAt: run.startedAt,
       completedAt: run.completedAt,
     };
-    await this.db.collection<ResearchRunDoc>(COLLECTION).insertOne(doc);
+    await this.db.collection<InquiryRunDoc>(COLLECTION).insertOne(doc);
   }
 
   async findInquiryRunById(id: InquiryRunId): Promise<InquiryRun | null> {
-    const doc = await this.db.collection<ResearchRunDoc>(COLLECTION).findOne({ _id: id });
-    return doc ? docToResearchRun(doc) : null;
+    const doc = await this.db.collection<InquiryRunDoc>(COLLECTION).findOne({ _id: id });
+    return doc ? docToInquiryRun(doc) : null;
   }
 
   async findInquiryRunByQuestionDay(questionKey: string, day: string): Promise<InquiryRun | null> {
     const doc = await this.db
-      .collection<ResearchRunDoc>(COLLECTION)
+      .collection<InquiryRunDoc>(COLLECTION)
       .findOne({ questionKey, day }, { sort: { createdAt: -1 } });
-    return doc ? docToResearchRun(doc) : null;
+    return doc ? docToInquiryRun(doc) : null;
   }
 
   async countInquiryRunsForDay(day: string): Promise<number> {
-    return this.db.collection<ResearchRunDoc>(COLLECTION).countDocuments({ day });
+    return this.db.collection<InquiryRunDoc>(COLLECTION).countDocuments({ day });
   }
 
   async claimNextInquiryRun(input: ClaimInquiryRunInput): Promise<InquiryRun | null> {
-    const doc = await this.db.collection<ResearchRunDoc>(COLLECTION).findOneAndUpdate(
+    const doc = await this.db.collection<InquiryRunDoc>(COLLECTION).findOneAndUpdate(
       {
         $or: [
           { status: "queued" },
@@ -122,11 +122,11 @@ export class MongoResearchRunStore implements InquiryRunStorePort {
       },
       { sort: { createdAt: -1 }, returnDocument: "after" },
     );
-    return doc ? docToResearchRun(doc) : null;
+    return doc ? docToInquiryRun(doc) : null;
   }
 
   async completeInquiryRun(input: CompleteInquiryRunInput): Promise<void> {
-    await this.db.collection<ResearchRunDoc>(COLLECTION).updateOne(
+    await this.db.collection<InquiryRunDoc>(COLLECTION).updateOne(
       { _id: input.id },
       {
         $set: {
@@ -144,8 +144,8 @@ export class MongoResearchRunStore implements InquiryRunStorePort {
 
   async listInquiryRuns(page: InquiryRunPage): Promise<InquiryRunListRow[]> {
     const docs = await this.db
-      .collection<ResearchRunDoc>(COLLECTION)
-      .find<ResearchRunListDoc>({}, { projection: LIST_PROJECTION })
+      .collection<InquiryRunDoc>(COLLECTION)
+      .find<InquiryRunListDoc>({}, { projection: LIST_PROJECTION })
       .sort({ createdAt: -1 })
       .limit(page.limit)
       .toArray();

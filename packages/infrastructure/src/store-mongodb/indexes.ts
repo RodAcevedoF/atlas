@@ -29,7 +29,7 @@ export async function ensureIndexes(db: Db): Promise<void> {
       ]),
     // not unique
     db
-      .collection("research_runs")
+      .collection("inquiry_runs")
       .createIndexes([
         { key: { createdAt: -1 } },
         { key: { status: 1, createdAt: 1 } },

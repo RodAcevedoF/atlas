@@ -3,6 +3,7 @@ import {
   MongoMarketStore,
   MongoMigrationLedger,
   createMongoClient,
+  renameResearchRunsToInquiryRuns,
 } from "@atlas/infra/store-mongodb";
 import { buildMigrations } from "./migrations.ts";
 
@@ -19,7 +20,10 @@ async function migrate(): Promise<void> {
     const store = new MongoMarketStore(db);
     const ledger = new MongoMigrationLedger(db);
 
-    const result = await new RunMigrationsUseCase(ledger, buildMigrations(store)).execute({
+    const result = await new RunMigrationsUseCase(
+      ledger,
+      buildMigrations(store, [renameResearchRunsToInquiryRuns(db)]),
+    ).execute({
       dryRun,
     });
 

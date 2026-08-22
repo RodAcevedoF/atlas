@@ -7,8 +7,8 @@ import { HttpOrchestration } from "@atlas/infra/orchestration-http";
 import { BunPasswordHasher } from "@atlas/infra/password-bun";
 import { RedisSessionStore, createRedisClient } from "@atlas/infra/session-redis";
 import {
+  MongoInquiryRunStore,
   MongoMarketStore,
-  MongoResearchRunStore,
   createMongoClient,
   ensureIndexes,
 } from "@atlas/infra/store-mongodb";
@@ -100,7 +100,7 @@ export async function bootstrap(): Promise<AppDeps> {
   const news = makeNewsDependencies({ signalSource, store });
   const world = makeWorldDependencies({ store, orchestration });
   const inquiry = makeInquiryDependencies({
-    store: new MongoResearchRunStore(db),
+    store: new MongoInquiryRunStore(db),
     orchestration,
     retryAfterMs: readPositiveNumber("INQUIRY_RETRY_AFTER_MS", DEFAULT_INQUIRY_RETRY_AFTER_MS),
     runTimeoutMs: readPositiveNumber("INQUIRY_RUN_TIMEOUT_MS", DEFAULT_INQUIRY_RUN_TIMEOUT_MS),
