@@ -8,7 +8,6 @@ import { oauthPublicRoutes, readOAuthConfigs, registerOAuthRoutes } from "./modu
 import { registerInquiryWorker } from "./modules/inquiry/worker.ts";
 import { registerAuthRoutes } from "./routes/auth.ts";
 import { registerInquiryRoutes } from "./routes/inquiry.ts";
-import { registerMarketsRoutes } from "./routes/markets.ts";
 import { registerNewsRoutes } from "./routes/news.ts";
 import { registerProfileRoutes } from "./routes/profile.ts";
 import { registerWorldRoutes } from "./routes/world.ts";
@@ -29,7 +28,6 @@ registerAuthGate(app, deps.auth.authenticate, oauthPublicRoutes(oauthConfigs));
 await registerAuthRoutes(app, deps.auth);
 await registerOAuthRoutes(app, deps.auth, oauthConfigs);
 await registerProfileRoutes(app, deps.profile);
-await registerMarketsRoutes(app, deps.markets);
 await registerNewsRoutes(app, deps.news);
 await registerWorldRoutes(app, deps.world);
 await registerInquiryRoutes(app, deps.inquiry);

@@ -1,7 +1,4 @@
 import { PasswordIdentityProvider } from "@atlas/infra/identity-password";
-import { CompositeMarketDataAdapter } from "@atlas/infra/market-composite";
-import { KalshiAdapter } from "@atlas/infra/market-kalshi";
-import { PolymarketAdapter } from "@atlas/infra/market-polymarket";
 import { ExaNewsAdapter } from "@atlas/infra/news-exa";
 import { HttpOrchestration } from "@atlas/infra/orchestration-http";
 import { BunPasswordHasher } from "@atlas/infra/password-bun";
@@ -18,7 +15,6 @@ import { type AuthDeps, makeAuthDependencies } from "../modules/auth/dependencie
 import { makeEmailPort } from "../modules/auth/email.ts";
 import { makeOAuthStrategies, readOAuthConfigs } from "../modules/auth/oauth.ts";
 import { type InquiryDeps, makeInquiryDependencies } from "../modules/inquiry/dependencies.ts";
-import { type MarketsDeps, makeMarketsDependencies } from "../modules/markets/dependencies.ts";
 import { type NewsDeps, makeNewsDependencies } from "../modules/news/dependencies.ts";
 import { type ProfileDeps, makeProfileDependencies } from "../modules/profile/dependencies.ts";
 import { type WorldDeps, makeWorldDependencies } from "../modules/world/dependencies.ts";
@@ -31,7 +27,6 @@ const DEFAULT_INQUIRY_DAILY_CAP = 25;
 export interface AppDeps {
   auth: AuthDeps;
   profile: ProfileDeps;
-  markets: MarketsDeps;
   news: NewsDeps;
   world: WorldDeps;
   inquiry: InquiryDeps;
@@ -67,7 +62,6 @@ export async function bootstrap(): Promise<AppDeps> {
 
   const redis = createRedisClient(process.env.REDIS_URL ?? "redis://127.0.0.1:6379");
 
-  const marketData = new CompositeMarketDataAdapter([new PolymarketAdapter(), new KalshiAdapter()]);
   const signalSource = new ExaNewsAdapter(exaApiKey);
   const store = new MongoMarketStore(db);
   const userStore = new MongoUserStore(db);
@@ -95,10 +89,9 @@ export async function bootstrap(): Promise<AppDeps> {
     verificationTokens,
     verificationConfig,
   });
-  const profile = makeProfileDependencies({ userStore, store });
-  const markets = makeMarketsDependencies({ marketData, store });
+  const profile = makeProfileDependencies({ userStore });
   const news = makeNewsDependencies({ signalSource, store });
-  const world = makeWorldDependencies({ store, orchestration });
+  const world = makeWorldDependencies({ store });
   const inquiry = makeInquiryDependencies({
     store: new MongoInquiryRunStore(db),
     orchestration,
@@ -111,5 +104,5 @@ export async function bootstrap(): Promise<AppDeps> {
     dailyCap: readPositiveInt("INQUIRY_DAILY_CAP", DEFAULT_INQUIRY_DAILY_CAP),
   });
 
-  return { auth, profile, markets, news, world, inquiry, redis };
+  return { auth, profile, news, world, inquiry, redis };
 }

@@ -14,14 +14,6 @@ const profileUpdateSchema = {
   },
 } as const;
 
-const reportIdSchema = {
-  params: {
-    type: "object",
-    required: ["id"],
-    properties: { id: { type: "string", minLength: 1, maxLength: 128 } },
-  },
-} as const;
-
 export async function registerProfileRoutes(
   app: FastifyInstance,
   deps: ProfileDeps,
@@ -30,26 +22,6 @@ export async function registerProfileRoutes(
     const user = requireUser(req);
     const body = req.body as Record<string, unknown> | undefined;
     const profile = await deps.updateProfile.execute(user.id, parseProfileUpdate(body));
-    return reply.send({ profile });
-  });
-
-  app.get("/profile/reports", async (req, reply) => {
-    const user = requireUser(req);
-    const reports = await deps.listSavedReports.execute(user.id);
-    return reply.send({ reports });
-  });
-
-  app.post("/profile/reports/:id", { schema: reportIdSchema }, async (req, reply) => {
-    const user = requireUser(req);
-    const { id } = req.params as { id: string };
-    const profile = await deps.saveReport.execute(user.id, id);
-    return reply.send({ profile });
-  });
-
-  app.delete("/profile/reports/:id", { schema: reportIdSchema }, async (req, reply) => {
-    const user = requireUser(req);
-    const { id } = req.params as { id: string };
-    const profile = await deps.unsaveReport.execute(user.id, id);
     return reply.send({ profile });
   });
 }
