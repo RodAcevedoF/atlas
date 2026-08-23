@@ -1,5 +1,8 @@
 import type { Migration } from "@atlas/application";
+import type { InquiryPlace } from "@atlas/domain";
 import type { Db } from "mongodb";
+import type { InquiryRunDoc } from "./collections.ts";
+import { regroupPlacesOntoCoordinates } from "./regroup-places.ts";
 
 const RESEARCH_RUNS = "research_runs";
 const INQUIRY_RUNS = "inquiry_runs";
@@ -75,6 +78,53 @@ export function emptyGdeltEraInquiryRuns(db: Db): Migration {
         $unset: { distribution: "", exemplars: "", executedQuery: "" },
       });
       return `emptied ${result.modifiedCount} GDELT-era runs`;
+    },
+  };
+}
+
+function regroupingChanged(stored: InquiryPlace[], regrouped: InquiryPlace[]): boolean {
+  if (stored.length !== regrouped.length) return true;
+  return regrouped.some(
+    (place, index) =>
+      place.place !== stored[index].place || place.country !== stored[index].country,
+  );
+}
+
+export function regroupInquiryPlacesOntoCoordinates(db: Db): Migration {
+  return {
+    id: "2026-08-23-regroup-inquiry-places-onto-coordinates",
+    async execute({ dryRun }) {
+      if (!(await hasCollection(db, INQUIRY_RUNS))) {
+        return `${INQUIRY_RUNS} absent — nothing to regroup`;
+      }
+
+      const runs = await db
+        .collection<InquiryRunDoc>(INQUIRY_RUNS)
+        .find({ "places.0": { $exists: true } })
+        .toArray();
+
+      const stacked = runs
+        .map((run) => ({
+          id: run._id,
+          stored: run.places,
+          places: regroupPlacesOntoCoordinates(run.places),
+        }))
+        .filter((run) => regroupingChanged(run.stored, run.places));
+      const merged = stacked.reduce(
+        (total, run) => total + run.stored.length - run.places.length,
+        0,
+      );
+
+      if (stacked.length === 0) return "every run already matches the current grouping";
+      if (dryRun) return `would regroup ${stacked.length} runs, merging ${merged} stacked places`;
+
+      await db.collection<InquiryRunDoc>(INQUIRY_RUNS).bulkWrite(
+        stacked.map((run) => ({
+          updateOne: { filter: { _id: run.id }, update: { $set: { places: run.places } } },
+        })),
+        { ordered: false },
+      );
+      return `regrouped ${stacked.length} runs, merging ${merged} stacked places`;
     },
   };
 }

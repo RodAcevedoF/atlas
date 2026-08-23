@@ -59,8 +59,6 @@ class TestPlaceClaims:
 
 
 class TestGroupByPlace:
-    # this is the aggregation D3 rests on: the run that motivated P2.3 returned four
-    # spellings of Khartoum, and they have to become one orb.
     def test_spellings_of_one_city_collapse_into_a_single_group(self) -> None:
         claims = [
             claim("a", "Khartoum"),
@@ -79,9 +77,75 @@ class TestGroupByPlace:
         assert groups[0].name == "Khartoum"
         assert len(groups[0].claims) == 3
 
+    def test_prose_names_on_one_coordinate_become_a_single_orb(self) -> None:
+        names = [
+            "Ross Lake area, near British Columbia and Washington border",
+            "Ross Lake",
+            "Ross Lake Campsite",
+        ]
+        claims = [claim(name, name) for name in names]
+        places = [
+            normalised(name, name, country="United States", latitude=48.7, longitude=-121.2)
+            for name in names
+        ]
+
+        groups = group_by_place(place_claims(claims, places))
+
+        assert len(groups) == 1
+        assert groups[0].name == "Ross Lake"
+        assert len(groups[0].claims) == 3
+
+    def test_a_minor_feature_cannot_label_an_orb_the_claims_are_not_about(self) -> None:
+        claims = [claim(str(index), "Voragine Crater") for index in range(5)]
+        claims.append(claim("collapse", "Monte Rittmann"))
+        places = [
+            normalised(
+                "Voragine Crater",
+                "Voragine Crater",
+                country="Italy",
+                latitude=37.75,
+                longitude=15.0,
+            ),
+            normalised(
+                "Monte Rittmann", "Monte Rittmann", country="Italy", latitude=37.75, longitude=15.0
+            ),
+        ]
+
+        groups = group_by_place(place_claims(claims, places))
+
+        assert [group.name for group in groups] == ["Voragine Crater"]
+
+    def test_a_merged_point_keeps_a_country_its_label_does_not_carry(self) -> None:
+        claims = [claim(str(index), "Voragine Crater") for index in range(3)]
+        claims.append(claim("etna", "Mount Etna"))
+        places = [
+            normalised(
+                "Voragine Crater", "Voragine Crater", country=None, latitude=37.75, longitude=15.0
+            ),
+            normalised("Mount Etna", "Mount Etna", country="Italy", latitude=37.75, longitude=15.0),
+        ]
+
+        groups = group_by_place(place_claims(claims, places))
+
+        assert [(group.name, group.country) for group in groups] == [("Voragine Crater", "Italy")]
+
+    def test_names_of_equal_length_pick_the_same_label_every_run(self) -> None:
+        claims = [claim("a", "upper"), claim("b", "lower")]
+        places = [
+            normalised("upper", "Central and Southern Arkansas", latitude=34.0, longitude=-92.5),
+            normalised("lower", "Central and southern Arkansas", latitude=34.0, longitude=-92.5),
+        ]
+
+        groups = group_by_place(place_claims(claims, places))
+
+        assert [group.name for group in groups] == ["Central and Southern Arkansas"]
+
     def test_places_are_ordered_by_claim_count_so_the_map_paints_the_loudest_first(self) -> None:
         claims = [claim("a", "Darfur"), claim("b", "Khartoum"), claim("c", "Khartoum")]
-        places = [normalised("Darfur", "Darfur"), normalised("Khartoum", "Khartoum")]
+        places = [
+            normalised("Darfur", "Darfur", latitude=13.0, longitude=24.0),
+            normalised("Khartoum", "Khartoum"),
+        ]
 
         groups = group_by_place(place_claims(claims, places))
 
@@ -98,7 +162,6 @@ class TestGroupByPlace:
 
         assert sorted(group.country or "" for group in groups) == ["Lebanon", "Libya"]
 
-    # a prose non-place ("Regional institutions (IGAD)") normalises without coordinates.
     def test_a_place_without_coordinates_never_becomes_an_orb(self) -> None:
         claims = [claim("a", "Khartoum"), claim("b", "Regional institutions (IGAD)")]
         places = [

@@ -6,6 +6,7 @@ import {
   dropGdeltEraInquiryRuns,
   dropSavedReportIds,
   emptyGdeltEraInquiryRuns,
+  regroupInquiryPlacesOntoCoordinates,
   renameResearchRunsToInquiryRuns,
 } from "@atlas/infra/store-mongodb";
 import { buildMigrations } from "./migrations.ts";
@@ -30,6 +31,7 @@ async function migrate(): Promise<void> {
         dropSavedReportIds(db),
         emptyGdeltEraInquiryRuns(db),
         dropGdeltEraInquiryRuns(db),
+        regroupInquiryPlacesOntoCoordinates(db),
       ]),
     ).execute({
       dryRun,

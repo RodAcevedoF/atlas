@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
@@ -45,29 +46,41 @@ def place_claims(
     return placed
 
 
+def canonical_place(placed: Sequence[PlacedClaim]) -> NormalisedPlace:
+    weight = Counter(item.place.name for item in placed)
+    return min(
+        (item.place for item in placed),
+        key=lambda place: (-weight[place.name], len(place.name), place.name),
+    )
+
+
+def canonical_country(placed: Sequence[PlacedClaim], canonical: NormalisedPlace) -> str | None:
+    if canonical.country:
+        return canonical.country
+    return next((item.place.country for item in placed if item.place.country), None)
+
+
 def group_by_place(placed: Iterable[PlacedClaim]) -> list[PlaceGroup]:
-    groups: dict[tuple[str, str | None], list[PlacedClaim]] = {}
-    coordinates: dict[tuple[str, str | None], tuple[float, float]] = {}
+    groups: dict[tuple[float, float], list[PlacedClaim]] = {}
 
     for item in placed:
-        place = item.place
-        latitude, longitude = place.latitude, place.longitude
+        latitude, longitude = item.place.latitude, item.place.longitude
         if latitude is None or longitude is None:
             continue
-        key = (place.name, place.country)
-        groups.setdefault(key, []).append(item)
-        coordinates.setdefault(key, (latitude, longitude))
+        groups.setdefault((latitude, longitude), []).append(item)
 
-    result = [
-        PlaceGroup(
-            name=name,
-            country=country,
-            latitude=coordinates[(name, country)][0],
-            longitude=coordinates[(name, country)][1],
-            claims=claims,
+    result = []
+    for (latitude, longitude), claims in groups.items():
+        canonical = canonical_place(claims)
+        result.append(
+            PlaceGroup(
+                name=canonical.name,
+                country=canonical_country(claims, canonical),
+                latitude=latitude,
+                longitude=longitude,
+                claims=claims,
+            )
         )
-        for (name, country), claims in groups.items()
-    ]
     result.sort(key=lambda group: (-len(group.claims), group.name))
     return result
 
