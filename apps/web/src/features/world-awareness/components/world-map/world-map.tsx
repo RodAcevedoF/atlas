@@ -11,7 +11,8 @@ import { AwarenessOrbLayers } from "./overlays/awareness-orb-layers.tsx";
 import { ZoomControl } from "./overlays/zoom-control.tsx";
 import { applyBasemapTheme } from "./utils/basemap-theme.ts";
 import type { ClaimFeatureCollection } from "./utils/claim-points.ts";
-import { type PlaceIdentity, readPlaceIdentity } from "./utils/place-selection.ts";
+import { expandCluster } from "./utils/cluster-zoom.ts";
+import { type PlaceIdentity, readClusterId, readPlaceIdentity } from "./utils/place-selection.ts";
 
 interface WorldMapProps {
   awareness: ClaimFeatureCollection | null;
@@ -29,7 +30,16 @@ export function WorldMap({ awareness, selectedPlace, onSelectPlace }: WorldMapPr
 
   const handleClick = useCallback(
     (event: MapLayerMouseEvent) => {
-      onSelectPlace(readPlaceIdentity(event.features?.[0]?.properties));
+      const properties = event.features?.[0]?.properties;
+      const clusterId = readClusterId(properties);
+      const map = mapRef.current;
+
+      if (clusterId !== null && map) {
+        expandCluster(map, clusterId, event.lngLat);
+        return;
+      }
+
+      onSelectPlace(readPlaceIdentity(properties));
     },
     [onSelectPlace],
   );

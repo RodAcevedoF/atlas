@@ -91,7 +91,7 @@ export function AwarenessLegend({ run, plotted }: AwarenessLegendProps) {
         <Eyebrow>Few</Eyebrow>
         <div
           className="h-1.5 flex-1 rounded-full"
-          style={{ background: "linear-gradient(90deg, var(--map-empty-fill), var(--primary))" }}
+          style={{ background: "var(--map-orb-gradient)" }}
         />
         <Eyebrow>Many</Eyebrow>
       </div>

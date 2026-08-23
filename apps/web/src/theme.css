@@ -75,6 +75,20 @@
   --map-empty-fill: #2b3543;
   --map-region-outline: rgba(255, 255, 255, 0.12);
   --map-vignette: rgba(6, 10, 28, 0.72);
+
+  --map-orb-quietest: #2d4a9e;
+  --map-orb-quiet: #2f7fd0;
+  --map-orb-mid: #22b3c4;
+  --map-orb-loud: #4fe3c1;
+  --map-orb-loudest: #c2ffe8;
+  --map-orb-gradient: linear-gradient(
+    90deg,
+    var(--map-orb-quietest),
+    var(--map-orb-quiet),
+    var(--map-orb-mid),
+    var(--map-orb-loud),
+    var(--map-orb-loudest)
+  );
 }
 
 @theme inline {

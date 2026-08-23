@@ -12,14 +12,6 @@ function resolveToken(token: string): string {
   return value;
 }
 
-export function primaryHex(): string {
-  return resolveToken("--primary");
-}
-
-export function emptyFillHex(): string {
-  return resolveToken("--map-empty-fill");
-}
-
 export function orbRimHex(): string {
   return resolveToken("--card-foreground");
 }
@@ -34,4 +26,14 @@ export function mapWaterHex(): string {
 
 export function mapLandHex(): string {
   return resolveToken("--map-land");
+}
+
+export function orbRampHexes(): string[] {
+  return [
+    resolveToken("--map-orb-quietest"),
+    resolveToken("--map-orb-quiet"),
+    resolveToken("--map-orb-mid"),
+    resolveToken("--map-orb-loud"),
+    resolveToken("--map-orb-loudest"),
+  ];
 }

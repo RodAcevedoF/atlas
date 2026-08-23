@@ -31,3 +31,10 @@ export function findSelectedPlace(
     ) ?? null
   );
 }
+
+export function readClusterId(
+  properties: Record<string, unknown> | null | undefined,
+): number | null {
+  const clusterId = properties?.cluster_id;
+  return typeof clusterId === "number" ? clusterId : null;
+}

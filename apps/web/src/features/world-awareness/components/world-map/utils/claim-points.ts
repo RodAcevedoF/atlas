@@ -4,21 +4,24 @@ export interface ClaimPointProperties {
   place: string;
   country: string | null;
   claimCount: number;
-  intensity: number;
+  isCountryLevel: boolean;
 }
 
 export type ClaimFeatureCollection = GeoJSON.FeatureCollection<GeoJSON.Point, ClaimPointProperties>;
 
 const EMPTY_POINTS: ClaimFeatureCollection = { type: "FeatureCollection", features: [] };
 
-function intensityOf(claimCount: number, peak: number): number {
-  return peak > 0 ? Math.sqrt(claimCount / peak) : 0;
+function isWholeCountry(place: InquiryPlaceRecord): boolean {
+  if (!place.country) return false;
+  return place.place.trim().toLowerCase() === place.country.trim().toLowerCase();
+}
+
+export function peakClaimCount(points: ClaimFeatureCollection): number {
+  return points.features.reduce((max, feature) => Math.max(max, feature.properties.claimCount), 0);
 }
 
 export function buildClaimPoints(places: InquiryPlaceRecord[]): ClaimFeatureCollection {
   if (places.length === 0) return EMPTY_POINTS;
-
-  const peak = places.reduce((max, place) => Math.max(max, place.claimCount), 0);
 
   return {
     type: "FeatureCollection",
@@ -29,7 +32,7 @@ export function buildClaimPoints(places: InquiryPlaceRecord[]): ClaimFeatureColl
         place: place.place,
         country: place.country,
         claimCount: place.claimCount,
-        intensity: intensityOf(place.claimCount, peak),
+        isCountryLevel: isWholeCountry(place),
       },
     })),
   };

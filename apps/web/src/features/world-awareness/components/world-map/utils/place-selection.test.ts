@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { buildInquiryPlace, buildInquiryRun } from "../../../../inquiry/testing/inquiry-builder.ts";
-import { findSelectedPlace, readPlaceIdentity } from "./place-selection.ts";
+import { findSelectedPlace, readClusterId, readPlaceIdentity } from "./place-selection.ts";
 
 describe("readPlaceIdentity", () => {
   test("a clicked orb yields the place it was painted from", () => {
@@ -17,6 +17,26 @@ describe("readPlaceIdentity", () => {
 
   test("clicking the map away from any orb selects nothing", () => {
     expect(readPlaceIdentity(undefined)).toBeNull();
+  });
+
+  test("a clustered orb names no place, so clicking it opens no claims panel", () => {
+    const identity = readPlaceIdentity({ cluster: true, cluster_id: 12, point_count: 8 });
+
+    expect(identity).toBeNull();
+  });
+});
+
+describe("readClusterId", () => {
+  test("a clicked cluster yields the id its expansion zoom is looked up by", () => {
+    expect(readClusterId({ cluster: true, cluster_id: 12, point_count: 8 })).toBe(12);
+  });
+
+  test("a single place is not a cluster and must not swallow the click", () => {
+    expect(readClusterId({ place: "Khartoum", country: "Sudan" })).toBeNull();
+  });
+
+  test("clicking the map away from any orb expands nothing", () => {
+    expect(readClusterId(undefined)).toBeNull();
   });
 });
 
