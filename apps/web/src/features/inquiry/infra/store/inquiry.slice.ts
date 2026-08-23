@@ -14,6 +14,7 @@ import {
 
 export interface InquiryAskState {
   isAsking: boolean;
+  isRefreshing: boolean;
   watchedStatus: InquiryRunStatus | null;
   isStillRunning: boolean;
   wasDeduped: boolean;
@@ -41,6 +42,7 @@ export interface InquiryState {
 
 const idleAsk: InquiryAskState = {
   isAsking: false,
+  isRefreshing: false,
   watchedStatus: null,
   isStillRunning: false,
   wasDeduped: false,
@@ -99,8 +101,8 @@ const inquirySlice = createSlice({
           message: action.error.message ?? "Failed to load that inquiry run",
         };
       })
-      .addCase(askInquiryQuestion.pending, (state) => {
-        state.ask = { ...idleAsk, isAsking: true };
+      .addCase(askInquiryQuestion.pending, (state, action) => {
+        state.ask = { ...idleAsk, isAsking: true, isRefreshing: action.meta.arg.refresh };
       })
       .addCase(inquiryRunProgressed, (state, action) => {
         state.ask.watchedStatus = action.payload;

@@ -2,8 +2,9 @@ import { AccountMenu } from "@/features/auth/components/account-menu.tsx";
 import { AppHeader } from "@/shared/app-shell";
 
 interface TopBarProps {
-  onSync: () => void;
-  isSyncing: boolean;
+  onRefresh: () => void;
+  isRefreshing: boolean;
+  canRefresh: boolean;
 }
 
 function Spinner() {
@@ -12,7 +13,7 @@ function Spinner() {
   );
 }
 
-export function TopBar({ onSync, isSyncing }: TopBarProps) {
+export function TopBar({ onRefresh, isRefreshing, canRefresh }: TopBarProps) {
   return (
     <AppHeader
       subtitle="World Awareness"
@@ -20,15 +21,15 @@ export function TopBar({ onSync, isSyncing }: TopBarProps) {
       actions={
         <button
           type="button"
-          onClick={onSync}
-          disabled={isSyncing}
+          onClick={onRefresh}
+          disabled={!canRefresh}
           className="flex h-8.5 items-center gap-1.75 rounded-[10px] bg-primary px-3.75 text-[12.5px] font-semibold text-primary-foreground transition-[filter] hover:brightness-[1.07] disabled:opacity-70"
           style={{
             boxShadow: "0 6px 18px -8px color-mix(in srgb, var(--primary) 70%, transparent)",
           }}
         >
-          {isSyncing ? <Spinner /> : null}
-          {isSyncing ? "Syncing…" : "Sync"}
+          {isRefreshing ? <Spinner /> : null}
+          {isRefreshing ? "Refreshing…" : "Refresh"}
         </button>
       }
     />

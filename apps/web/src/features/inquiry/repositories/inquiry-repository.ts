@@ -46,6 +46,11 @@ export interface InquiryRunSummaryRecord {
   completedAt: string | null;
 }
 
+export interface InquiryRunRequestInput {
+  question: string;
+  refresh: boolean;
+}
+
 export interface InquiryRunRequestRecord {
   runId: string;
   status: InquiryRunStatus;
@@ -55,5 +60,5 @@ export interface InquiryRunRequestRecord {
 export interface InquiryRepository {
   recentRuns(limit: number): Promise<InquiryRunSummaryRecord[]>;
   runById(runId: string): Promise<InquiryRunRecord>;
-  requestRun(question: string): Promise<InquiryRunRequestRecord>;
+  requestRun(request: InquiryRunRequestInput): Promise<InquiryRunRequestRecord>;
 }

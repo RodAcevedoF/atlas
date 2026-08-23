@@ -21,6 +21,7 @@ export class InquiryDailyCapReachedError extends Error {
 
 export interface RequestInquiryRunInput {
   question: string;
+  refresh: boolean;
 }
 
 export interface RequestInquiryRunOutput {
@@ -44,6 +45,11 @@ function toDay(now: Date): string {
 /** a permanent failure is not an answer, so asking again is a new run rather than a replay */
 function isReusable(run: InquiryRun): boolean {
   return run.status !== "failed_permanent";
+}
+
+/** work already under way has no newer answer to fetch, so a refresh waits for it */
+function isInFlight(run: InquiryRun): boolean {
+  return run.status === "queued" || run.status === "running";
 }
 
 function queuedRun(input: {
@@ -91,9 +97,9 @@ export class RequestInquiryRunUseCase implements RequestInquiryRun {
     const day = toDay(now);
     const questionKey = toQuestionKey(question);
 
-    const stored = await this.store.findInquiryRunByQuestionDay(questionKey, day);
-    if (stored && isReusable(stored)) {
-      return { runId: stored.id, status: stored.status, deduped: true };
+    const reusable = await this.reusableRun(input.refresh, questionKey, day);
+    if (reusable) {
+      return { runId: reusable.id, status: reusable.status, deduped: true };
     }
 
     const used = await this.store.countInquiryRunsForDay(day);
@@ -102,5 +108,16 @@ export class RequestInquiryRunUseCase implements RequestInquiryRun {
     const run = queuedRun({ question, questionKey, day, now });
     await this.store.saveInquiryRun(run);
     return { runId: run.id, status: run.status, deduped: false };
+  }
+
+  private async reusableRun(
+    refresh: boolean,
+    questionKey: string,
+    day: string,
+  ): Promise<InquiryRun | null> {
+    const stored = await this.store.findInquiryRunByQuestionDay(questionKey, day);
+    if (!stored) return null;
+    if (refresh) return isInFlight(stored) ? stored : null;
+    return isReusable(stored) ? stored : null;
   }
 }

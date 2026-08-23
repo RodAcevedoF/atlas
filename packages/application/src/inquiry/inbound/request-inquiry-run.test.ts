@@ -44,7 +44,7 @@ describe("RequestInquiryRunUseCase", () => {
     const { store, runs } = inMemoryInquiryRunStore();
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
-    const result = await useCase.execute({ question: QUESTION });
+    const result = await useCase.execute({ question: QUESTION, refresh: false });
 
     expect(result.status).toBe("queued");
     expect(result.deduped).toBe(false);
@@ -73,7 +73,7 @@ describe("RequestInquiryRunUseCase", () => {
       const { store, runs } = inMemoryInquiryRunStore([run({ status })]);
       const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
-      const result = await useCase.execute({ question: QUESTION });
+      const result = await useCase.execute({ question: QUESTION, refresh: false });
 
       expect(result).toEqual({ runId: makeInquiryRunId("run-1"), status, deduped: true });
       expect(runs()).toHaveLength(1);
@@ -84,7 +84,7 @@ describe("RequestInquiryRunUseCase", () => {
     const { store, runs } = inMemoryInquiryRunStore([run({ status: "failed_permanent" })]);
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
-    const result = await useCase.execute({ question: QUESTION });
+    const result = await useCase.execute({ question: QUESTION, refresh: false });
 
     expect(result.deduped).toBe(false);
     expect(result.status).toBe("queued");
@@ -101,7 +101,7 @@ describe("RequestInquiryRunUseCase", () => {
     const { store } = inMemoryInquiryRunStore([failed, retried]);
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
-    const result = await useCase.execute({ question: QUESTION });
+    const result = await useCase.execute({ question: QUESTION, refresh: false });
 
     expect(result.runId).toBe(makeInquiryRunId("run-new"));
     expect(result.deduped).toBe(true);
@@ -111,7 +111,10 @@ describe("RequestInquiryRunUseCase", () => {
     const { store, runs } = inMemoryInquiryRunStore([run()]);
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
-    const result = await useCase.execute({ question: "  Who is COVERING   the Sudan\nfamine  " });
+    const result = await useCase.execute({
+      question: "  Who is COVERING   the Sudan\nfamine  ",
+      refresh: false,
+    });
 
     expect(result.deduped).toBe(true);
     expect(runs()).toHaveLength(1);
@@ -122,7 +125,7 @@ describe("RequestInquiryRunUseCase", () => {
     const { store, runs } = inMemoryInquiryRunStore([stale]);
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
-    const result = await useCase.execute({ question: QUESTION });
+    const result = await useCase.execute({ question: QUESTION, refresh: false });
 
     expect(result.deduped).toBe(false);
     expect(runs()).toHaveLength(2);
@@ -135,7 +138,7 @@ describe("RequestInquiryRunUseCase", () => {
     const { store, runs } = inMemoryInquiryRunStore(seed);
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
-    const request = useCase.execute({ question: QUESTION });
+    const request = useCase.execute({ question: QUESTION, refresh: false });
 
     await expect(request).rejects.toBeInstanceOf(InquiryDailyCapReachedError);
     expect(runs()).toHaveLength(DAILY_CAP);
@@ -148,7 +151,7 @@ describe("RequestInquiryRunUseCase", () => {
     const { store } = inMemoryInquiryRunStore([...seed, run({ id: makeInquiryRunId("run-4") })]);
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
-    const result = await useCase.execute({ question: QUESTION });
+    const result = await useCase.execute({ question: QUESTION, refresh: false });
 
     expect(result).toEqual({
       runId: makeInquiryRunId("run-4"),
@@ -168,9 +171,56 @@ describe("RequestInquiryRunUseCase", () => {
     const { store } = inMemoryInquiryRunStore(seed);
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
-    const result = await useCase.execute({ question: QUESTION });
+    const result = await useCase.execute({ question: QUESTION, refresh: false });
 
     expect(result.status).toBe("queued");
+  });
+
+  test("a refresh re-asks today's answered question rather than replaying it", async () => {
+    const answered = run();
+    const { store, runs } = inMemoryInquiryRunStore([answered]);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+
+    const result = await useCase.execute({ question: QUESTION, refresh: true });
+
+    expect(result.deduped).toBe(false);
+    expect(result.status).toBe("queued");
+    expect(result.runId).not.toBe(answered.id);
+    expect(runs()).toHaveLength(2);
+    expect(runs().find((stored) => stored.id === answered.id)).toEqual(answered);
+  });
+
+  const inFlight: { name: string; status: InquiryRunStatus }[] = [
+    { name: "a refresh waits for the run the worker is holding", status: "running" },
+    { name: "a refresh does not queue a second run behind one already queued", status: "queued" },
+  ];
+
+  for (const { name, status } of inFlight) {
+    test(name, async () => {
+      const { store, runs } = inMemoryInquiryRunStore([run({ status })]);
+      const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+
+      const result = await useCase.execute({ question: QUESTION, refresh: true });
+
+      expect(result).toEqual({ runId: makeInquiryRunId("run-1"), status, deduped: true });
+      expect(runs()).toHaveLength(1);
+    });
+  }
+
+  test("a refresh past the cap is refused, because skipping the replay still spends a run", async () => {
+    const seed = [1, 2, 3].map((index) =>
+      run({ id: makeInquiryRunId(`run-${index}`), questionKey: `question ${index}` }),
+    );
+    const { store, runs } = inMemoryInquiryRunStore([
+      ...seed,
+      run({ id: makeInquiryRunId("run-4") }),
+    ]);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+
+    const request = useCase.execute({ question: QUESTION, refresh: true });
+
+    await expect(request).rejects.toBeInstanceOf(InquiryDailyCapReachedError);
+    expect(runs()).toHaveLength(4);
   });
 
   const rejected = [
@@ -186,7 +236,7 @@ describe("RequestInquiryRunUseCase", () => {
       const { store, runs } = inMemoryInquiryRunStore();
       const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
-      const request = useCase.execute({ question });
+      const request = useCase.execute({ question, refresh: false });
 
       await expect(request).rejects.toBeInstanceOf(InvalidInquiryQuestionError);
       expect(runs()).toHaveLength(0);

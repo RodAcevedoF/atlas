@@ -5,6 +5,7 @@ import { type InquiryAskState, selectInquiryAsk } from "../infra/store/inquiry.s
 
 export interface UseInquiryAskResult extends InquiryAskState {
   ask: (question: string) => void;
+  refresh: (question: string) => void;
 }
 
 export function useInquiryAsk(): UseInquiryAskResult {
@@ -13,10 +14,17 @@ export function useInquiryAsk(): UseInquiryAskResult {
 
   const ask = useCallback(
     (question: string) => {
-      void dispatch(askInquiryQuestion(question));
+      void dispatch(askInquiryQuestion({ question, refresh: false }));
     },
     [dispatch],
   );
 
-  return { ...state, ask };
+  const refresh = useCallback(
+    (question: string) => {
+      void dispatch(askInquiryQuestion({ question, refresh: true }));
+    },
+    [dispatch],
+  );
+
+  return { ...state, ask, refresh };
 }

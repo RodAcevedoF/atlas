@@ -1,5 +1,6 @@
 import type {
   InquiryRepository,
+  InquiryRunRequestInput,
   InquiryRunRequestRecord,
 } from "../repositories/inquiry-repository.ts";
 
@@ -9,10 +10,12 @@ export interface RequestInquiryRunDeps {
   inquiryRepository: InquiryRepository;
 }
 
-export type RequestInquiryRun = (question: string) => Promise<InquiryRunRequestRecord>;
+export type RequestInquiryRun = (
+  request: InquiryRunRequestInput,
+) => Promise<InquiryRunRequestRecord>;
 
 export function makeRequestInquiryRun({
   inquiryRepository,
 }: RequestInquiryRunDeps): RequestInquiryRun {
-  return (question) => inquiryRepository.requestRun(question);
+  return (request) => inquiryRepository.requestRun(request);
 }

@@ -8,7 +8,10 @@ export function parseInquiryRunBody(
   body: Record<string, unknown> | undefined,
 ): RequestInquiryRunInput {
   const source = body ?? {};
-  return { question: typeof source.question === "string" ? source.question : "" };
+  return {
+    question: typeof source.question === "string" ? source.question : "",
+    refresh: source.refresh === true,
+  };
 }
 
 export function parseInquiryRunId(value: unknown): InquiryRunId {

@@ -1,18 +1,17 @@
-import { useRecentInquiryRuns } from "@/features/inquiry";
 import { TopBar } from "./components/dashboard/top-bar.tsx";
 import { MapCockpit } from "./components/world-map/map-cockpit.tsx";
-import { useWorldDashboard } from "./hooks/use-world-dashboard.ts";
+import { useWorldAwareness } from "./hooks/use-world-awareness.ts";
 
 export function WorldAwarenessPage() {
-  const { isSyncing, error, handleSync } = useWorldDashboard();
-  const { runs: inquiryRuns, error: inquiryError } = useRecentInquiryRuns();
+  const { awareness, error, canRefresh, isRefreshing, refreshRun, clearRequestedRun } =
+    useWorldAwareness();
 
   return (
     <main className="flex h-screen flex-col overflow-hidden">
-      <TopBar onSync={() => void handleSync()} isSyncing={isSyncing} />
+      <TopBar onRefresh={refreshRun} isRefreshing={isRefreshing} canRefresh={canRefresh} />
 
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <MapCockpit inquiryRuns={inquiryRuns} error={error ?? inquiryError} />
+        <MapCockpit awareness={awareness} error={error} onAsk={clearRequestedRun} />
       </div>
     </main>
   );

@@ -3,6 +3,7 @@ import type { InquiryRunStatus } from "@atlas/domain";
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import type {
   InquiryRunRecord,
+  InquiryRunRequestInput,
   InquiryRunSummaryRecord,
 } from "../../repositories/inquiry-repository.ts";
 import { makeLoadInquiryRun } from "../../use-cases/load-inquiry-run.ts";
@@ -40,10 +41,10 @@ export const loadInquiryRun = createAsyncThunk<InquiryRunRecord, string, Command
 
 export const askInquiryQuestion = createAsyncThunk<
   AskInquiryQuestionOutcome,
-  string,
+  InquiryRunRequestInput,
   CommandConfig
->("inquiry/ask", async (question, { extra, dispatch }) => {
-  const requested = await makeRequestInquiryRun(extra)(question);
+>("inquiry/ask", async (request, { extra, dispatch }) => {
+  const requested = await makeRequestInquiryRun(extra)(request);
   const watchInquiryRun = makePollInquiryRun(extra, INQUIRY_POLL_SCHEDULE);
 
   try {

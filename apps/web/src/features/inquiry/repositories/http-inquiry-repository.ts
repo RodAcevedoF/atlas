@@ -2,6 +2,7 @@ import { fetchJson } from "@/shared/http.ts";
 import type {
   InquiryRepository,
   InquiryRunRecord,
+  InquiryRunRequestInput,
   InquiryRunRequestRecord,
   InquiryRunSummaryRecord,
 } from "./inquiry-repository.ts";
@@ -15,11 +16,11 @@ export class HttpInquiryRepository implements InquiryRepository {
     return fetchJson<InquiryRunRecord>(`/api/inquiry/runs/${encodeURIComponent(runId)}`);
   }
 
-  requestRun(question: string): Promise<InquiryRunRequestRecord> {
+  requestRun(request: InquiryRunRequestInput): Promise<InquiryRunRequestRecord> {
     return fetchJson<InquiryRunRequestRecord>("/api/inquiry/runs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify(request),
     });
   }
 }
