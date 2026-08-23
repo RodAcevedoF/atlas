@@ -8,10 +8,11 @@ import type {
   InquiryRunRecord,
 } from "../repositories/inquiry-repository.ts";
 import { isPaintableRun } from "./paintable-run.ts";
-import { RUN_STATUS_LABEL, runStatusClass } from "./run-status.ts";
+import { RUN_STATUS_LABEL, isFailedRun, runStatusClass } from "./run-status.ts";
 
 const NO_SYNTHESIS = "No synthesis for this run.";
 const NO_PLACES = "This run placed no claim on the map.";
+const NO_REASON = "No reason was recorded for this failure.";
 
 const LOW_CONFIDENCE = 0.5;
 
@@ -60,6 +61,22 @@ function PlaceBlock({ place }: { place: InquiryPlaceRecord }) {
   );
 }
 
+function FailureReason({ run }: { run: InquiryRunRecord }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <Eyebrow>Why it failed</Eyebrow>
+        <span className="font-mono text-[10.5px] text-muted-foreground tabular-nums">
+          {run.attempts} {run.attempts === 1 ? "attempt" : "attempts"}
+        </span>
+      </div>
+      <p className="text-[12.5px] leading-relaxed text-destructive">
+        {run.error || <span className="text-muted-foreground">{NO_REASON}</span>}
+      </p>
+    </div>
+  );
+}
+
 function Places({ places }: { places: InquiryPlaceRecord[] }) {
   if (places.length === 0) {
     return <p className="text-[12px] text-muted-foreground">{NO_PLACES}</p>;
@@ -95,6 +112,8 @@ export function RunDetail({ run }: { run: InquiryRunRecord }) {
           </Button>
         ) : null}
       </div>
+
+      {isFailedRun(run.status) ? <FailureReason run={run} /> : null}
 
       <div className="flex flex-col gap-1.5">
         <Eyebrow>Synthesis</Eyebrow>

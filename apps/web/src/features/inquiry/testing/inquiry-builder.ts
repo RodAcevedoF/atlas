@@ -39,6 +39,8 @@ export function buildInquiryRun(overrides: Partial<InquiryRunRecord> = {}): Inqu
     unplacedClaims: 0,
     synthesis: null,
     status: "succeeded",
+    error: null,
+    attempts: 1,
     createdAt: "2026-08-18T09:00:00.000Z",
     startedAt: "2026-08-18T09:00:01.000Z",
     completedAt: "2026-08-18T09:00:30.000Z",

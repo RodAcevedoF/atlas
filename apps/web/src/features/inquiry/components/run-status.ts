@@ -12,6 +12,10 @@ export const RUN_STATUS_LABEL: Record<InquiryRunStatus, string> = {
 
 const FAILED_STATUSES: InquiryRunStatus[] = ["failed_retryable", "failed_permanent"];
 
+export function isFailedRun(status: InquiryRunStatus): boolean {
+  return FAILED_STATUSES.includes(status);
+}
+
 export function runStatusClass(status: InquiryRunStatus): string {
-  return FAILED_STATUSES.includes(status) ? "text-destructive" : "text-muted-foreground";
+  return isFailedRun(status) ? "text-destructive" : "text-muted-foreground";
 }

@@ -67,6 +67,8 @@ export interface PublicInquiryRun {
   unplacedClaims: number;
   synthesis: string | null;
   status: InquiryRunStatus;
+  error: string | null;
+  attempts: number;
   createdAt: Date;
   startedAt: Date | null;
   completedAt: Date | null;
@@ -77,7 +79,6 @@ export interface InquiryRunSummary {
   question: string;
   day: string;
   window: string;
-  /** how many orbs this run would paint — 0 means there is nothing to show */
   placeCount: number;
   status: InquiryRunStatus;
   createdAt: Date;
@@ -115,6 +116,8 @@ export function toPublicInquiryRun(run: InquiryRun): PublicInquiryRun {
     unplacedClaims: run.unplacedClaims,
     synthesis: run.synthesis,
     status: run.status,
+    error: run.error,
+    attempts: run.attempts,
     createdAt: run.createdAt,
     startedAt: run.startedAt,
     completedAt: run.completedAt,

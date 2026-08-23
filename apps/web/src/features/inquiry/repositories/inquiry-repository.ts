@@ -27,6 +27,8 @@ export interface InquiryRunRecord {
   unplacedClaims: number;
   synthesis: string | null;
   status: InquiryRunStatus;
+  error: string | null;
+  attempts: number;
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
