@@ -25,8 +25,6 @@ export interface AwarenessLayer {
   requestMiss: AwarenessRequestMiss | null;
   showsNotice: boolean;
   error: string | null;
-  showAmbient: () => void;
-  showRun: () => void;
   dismissNotice: () => void;
 }
 
@@ -54,14 +52,8 @@ export function useAwarenessLayer(
     [detail.run],
   );
 
-  const [ambientForRunId, setAmbientForRunId] = useState<string | null>(null);
-  const selectedRunId = selection.run?.id ?? null;
-  const showAmbient = useCallback(() => setAmbientForRunId(selectedRunId), [selectedRunId]);
-  const showRun = useCallback(() => setAmbientForRunId(null), []);
-
   const plotted = points?.features.length ?? 0;
-  const showsAmbient = selectedRunId !== null && ambientForRunId === selectedRunId;
-  const isPainting = plotted > 0 && !showsAmbient;
+  const isPainting = plotted > 0;
   const isFallback = isPainting && selection.isFallback;
   const isResolvingRun = selection.run !== null && detail.run === null;
 
@@ -86,8 +78,6 @@ export function useAwarenessLayer(
     requestMiss: selection.requestMiss,
     showsNotice,
     error: detail.error,
-    showAmbient,
-    showRun,
     dismissNotice,
   };
 }

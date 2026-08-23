@@ -20,7 +20,7 @@ const REQUEST_MISS: Record<AwarenessRequestMiss, string> = {
 const SHOWING_INSTEAD = {
   fallback: "Showing your last run with placed claims.",
   latest: "Showing your most recent run with placed claims.",
-  ambient: "The map is showing ambient coverage.",
+  empty: "The map has nothing to plot yet.",
 } as const;
 
 interface AwarenessRunNoticeProps {
@@ -32,7 +32,7 @@ interface AwarenessRunNoticeProps {
 }
 
 function showingInstead(isPainting: boolean, isFallback: boolean): string {
-  if (!isPainting) return SHOWING_INSTEAD.ambient;
+  if (!isPainting) return SHOWING_INSTEAD.empty;
   return isFallback ? SHOWING_INSTEAD.fallback : SHOWING_INSTEAD.latest;
 }
 
@@ -70,28 +70,12 @@ export function AwarenessRunNotice({
   );
 }
 
-export function AwarenessRunPill({
-  run,
-  onShowRun,
-}: { run: InquiryRunSummaryRecord; onShowRun: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onShowRun}
-      className="absolute bottom-4 left-4 z-5 max-w-64 truncate rounded-xl border border-border bg-card/70 px-3 py-2 text-[11px] text-muted-foreground backdrop-blur-md hover:text-card-foreground"
-    >
-      Show inquiry run · {run.question}
-    </button>
-  );
-}
-
 interface AwarenessLegendProps {
   run: InquiryRunRecord;
   plotted: number;
-  onShowAmbient: () => void;
 }
 
-export function AwarenessLegend({ run, plotted, onShowAmbient }: AwarenessLegendProps) {
+export function AwarenessLegend({ run, plotted }: AwarenessLegendProps) {
   return (
     <div className="absolute right-4 top-4 z-5 flex w-64 flex-col gap-2.5 rounded-xl border border-border bg-card/70 p-2.5 backdrop-blur-md">
       <div className="flex flex-col gap-1">
@@ -116,14 +100,6 @@ export function AwarenessLegend({ run, plotted, onShowAmbient }: AwarenessLegend
         {run.claimCount} claims across {plotted} places
         {run.unplacedClaims > 0 ? <span> · {run.unplacedClaims} could not be placed</span> : null}
       </p>
-
-      <button
-        type="button"
-        onClick={onShowAmbient}
-        className="text-left text-[10px] text-muted-foreground underline-offset-2 hover:text-card-foreground hover:underline"
-      >
-        Show ambient map
-      </button>
     </div>
   );
 }

@@ -11,8 +11,8 @@ import {
   AWARENESS_ORB_RADIUS,
   AWARENESS_SOURCE,
 } from "../constants.ts";
+import { buildAwarenessRamp } from "../utils/awareness-ramp.ts";
 import type { ClaimFeatureCollection } from "../utils/claim-points.ts";
-import { buildAwarenessRamp } from "../utils/fill-expressions.ts";
 import { orbRimHex, orbShadowHex } from "../utils/theme-colors.ts";
 
 interface AwarenessOrbLayersProps {
