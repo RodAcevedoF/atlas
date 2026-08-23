@@ -15,6 +15,7 @@ const NO_PLACES = "This run placed no claim on the map.";
 const NO_REASON = "No reason was recorded for this failure.";
 
 const LOW_CONFIDENCE = 0.5;
+const COST_DECIMALS = 3;
 
 function ClaimRow({ claim }: { claim: InquiryClaimRecord }) {
   return (
@@ -77,6 +78,14 @@ function FailureReason({ run }: { run: InquiryRunRecord }) {
   );
 }
 
+function RetrievalCost({ costUsd }: { costUsd: number }) {
+  if (costUsd <= 0) {
+    return null;
+  }
+
+  return <span className="tabular-nums">· retrieval ${costUsd.toFixed(COST_DECIMALS)}</span>;
+}
+
 function Places({ places }: { places: InquiryPlaceRecord[] }) {
   if (places.length === 0) {
     return <p className="text-[12px] text-muted-foreground">{NO_PLACES}</p>;
@@ -103,6 +112,7 @@ export function RunDetail({ run }: { run: InquiryRunRecord }) {
           <span className="flex items-center gap-1.5 font-mono text-[10.5px] text-muted-foreground">
             {formatRelativeTime(run.createdAt)}
             <span className={runStatusClass(run.status)}>· {RUN_STATUS_LABEL[run.status]}</span>
+            <RetrievalCost costUsd={run.retrievalCostUsd} />
           </span>
         </div>
 

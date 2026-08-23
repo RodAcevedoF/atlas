@@ -10,6 +10,8 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
+from langsmith import traceable
+from langsmith.run_helpers import get_current_run_tree
 
 from app.ports.claims import (
     Claim,
@@ -235,6 +237,37 @@ async def fetch_claims(
     return parse_retrieval(payload, question, pricing)
 
 
+def trace_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in inputs.items() if key != "self"}
+
+
+def trace_outputs(retrieval: ClaimsRetrieval) -> dict[str, Any]:
+    """Counts and the bill, never the article bodies — a 25-result payload is megabytes."""
+    return {
+        "claims": len(retrieval.claims),
+        "documents": len(retrieval.documents),
+        "costUsd": retrieval.cost.usd,
+        "costReported": retrieval.cost.reported,
+    }
+
+
+def cost_metadata(cost: RetrievalCost) -> dict[str, Any]:
+    return {
+        "exa_cost_usd": cost.usd,
+        "exa_cost_reported": cost.reported,
+        "exa_searches": cost.searches,
+        "exa_results": cost.results,
+    }
+
+
+def record_cost_on_trace(cost: RetrievalCost) -> None:
+    """No-op when tracing is off, so the retrieval path never depends on LangSmith being up."""
+    run = get_current_run_tree()
+    if run is None:
+        return
+    run.metadata.update(cost_metadata(cost))
+
+
 class ExaClaimSource:
     """ClaimSourcePort over Exa search + schema'd contents. Holds no retry policy."""
 
@@ -250,10 +283,19 @@ class ExaClaimSource:
         self._search_type = search_type
         self._timeout_seconds = timeout_seconds
 
+    @traceable(
+        run_type="retriever",
+        name="exa_search",
+        process_inputs=trace_inputs,
+        process_outputs=trace_outputs,
+    )
     async def fetch(self, question: str, limit: int, window: str) -> ClaimsRetrieval:
         start = window_start(window, datetime.now(UTC))
         headers = {"x-api-key": self._api_key, "Content-Type": "application/json"}
         async with httpx.AsyncClient(timeout=self._timeout_seconds, headers=headers) as client:
-            return await fetch_claims(
+            retrieval = await fetch_claims(
                 question, limit, self._search_type, start, self._pricing, client
             )
+
+        record_cost_on_trace(retrieval.cost)
+        return retrieval

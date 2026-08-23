@@ -25,6 +25,7 @@ export interface InquiryRunRecord {
   places: InquiryPlaceRecord[];
   claimCount: number;
   unplacedClaims: number;
+  retrievalCostUsd: number;
   synthesis: string | null;
   status: InquiryRunStatus;
   error: string | null;

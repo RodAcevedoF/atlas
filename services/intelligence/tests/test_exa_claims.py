@@ -5,16 +5,28 @@ from typing import Any
 
 import httpx
 import pytest
+from langsmith import traceable
+from langsmith.run_helpers import get_current_run_tree, tracing_context
+from langsmith.run_trees import RunTree
 
 from app.adapters.exa_claims import (
     ExaClaimSource,
     ExaPricing,
     build_request,
+    cost_metadata,
     fetch_claims,
     parse_retrieval,
+    record_cost_on_trace,
+    trace_inputs,
+    trace_outputs,
     window_start,
 )
-from app.ports.claims import ClaimSourcePort, ClaimSourceRetryable, ClaimSourceUnavailable
+from app.ports.claims import (
+    ClaimSourcePort,
+    ClaimSourceRetryable,
+    ClaimSourceUnavailable,
+    RetrievalCost,
+)
 
 START = "2026-08-16T00:00:00.000Z"
 
@@ -48,8 +60,6 @@ def responding(status: int, body: str) -> httpx.AsyncClient:
 
 
 class TestPricing:
-    # Exa quotes per 1k requests, per 1k results beyond the included 10, and per 1k pages of
-    # content. Only the summary comes back billed, so a run of N results is N billed pages.
     cases = [
         ("a search that returned nothing still bills the search", 0, 0.007),
         ("at the included-result boundary nothing extra is billed", 10, 0.017),
@@ -61,8 +71,6 @@ class TestPricing:
         for name, results, expected in self.cases:
             assert PRICING.estimate(results) == pytest.approx(expected), name
 
-    # measured 2026-08-22: a 25-result Sudan run billed $0.045. The forecast is the number the
-    # owner sets a budget from, so it has to stay near what Exa actually charges.
     def test_the_forecast_stays_close_to_a_measured_run(self) -> None:
         assert PRICING.estimate(25) == pytest.approx(0.045, rel=0.10)
 
@@ -130,7 +138,6 @@ class TestClaimExtraction:
         assert retrieval.claims[0].place.latitude is None
         assert retrieval.claims[0].place.longitude is None
 
-    # nothing downstream can place these, and the normaliser cannot invent a place from nothing.
     unusable = [
         ("a claim with no place", {"claim": "something happened", "confidence": 0.5}),
         (
@@ -157,7 +164,7 @@ class TestClaimExtraction:
 
         assert retrieval.claims[0].confidence == 0.0
 
-    # P2.5 — improving the extractor later must not mean re-fetching every article.
+
     def test_the_extractor_inputs_survive_a_summary_that_yielded_nothing(self) -> None:
         payload = {"results": [result("https://example.com/a", None, summary="not json at all")]}
 
@@ -231,7 +238,6 @@ class TestWindow:
 
 
 class TestFailureVocabulary:
-    # the graph catches the port's two failure kinds; anything the port cannot name escapes it.
     retryable = [
         ("a gateway blip", 502),
         ("an upstream timeout", 408),
@@ -287,3 +293,61 @@ class TestPortConformance:
         )
 
         assert isinstance(source, ExaClaimSource)
+
+
+class TestTracedCost:
+    """Exa bills in dollars over plain httpx."""
+
+    claim = {"claim": "a claim", "place": "Khartoum", "confidence": 0.8}
+    retrieval = parse_retrieval(
+        {
+            "results": [result("https://example.test/a", claims=[claim])],
+            "costDollars": {"total": 0.047},
+        },
+        "where is lithium mining expanding",
+        PRICING,
+    )
+
+    def test_the_trace_carries_counts_and_the_bill_but_never_the_article_bodies(self) -> None:
+        logged = trace_outputs(self.retrieval)
+
+        assert logged == {
+            "claims": 1,
+            "documents": 1,
+            "costUsd": 0.047,
+            "costReported": True,
+        }
+        assert "the article body" not in json.dumps(logged)
+
+    def test_the_adapter_itself_is_not_shipped_as_an_input(self) -> None:
+        logged = trace_inputs({"self": object(), "question": "q", "limit": 25, "window": "1w"})
+
+        assert logged == {"question": "q", "limit": 25, "window": "1w"}
+
+    def test_a_dollar_cost_reaches_the_span_because_langsmith_prices_only_tokens(self) -> None:
+        cost = RetrievalCost(usd=0.047, reported=True, searches=1, results=25)
+
+        with tracing_context(enabled="local"):
+
+            @traceable
+            def retrieve() -> RunTree | None:
+                record_cost_on_trace(cost)
+                return get_current_run_tree()
+
+            run = retrieve()
+
+        assert run is not None
+        assert run.metadata["exa_cost_usd"] == 0.047
+        assert run.metadata["exa_cost_reported"] is True
+        assert run.metadata["exa_results"] == 25
+
+    def test_an_estimate_is_marked_as_one_so_a_reader_can_tell_it_from_the_bill(self) -> None:
+        estimated = cost_metadata(RetrievalCost(usd=0.047, reported=False, searches=1, results=25))
+
+        assert estimated["exa_cost_reported"] is False
+
+    def test_retrieval_survives_tracing_being_off_rather_than_depending_on_langsmith(self) -> None:
+        cost = RetrievalCost(usd=0.047, reported=True, searches=1, results=25)
+
+        with tracing_context(enabled=False):
+            record_cost_on_trace(cost)

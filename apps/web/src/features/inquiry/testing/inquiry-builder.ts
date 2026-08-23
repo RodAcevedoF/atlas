@@ -37,6 +37,7 @@ export function buildInquiryRun(overrides: Partial<InquiryRunRecord> = {}): Inqu
     places: [buildInquiryPlace()],
     claimCount: 1,
     unplacedClaims: 0,
+    retrievalCostUsd: 0.047,
     synthesis: null,
     status: "succeeded",
     error: null,

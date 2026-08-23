@@ -4,6 +4,7 @@
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["bun-types", "geojson"],
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@atlas/domain": ["../../packages/domain/src/index.ts"],

@@ -23,10 +23,6 @@ export interface InquiryClaim {
   publishedDate: string | null;
 }
 
-/**
- * One place with the claims that landed on it — the map's unit, aggregated server-side.
- * The place is where the claim says the event happened, never where it was published.
- */
 export interface InquiryPlace {
   place: string;
   country: string | null;
@@ -43,9 +39,7 @@ export interface InquiryRun {
   day: string;
   window: string;
   places: InquiryPlace[];
-  /** every claim retrieved, including the ones no place could be resolved for */
   claimCount: number;
-  /** claims the map cannot show — the difference is a finding, not a rounding error */
   unplacedClaims: number;
   costUsd: number;
   synthesis: string | null;
