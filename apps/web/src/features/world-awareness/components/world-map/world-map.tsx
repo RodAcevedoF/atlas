@@ -1,22 +1,41 @@
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useCallback, useRef } from "react";
-import MapGL, { type MapEvent, type MapRef } from "react-map-gl/maplibre";
-import { BASEMAP_STYLE, INITIAL_VIEW_STATE, RESET_CAMERA } from "./constants.ts";
+import { useCallback, useRef, useState } from "react";
+import MapGL, { type MapEvent, type MapLayerMouseEvent, type MapRef } from "react-map-gl/maplibre";
+import {
+  BASEMAP_STYLE,
+  INITIAL_VIEW_STATE,
+  INTERACTIVE_LAYERS,
+  RESET_CAMERA,
+} from "./constants.ts";
 import { AwarenessOrbLayers } from "./overlays/awareness-orb-layers.tsx";
 import { ZoomControl } from "./overlays/zoom-control.tsx";
 import { applyBasemapTheme } from "./utils/basemap-theme.ts";
 import type { ClaimFeatureCollection } from "./utils/claim-points.ts";
+import { type PlaceIdentity, readPlaceIdentity } from "./utils/place-selection.ts";
 
 interface WorldMapProps {
   awareness: ClaimFeatureCollection | null;
+  selectedPlace: string | null;
+  onSelectPlace: (identity: PlaceIdentity | null) => void;
 }
 
-export function WorldMap({ awareness }: WorldMapProps) {
+export function WorldMap({ awareness, selectedPlace, onSelectPlace }: WorldMapProps) {
   const mapRef = useRef<MapRef>(null);
+  const [isOverOrb, setIsOverOrb] = useState(false);
 
   const handleLoad = useCallback((event: MapEvent) => {
     applyBasemapTheme(event.target);
   }, []);
+
+  const handleClick = useCallback(
+    (event: MapLayerMouseEvent) => {
+      onSelectPlace(readPlaceIdentity(event.features?.[0]?.properties));
+    },
+    [onSelectPlace],
+  );
+
+  const enterOrb = useCallback(() => setIsOverOrb(true), []);
+  const leaveOrb = useCallback(() => setIsOverOrb(false), []);
 
   const resetView = useCallback(() => mapRef.current?.easeTo(RESET_CAMERA), []);
   const zoomIn = useCallback(() => mapRef.current?.zoomIn(), []);
@@ -29,11 +48,15 @@ export function WorldMap({ awareness }: WorldMapProps) {
           ref={mapRef}
           initialViewState={INITIAL_VIEW_STATE}
           mapStyle={BASEMAP_STYLE}
-          cursor="grab"
+          cursor={isOverOrb ? "pointer" : "grab"}
           onLoad={handleLoad}
+          onClick={handleClick}
+          onMouseEnter={enterOrb}
+          onMouseLeave={leaveOrb}
+          interactiveLayerIds={INTERACTIVE_LAYERS}
           attributionControl={false}
         >
-          {awareness ? <AwarenessOrbLayers data={awareness} /> : null}
+          {awareness ? <AwarenessOrbLayers data={awareness} selectedPlace={selectedPlace} /> : null}
         </MapGL>
       </div>
 
