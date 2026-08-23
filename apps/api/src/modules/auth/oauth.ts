@@ -47,7 +47,6 @@ function webAppUrl(): string {
   return process.env.WEB_APP_URL ?? "http://localhost:3000";
 }
 
-/** Providers are enabled only when their client id + secret env are both present. */
 export function readOAuthConfigs(): OAuthProviderConfig[] {
   const configs: OAuthProviderConfig[] = [];
   for (const provider of Object.keys(PROVIDERS) as OAuthProvider[]) {
@@ -67,7 +66,6 @@ export function makeOAuthStrategies(configs: OAuthProviderConfig[]): IdentityPro
   return registry;
 }
 
-/** The `onRequest` auth gate must let the OAuth start + callback routes through unauthenticated. */
 export function oauthPublicRoutes(configs: OAuthProviderConfig[]): string[] {
   return configs.flatMap((config) => [
     `/auth/${config.provider}`,
@@ -75,12 +73,6 @@ export function oauthPublicRoutes(configs: OAuthProviderConfig[]): string[] {
   ]);
 }
 
-/**
- * Registers `@fastify/oauth2` per enabled provider (it owns the redirect/state/PKCE dance) and the
- * matching callback route: exchange the code for a token, run the shared authenticate use-case, drop
- * the session cookie, and redirect back into the web app. The callback goes through the web `/api`
- * proxy so the session cookie lands on the app's origin.
- */
 export async function registerOAuthRoutes(
   app: FastifyInstance,
   deps: AuthDeps,

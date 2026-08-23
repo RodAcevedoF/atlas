@@ -50,6 +50,7 @@ const TONE_TEXT: Record<MessageTone, string> = {
 };
 
 function askMessage(state: InquiryAskState): AskMessage | null {
+  if (state.isRefresh) return null;
   if (state.isStillRunning && state.error) {
     return { text: `${LOST_WATCH} ${state.error}`, tone: "error" };
   }

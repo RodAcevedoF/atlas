@@ -14,7 +14,7 @@ import {
 
 export interface InquiryAskState {
   isAsking: boolean;
-  isRefreshing: boolean;
+  isRefresh: boolean;
   watchedStatus: InquiryRunStatus | null;
   isStillRunning: boolean;
   wasDeduped: boolean;
@@ -42,7 +42,7 @@ export interface InquiryState {
 
 const idleAsk: InquiryAskState = {
   isAsking: false,
-  isRefreshing: false,
+  isRefresh: false,
   watchedStatus: null,
   isStillRunning: false,
   wasDeduped: false,
@@ -70,7 +70,11 @@ function keepFreshDetails(
 const inquirySlice = createSlice({
   name: "inquiry",
   initialState,
-  reducers: {},
+  reducers: {
+    askErrorDismissed(state) {
+      state.ask.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(loadRecentInquiryRuns.pending, (state) => {
@@ -102,7 +106,7 @@ const inquirySlice = createSlice({
         };
       })
       .addCase(askInquiryQuestion.pending, (state, action) => {
-        state.ask = { ...idleAsk, isAsking: true, isRefreshing: action.meta.arg.refresh };
+        state.ask = { ...idleAsk, isAsking: true, isRefresh: action.meta.arg.refresh };
       })
       .addCase(inquiryRunProgressed, (state, action) => {
         state.ask.watchedStatus = action.payload;
@@ -110,6 +114,7 @@ const inquirySlice = createSlice({
       .addCase(askInquiryQuestion.fulfilled, (state, action) => {
         state.ask = {
           ...idleAsk,
+          isRefresh: state.ask.isRefresh,
           isStillRunning: action.payload.isStillRunning,
           wasDeduped: action.payload.deduped,
           error: action.payload.watchError,
@@ -118,6 +123,7 @@ const inquirySlice = createSlice({
       .addCase(askInquiryQuestion.rejected, (state, action) => {
         state.ask = {
           ...idleAsk,
+          isRefresh: state.ask.isRefresh,
           error: action.error.message ?? "Failed to start your inquiry run",
         };
       });
@@ -125,6 +131,7 @@ const inquirySlice = createSlice({
 });
 
 export const inquiryReducer = inquirySlice.reducer;
+export const { askErrorDismissed } = inquirySlice.actions;
 
 export const selectInquiry = (state: RootState): InquiryState => state.inquiry;
 export const selectInquiryDetail = (state: RootState): InquiryDetailState => state.inquiry.detail;

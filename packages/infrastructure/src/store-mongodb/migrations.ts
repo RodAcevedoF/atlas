@@ -78,3 +78,24 @@ export function emptyGdeltEraInquiryRuns(db: Db): Migration {
     },
   };
 }
+
+const EXA_CUTOVER = new Date("2026-08-22T21:40:00.000Z");
+
+export function dropGdeltEraInquiryRuns(db: Db): Migration {
+  return {
+    id: "2026-08-23-drop-gdelt-era-inquiry-runs",
+    async execute({ dryRun }) {
+      if (!(await hasCollection(db, INQUIRY_RUNS))) {
+        return `${INQUIRY_RUNS} absent — nothing to drop`;
+      }
+
+      const stale = { createdAt: { $lt: EXA_CUTOVER }, costUsd: { $lte: 0 } };
+      const holding = await db.collection(INQUIRY_RUNS).countDocuments(stale);
+      if (holding === 0) return "no GDELT-era run left";
+      if (dryRun) return `would drop ${holding} GDELT-era runs`;
+
+      const result = await db.collection(INQUIRY_RUNS).deleteMany(stale);
+      return `dropped ${result.deletedCount} GDELT-era runs`;
+    },
+  };
+}

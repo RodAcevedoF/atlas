@@ -1,11 +1,16 @@
 import { useAppDispatch, useAppSelector } from "@/store/hooks.ts";
 import { useCallback } from "react";
 import { askInquiryQuestion } from "../infra/store/inquiry.commands.ts";
-import { type InquiryAskState, selectInquiryAsk } from "../infra/store/inquiry.slice.ts";
+import {
+  type InquiryAskState,
+  askErrorDismissed,
+  selectInquiryAsk,
+} from "../infra/store/inquiry.slice.ts";
 
 export interface UseInquiryAskResult extends InquiryAskState {
   ask: (question: string) => void;
   refresh: (question: string) => void;
+  dismissError: () => void;
 }
 
 export function useInquiryAsk(): UseInquiryAskResult {
@@ -26,5 +31,9 @@ export function useInquiryAsk(): UseInquiryAskResult {
     [dispatch],
   );
 
-  return { ...state, ask, refresh };
+  const dismissError = useCallback(() => {
+    dispatch(askErrorDismissed());
+  }, [dispatch]);
+
+  return { ...state, ask, refresh, dismissError };
 }

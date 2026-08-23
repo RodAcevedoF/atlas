@@ -3,6 +3,7 @@ import {
   MongoMigrationLedger,
   MongoSignalStore,
   createMongoClient,
+  dropGdeltEraInquiryRuns,
   dropSavedReportIds,
   emptyGdeltEraInquiryRuns,
   renameResearchRunsToInquiryRuns,
@@ -28,6 +29,7 @@ async function migrate(): Promise<void> {
         renameResearchRunsToInquiryRuns(db),
         dropSavedReportIds(db),
         emptyGdeltEraInquiryRuns(db),
+        dropGdeltEraInquiryRuns(db),
       ]),
     ).execute({
       dryRun,
