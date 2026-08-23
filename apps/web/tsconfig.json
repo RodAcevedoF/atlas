@@ -13,5 +13,5 @@
       "@atlas/infra/*": ["../../packages/infrastructure/src/*/index.ts"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "testing"]
 }

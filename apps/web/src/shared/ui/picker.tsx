@@ -1,6 +1,6 @@
 import { Card, cn } from "@atlas/ui";
 import { ChevronDown } from "lucide-react";
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Eyebrow } from "./eyebrow.tsx";
 
 interface PickerProps {
@@ -16,20 +16,23 @@ export function Picker({ trigger, label, title, disabled, children }: PickerProp
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const close = () => {
+  const close = useCallback(() => {
     setOpen(false);
     triggerRef.current?.focus();
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      close();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [open, close]);
 
   return (
-    <div
-      className="relative"
-      onKeyDown={(event) => {
-        if (!open || event.key !== "Escape") return;
-        event.stopPropagation();
-        close();
-      }}
-    >
+    <div className="relative">
       <button
         ref={triggerRef}
         type="button"
