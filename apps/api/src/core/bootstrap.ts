@@ -1,25 +1,17 @@
 import type { InquiryRunId } from "@atlas/domain";
 import { makeInquiryRunId } from "@atlas/domain";
 import { PasswordIdentityProvider } from "@atlas/infra/identity-password";
-import { ExaNewsAdapter } from "@atlas/infra/news-exa";
 import { HttpOrchestration } from "@atlas/infra/orchestration-http";
 import { BunPasswordHasher } from "@atlas/infra/password-bun";
 import { RedisSessionStore, createRedisClient } from "@atlas/infra/session-redis";
-import {
-  MongoInquiryRunStore,
-  MongoSignalStore,
-  createMongoClient,
-  ensureIndexes,
-} from "@atlas/infra/store-mongodb";
+import { MongoInquiryRunStore, createMongoClient, ensureIndexes } from "@atlas/infra/store-mongodb";
 import { MongoUserStore, ensureUserIndexes } from "@atlas/infra/user-store-mongodb";
 import { RedisVerificationTokenStore } from "@atlas/infra/verification-redis";
 import { type AuthDeps, makeAuthDependencies } from "../modules/auth/dependencies.ts";
 import { makeEmailPort } from "../modules/auth/email.ts";
 import { makeOAuthStrategies, readOAuthConfigs } from "../modules/auth/oauth.ts";
 import { type InquiryDeps, makeInquiryDependencies } from "../modules/inquiry/dependencies.ts";
-import { type NewsDeps, makeNewsDependencies } from "../modules/news/dependencies.ts";
 import { type ProfileDeps, makeProfileDependencies } from "../modules/profile/dependencies.ts";
-import { type WorldDeps, makeWorldDependencies } from "../modules/world/dependencies.ts";
 
 const DEFAULT_INQUIRY_RETRY_AFTER_MS = 11 * 60 * 1000;
 const DEFAULT_INQUIRY_POLL_INTERVAL_MS = 5_000;
@@ -29,8 +21,6 @@ const DEFAULT_INQUIRY_DAILY_CAP = 25;
 export interface AppDeps {
   auth: AuthDeps;
   profile: ProfileDeps;
-  news: NewsDeps;
-  world: WorldDeps;
   inquiry: InquiryDeps;
   redis: ReturnType<typeof createRedisClient>;
 }
@@ -57,8 +47,6 @@ function readPositiveInt(name: string, fallback: number): number {
 export async function bootstrap(): Promise<AppDeps> {
   const uri = process.env.MONGODB_URI;
   if (!uri) throw new Error("MONGODB_URI is required");
-  const exaApiKey = process.env.EXA_API_KEY;
-  if (!exaApiKey) throw new Error("EXA_API_KEY is required");
   const dbName = process.env.MONGODB_DB_NAME ?? "atlas";
 
   const client = createMongoClient(uri);
@@ -69,8 +57,6 @@ export async function bootstrap(): Promise<AppDeps> {
 
   const redis = createRedisClient(process.env.REDIS_URL ?? "redis://127.0.0.1:6379");
 
-  const signalSource = new ExaNewsAdapter(exaApiKey);
-  const store = new MongoSignalStore(db);
   const userStore = new MongoUserStore(db);
   const sessionStore = new RedisSessionStore(redis);
   const hasher = new BunPasswordHasher();
@@ -97,8 +83,6 @@ export async function bootstrap(): Promise<AppDeps> {
     verificationConfig,
   });
   const profile = makeProfileDependencies({ userStore });
-  const news = makeNewsDependencies({ signalSource, store });
-  const world = makeWorldDependencies({ store });
   const inquiry = makeInquiryDependencies({
     store: new MongoInquiryRunStore(db),
     orchestration,
@@ -112,5 +96,5 @@ export async function bootstrap(): Promise<AppDeps> {
     pinnedRunId: readInquiryRunId("INQUIRY_PINNED_RUN_ID"),
   });
 
-  return { auth, profile, news, world, inquiry, redis };
+  return { auth, profile, inquiry, redis };
 }

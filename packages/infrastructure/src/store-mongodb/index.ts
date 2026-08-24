@@ -6,7 +6,7 @@ export * from "./migrations.ts";
 export * from "./inquiry-run-store.ts";
 
 import type { SignalClassificationUpdate, SignalStorePort } from "@atlas/application";
-import type { GeoRegion, Signal, SignalSource, Topic, TopicSentimentSummary } from "@atlas/domain";
+import type { GeoRegion, Signal, SignalSource, Topic } from "@atlas/domain";
 import { makeSignalId } from "@atlas/domain";
 import type { Db } from "mongodb";
 import type { SignalDoc } from "./collections.ts";
@@ -38,29 +38,6 @@ function docToSignal(doc: SignalDoc): Signal {
 export class MongoSignalStore implements SignalStorePort {
   constructor(private readonly db: Db) {}
 
-  async upsertSignals(signals: Signal[]): Promise<void> {
-    if (signals.length === 0) return;
-    // One bulkWrite round trip instead of N replaceOne calls. Unordered: the ops are
-    // independent (keyed by distinct _id), so the engine can apply them in parallel.
-    const operations = signals.map((signal) => {
-      const doc: Omit<SignalDoc, "_id"> = {
-        source: signal.source,
-        topic: signal.topic,
-        primaryRegion: signal.primaryRegion,
-        regions: coerceRegions(signal.regions),
-        sourceCountry: signal.sourceCountry,
-        weight: signal.weight,
-        sentiment: signal.sentiment,
-        title: signal.title,
-        ref: signal.ref,
-        timestamp: signal.timestamp,
-        createdAt: signal.createdAt,
-      };
-      return { replaceOne: { filter: { _id: signal.id }, replacement: doc, upsert: true } };
-    });
-    await this.db.collection<SignalDoc>("signals").bulkWrite(operations, { ordered: false });
-  }
-
   async updateSignalClassifications(updates: SignalClassificationUpdate[]): Promise<void> {
     if (updates.length === 0) return;
     const operations = updates.map((update) => ({
@@ -70,44 +47,6 @@ export class MongoSignalStore implements SignalStorePort {
       },
     }));
     await this.db.collection<SignalDoc>("signals").bulkWrite(operations, { ordered: false });
-  }
-
-  async listTopicSentimentSummaries(filter?: {
-    region?: GeoRegion;
-    since?: Date;
-  }): Promise<TopicSentimentSummary[]> {
-    const match: Record<string, unknown> = {};
-    if (filter?.region) match.regions = filter.region;
-    if (filter?.since) match.timestamp = { $gte: filter.since };
-
-    const rows = await this.db
-      .collection<SignalDoc>("signals")
-      .aggregate<{
-        _id: Topic;
-        signalCount: number;
-        totalWeight: number;
-        weightedSentiment: number;
-        sources: SignalSource[];
-      }>([
-        { $match: match },
-        {
-          $group: {
-            _id: "$topic",
-            signalCount: { $sum: 1 },
-            totalWeight: { $sum: "$weight" },
-            weightedSentiment: { $sum: { $multiply: ["$weight", "$sentiment"] } },
-            sources: { $addToSet: "$source" },
-          },
-        },
-      ])
-      .toArray();
-
-    return rows.map((row) => ({
-      topic: row._id,
-      signalCount: row.signalCount,
-      sourceCount: row.sources.length,
-      temperature: row.totalWeight > 0 ? row.weightedSentiment / row.totalWeight : 0,
-    }));
   }
 
   async listSignals(filter?: {

@@ -37,18 +37,3 @@ export interface Signal {
   timestamp: Date;
   createdAt: Date;
 }
-
-const RELEVANCE_HALF_LIFE_HOURS = 24;
-
-export function scoreSignalRelevance(signal: Signal, now: Date): number {
-  const ageHours = Math.max(0, (now.getTime() - signal.timestamp.getTime()) / 3_600_000);
-  const recency = 2 ** (-ageHours / RELEVANCE_HALF_LIFE_HOURS);
-  return signal.weight * recency;
-}
-
-export interface TopicSentimentSummary {
-  topic: Topic;
-  signalCount: number;
-  sourceCount: number;
-  temperature: number;
-}

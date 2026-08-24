@@ -18,7 +18,6 @@ export type {
   OrchestrationPort,
 } from "./world/outbound/orchestration.ts";
 export { GraphUnavailableError } from "./world/outbound/orchestration.ts";
-export type { SignalSourceFilter, SignalSourcePort } from "./news/outbound/signal-source.ts";
 export type { UserStorePort } from "./auth/outbound/user-store.ts";
 export type { SessionPort } from "./auth/outbound/session-store.ts";
 export type { PasswordHasherPort } from "./auth/outbound/password-hasher.ts";
@@ -30,23 +29,7 @@ export type {
 export type { EmailMessage, EmailPort } from "./auth/outbound/email.ts";
 export type { VerificationTokenStorePort } from "./auth/outbound/verification-token-store.ts";
 
-// news
-export type {
-  IngestNewsInput,
-  IngestNewsOutput,
-  IngestNews,
-} from "./news/inbound/ingest-news.ts";
-export { IngestNewsUseCase } from "./news/inbound/ingest-news.ts";
-
 // world
-export type {
-  ListWorldSnapshotsInput,
-  ListWorldSnapshotsOutput,
-  TopicSnapshot,
-  TopicSnapshotCorroboration,
-  ListWorldSnapshots,
-} from "./world/inbound/list-world-snapshots.ts";
-export { ListWorldSnapshotsUseCase } from "./world/inbound/list-world-snapshots.ts";
 export type {
   RegionDiagnostics,
   ReclassifySignalsInput,

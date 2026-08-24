@@ -16,14 +16,8 @@ export {
 } from "./entities/inquiry-run.ts";
 export { INQUIRY_RUN_STATUSES } from "./entities/inquiry-run.ts";
 
-export type {
-  SignalId,
-  SignalSource,
-  Topic,
-  Signal,
-  TopicSentimentSummary,
-} from "./entities/signal.ts";
-export { makeSignalId, scoreSignalRelevance } from "./entities/signal.ts";
+export type { SignalId, SignalSource, Topic, Signal } from "./entities/signal.ts";
+export { makeSignalId } from "./entities/signal.ts";
 export { SIGNAL_SOURCES, TOPICS } from "./entities/signal.ts";
 
 export type { GeoRegion } from "./entities/geography.ts";

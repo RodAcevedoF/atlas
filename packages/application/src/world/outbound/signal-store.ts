@@ -1,11 +1,4 @@
-import type {
-  GeoRegion,
-  Signal,
-  SignalId,
-  SignalSource,
-  Topic,
-  TopicSentimentSummary,
-} from "@atlas/domain";
+import type { GeoRegion, Signal, SignalId, SignalSource, Topic } from "@atlas/domain";
 
 export interface SignalClassificationUpdate {
   id: SignalId;
@@ -14,12 +7,7 @@ export interface SignalClassificationUpdate {
 }
 
 export interface SignalStorePort {
-  upsertSignals(signals: Signal[]): Promise<void>;
   updateSignalClassifications(updates: SignalClassificationUpdate[]): Promise<void>;
-  listTopicSentimentSummaries(filter?: {
-    region?: GeoRegion;
-    since?: Date;
-  }): Promise<TopicSentimentSummary[]>;
   listSignals(filter?: {
     source?: SignalSource;
     topic?: Topic;
