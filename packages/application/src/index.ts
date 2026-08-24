@@ -44,6 +44,11 @@ export {
 export type { GetInquiryRun } from "./inquiry/inbound/get-inquiry-run.ts";
 export { GetInquiryRunUseCase } from "./inquiry/inbound/get-inquiry-run.ts";
 export type {
+  DeleteInquiryRun,
+  DeleteInquiryRunOutcome,
+} from "./inquiry/inbound/delete-inquiry-run.ts";
+export { DeleteInquiryRunUseCase } from "./inquiry/inbound/delete-inquiry-run.ts";
+export type {
   ListInquiryRuns,
   InquiryRunFilter,
 } from "./inquiry/inbound/list-inquiry-runs.ts";

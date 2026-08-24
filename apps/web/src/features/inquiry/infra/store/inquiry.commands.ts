@@ -6,6 +6,7 @@ import type {
   InquiryRunRecord,
   InquiryRunRequestInput,
 } from "../../repositories/inquiry-repository.ts";
+import { makeDeleteInquiryRun } from "../../use-cases/delete-inquiry-run.ts";
 import { makeLoadInquiryRun } from "../../use-cases/load-inquiry-run.ts";
 import { makeLoadRecentInquiryRuns } from "../../use-cases/load-recent-inquiry-runs.ts";
 import { INQUIRY_POLL_SCHEDULE, makePollInquiryRun } from "../../use-cases/poll-inquiry-run.ts";
@@ -37,6 +38,14 @@ export const loadRecentInquiryRuns = createAsyncThunk<InquiryRunListRecord, void
 export const loadInquiryRun = createAsyncThunk<InquiryRunRecord, string, CommandConfig>(
   "inquiry/loadRun",
   (runId, { extra }) => makeLoadInquiryRun(extra)(runId),
+);
+
+export const deleteInquiryRun = createAsyncThunk<void, string, CommandConfig>(
+  "inquiry/delete",
+  async (runId, { extra, dispatch }) => {
+    await makeDeleteInquiryRun(extra)(runId);
+    await dispatch(loadRecentInquiryRuns());
+  },
 );
 
 export const askInquiryQuestion = createAsyncThunk<

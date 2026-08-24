@@ -10,7 +10,7 @@ afterEach(cleanup);
 function renderRun(run: InquiryRunRecord) {
   render(
     <MemoryRouter>
-      <RunDetail run={run} />
+      <RunDetail run={run} onDelete={null} />
     </MemoryRouter>,
   );
 }

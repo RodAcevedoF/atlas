@@ -78,6 +78,7 @@ export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquir
       held.set(claimed.id, claimed);
       return Promise.resolve(claimed);
     },
+    deleteInquiryRunById: (id) => Promise.resolve(held.delete(id)),
     completeInquiryRun(input) {
       const run = held.get(input.id);
       if (!run) return Promise.reject(new Error(`unknown inquiry run ${input.id}`));

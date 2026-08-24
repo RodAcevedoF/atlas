@@ -16,7 +16,9 @@ interface InquiryHistoryProps {
   isLoading: boolean;
   error: string | null;
   selectedId: string | null;
+  pinnedRunId: string | null;
   onSelect: (runId: string) => void;
+  onDelete: (runId: string) => void;
   detail: UseInquiryRunResult;
 }
 
@@ -28,8 +30,14 @@ function Notice({ children }: { children: ReactNode }) {
   );
 }
 
-function DetailPane({ detail }: { detail: UseInquiryRunResult }) {
-  if (detail.run) return <RunDetail run={detail.run} />;
+function DetailPane({
+  detail,
+  onDelete,
+}: {
+  detail: UseInquiryRunResult;
+  onDelete: (() => void) | null;
+}) {
+  if (detail.run) return <RunDetail run={detail.run} onDelete={onDelete} />;
   if (detail.error) return <p className="text-[12.5px] text-destructive">{detail.error}</p>;
   return <p className="text-[12.5px] text-muted-foreground">{LOADING_RUN}</p>;
 }
@@ -39,9 +47,14 @@ export function InquiryHistory({
   isLoading,
   error,
   selectedId,
+  pinnedRunId,
   onSelect,
+  onDelete,
   detail,
 }: InquiryHistoryProps) {
+  const deletableId = selectedId !== null && selectedId !== pinnedRunId ? selectedId : null;
+  const deleteSelected = deletableId === null ? null : () => onDelete(deletableId);
+
   if (runs.length === 0 && error) {
     return (
       <Notice>
@@ -75,7 +88,7 @@ export function InquiryHistory({
         </Card>
 
         <Card className="min-w-0 flex-1 overflow-y-auto p-5">
-          <DetailPane detail={detail} />
+          <DetailPane detail={detail} onDelete={deleteSelected} />
         </Card>
       </div>
     </div>

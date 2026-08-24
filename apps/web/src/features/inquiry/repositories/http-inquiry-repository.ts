@@ -1,4 +1,4 @@
-import { fetchJson } from "@/shared/http.ts";
+import { fetchJson, fetchNoContent } from "@/shared/http.ts";
 import type {
   InquiryRepository,
   InquiryRunListRecord,
@@ -14,6 +14,10 @@ export class HttpInquiryRepository implements InquiryRepository {
 
   runById(runId: string): Promise<InquiryRunRecord> {
     return fetchJson<InquiryRunRecord>(`/api/inquiry/runs/${encodeURIComponent(runId)}`);
+  }
+
+  deleteRun(runId: string): Promise<void> {
+    return fetchNoContent(`/api/inquiry/runs/${encodeURIComponent(runId)}`, { method: "DELETE" });
   }
 
   requestRun(request: InquiryRunRequestInput): Promise<InquiryRunRequestRecord> {

@@ -145,6 +145,11 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
     return doc ? docToInquiryRun(doc) : null;
   }
 
+  async deleteInquiryRunById(id: InquiryRunId): Promise<boolean> {
+    const result = await this.db.collection<InquiryRunDoc>(COLLECTION).deleteOne({ _id: id });
+    return result.deletedCount === 1;
+  }
+
   async completeInquiryRun(input: CompleteInquiryRunInput): Promise<void> {
     await this.db.collection<InquiryRunDoc>(COLLECTION).updateOne(
       { _id: input.id },

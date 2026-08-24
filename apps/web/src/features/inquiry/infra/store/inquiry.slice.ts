@@ -7,6 +7,7 @@ import type {
 } from "../../repositories/inquiry-repository.ts";
 import {
   askInquiryQuestion,
+  deleteInquiryRun,
   inquiryRunProgressed,
   inquiryRunRequested,
   loadInquiryRun,
@@ -110,6 +111,9 @@ const inquirySlice = createSlice({
           runId: action.meta.arg,
           message: action.error.message ?? "Failed to load that inquiry run",
         };
+      })
+      .addCase(deleteInquiryRun.rejected, (state, action) => {
+        state.error = action.error.message ?? "Failed to delete that inquiry run";
       })
       .addCase(askInquiryQuestion.pending, (state, action) => {
         state.ask = { ...idleAsk, isAsking: true, isRefresh: action.meta.arg.refresh };

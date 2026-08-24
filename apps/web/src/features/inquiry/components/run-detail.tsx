@@ -7,6 +7,7 @@ import type {
   InquiryPlaceRecord,
   InquiryRunRecord,
 } from "../repositories/inquiry-repository.ts";
+import { DeleteRunButton } from "./delete-run-button.tsx";
 import { isPaintableRun } from "./paintable-run.ts";
 import { RUN_STATUS_LABEL, isFailedRun, runStatusClass } from "./run-status.ts";
 
@@ -100,7 +101,13 @@ function Places({ places }: { places: InquiryPlaceRecord[] }) {
   );
 }
 
-export function RunDetail({ run }: { run: InquiryRunRecord }) {
+export function RunDetail({
+  run,
+  onDelete,
+}: {
+  run: InquiryRunRecord;
+  onDelete: (() => void) | null;
+}) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-start justify-between gap-4">
@@ -116,11 +123,14 @@ export function RunDetail({ run }: { run: InquiryRunRecord }) {
           </span>
         </div>
 
-        {isPaintableRun(run.places.length) ? (
-          <Button asChild size="sm" variant="secondary">
-            <Link to={`/world?run=${encodeURIComponent(run.id)}`}>Show on map</Link>
-          </Button>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {isPaintableRun(run.places.length) ? (
+            <Button asChild size="sm" variant="secondary">
+              <Link to={`/world?run=${encodeURIComponent(run.id)}`}>Show on map</Link>
+            </Button>
+          ) : null}
+          {onDelete ? <DeleteRunButton key={run.id} onConfirm={onDelete} /> : null}
+        </div>
       </div>
 
       {isFailedRun(run.status) ? <FailureReason run={run} /> : null}

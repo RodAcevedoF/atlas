@@ -25,6 +25,7 @@ export function inMemoryInquiryRepository({ statuses }: InquiryRepositorySeed): 
     },
     recentRuns: () => outsideWatchPath("recentRuns"),
     requestRun: () => outsideWatchPath("requestRun"),
+    deleteRun: () => outsideWatchPath("deleteRun"),
   };
 }
 
@@ -55,6 +56,31 @@ export function inMemoryAskInquiryRepository({
       if (!requested) return outsideAskPath("requestRun");
       listed.unshift(requested);
       return Promise.resolve({ runId: requested.id, status: requested.status, deduped: false });
+    },
+    deleteRun: () => outsideAskPath("deleteRun"),
+  };
+}
+
+export interface DeleteInquiryRepositorySeed {
+  runs: InquiryRunSummaryRecord[];
+}
+
+function outsideDeletePath(method: string): never {
+  throw new Error(`inquiry-repository.fake: ${method} is outside the delete path`);
+}
+
+export function inMemoryDeleteInquiryRepository({
+  runs,
+}: DeleteInquiryRepositorySeed): InquiryRepository {
+  let listed = [...runs];
+
+  return {
+    recentRuns: () => Promise.resolve({ runs: [...listed], pinnedRunId: null }),
+    runById: () => outsideDeletePath("runById"),
+    requestRun: () => outsideDeletePath("requestRun"),
+    deleteRun: (runId) => {
+      listed = listed.filter((run) => run.id !== runId);
+      return Promise.resolve();
     },
   };
 }

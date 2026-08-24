@@ -24,6 +24,16 @@ export async function registerInquiryRoutes(
     return reply.send(run);
   });
 
+  app.delete("/inquiry/runs/:id", async (req, reply) => {
+    const params = req.params as { id?: string };
+    const outcome = await deps.deleteInquiryRun.execute(parseInquiryRunId(params.id));
+    if (outcome === "pinned") {
+      return reply.code(409).send({ error: "The pinned run backs the map and cannot be deleted" });
+    }
+    if (outcome === "not_found") return reply.code(404).send({ error: "Inquiry run not found" });
+    return reply.code(204).send();
+  });
+
   app.get("/inquiry/runs", async (req, reply) => {
     const query = (req.query as RawQuery | undefined) ?? {};
     const runs = await deps.listInquiryRuns.execute(parseInquiryRunsQuery(query));

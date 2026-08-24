@@ -8,6 +8,11 @@ export async function fetchJson<T>(url: string, options?: RequestInit): Promise<
   return (await response.json()) as T;
 }
 
+export async function fetchNoContent(url: string, options?: RequestInit): Promise<void> {
+  const response = await fetch(url, { credentials: "include", ...options });
+  if (!response.ok) throw new Error(await readErrorMessage(response));
+}
+
 async function readErrorMessage(response: Response): Promise<string> {
   const fallback = `HTTP ${response.status} ${response.statusText}`;
   if (!response.headers.get("content-type")?.includes("application/json")) return fallback;

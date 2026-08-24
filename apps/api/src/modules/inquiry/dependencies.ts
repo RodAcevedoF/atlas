@@ -1,4 +1,5 @@
 import type {
+  DeleteInquiryRun,
   ExecuteInquiryRun,
   GetInquiryRun,
   InquiryRunStorePort,
@@ -7,6 +8,7 @@ import type {
   RequestInquiryRun,
 } from "@atlas/application";
 import {
+  DeleteInquiryRunUseCase,
   ExecuteInquiryRunUseCase,
   GetInquiryRunUseCase,
   ListInquiryRunsUseCase,
@@ -19,6 +21,7 @@ export interface InquiryDeps {
   requestInquiryRun: RequestInquiryRun;
   getInquiryRun: GetInquiryRun;
   listInquiryRuns: ListInquiryRuns;
+  deleteInquiryRun: DeleteInquiryRun;
   pollIntervalMs: number;
 }
 
@@ -41,6 +44,7 @@ export function makeInquiryDependencies(deps: {
     requestInquiryRun: new RequestInquiryRunUseCase(deps.store, deps.dailyCap),
     getInquiryRun: new GetInquiryRunUseCase(deps.store),
     listInquiryRuns: new ListInquiryRunsUseCase(deps.store, deps.pinnedRunId),
+    deleteInquiryRun: new DeleteInquiryRunUseCase(deps.store, deps.pinnedRunId),
     pollIntervalMs: deps.pollIntervalMs,
   };
 }

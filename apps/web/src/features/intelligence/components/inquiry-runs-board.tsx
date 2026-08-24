@@ -1,6 +1,7 @@
 import {
   InquiryHistory,
   resolveSelectedRunId,
+  useDeleteInquiryRun,
   useInquiryRun,
   useRecentInquiryRuns,
 } from "@/features/inquiry";
@@ -9,9 +10,10 @@ import { useSearchParams } from "react-router-dom";
 
 export function InquiryRunsBoard() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { runs, isLoading, error } = useRecentInquiryRuns();
+  const { runs, pinnedRunId, isLoading, error } = useRecentInquiryRuns();
   const selectedId = resolveSelectedRunId(runs, searchParams.get("run"));
   const detail = useInquiryRun(selectedId);
+  const deleteRun = useDeleteInquiryRun();
 
   const selectRun = useCallback(
     (runId: string) => {
@@ -33,7 +35,9 @@ export function InquiryRunsBoard() {
       isLoading={isLoading}
       error={error}
       selectedId={selectedId}
+      pinnedRunId={pinnedRunId}
       onSelect={selectRun}
+      onDelete={deleteRun}
       detail={detail}
     />
   );
