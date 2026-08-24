@@ -40,19 +40,6 @@ export { IngestNewsUseCase } from "./news/inbound/ingest-news.ts";
 
 // world
 export type {
-  ListWorldTopicsInput,
-  ListWorldTopicsOutput,
-  ListWorldTopics,
-} from "./world/inbound/list-world-topics.ts";
-export { ListWorldTopicsUseCase } from "./world/inbound/list-world-topics.ts";
-export type {
-  ListWorldEventsInput,
-  ListWorldEventsOutput,
-  WorldEvent,
-  ListWorldEvents,
-} from "./world/inbound/list-world-events.ts";
-export { ListWorldEventsUseCase } from "./world/inbound/list-world-events.ts";
-export type {
   ListWorldSnapshotsInput,
   ListWorldSnapshotsOutput,
   TopicSnapshot,

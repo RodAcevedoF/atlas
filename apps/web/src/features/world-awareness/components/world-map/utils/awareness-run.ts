@@ -51,19 +51,15 @@ export function selectAwarenessRun(
   }
 
   const requestMiss = missFor(requestedId, requested);
-  const pinned = findRun(runs, pinnedRunId);
-  if (pinned && isPaintable(pinned)) {
-    return { latest, run: pinned, isPinned: true, isFallback: false, requestMiss };
-  }
-
   const painted = firstPaintable(runs);
   if (!painted) return { latest, run: null, isPinned: false, isFallback: false, requestMiss };
 
+  const isPinned = painted.id === pinnedRunId;
   return {
     latest,
     run: painted,
-    isPinned: false,
-    isFallback: painted.id !== latest.id,
+    isPinned,
+    isFallback: !isPinned && painted.id !== latest.id,
     requestMiss,
   };
 }

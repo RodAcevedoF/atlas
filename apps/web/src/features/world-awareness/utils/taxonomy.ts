@@ -1,4 +1,4 @@
-import type { GeoRegion, Topic } from "../repositories/world-repository.ts";
+import type { GeoRegion, Topic } from "@atlas/domain";
 
 export const REGION_LABELS: Record<GeoRegion, string> = {
   "north-america": "North America",

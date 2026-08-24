@@ -6,15 +6,7 @@ export * from "./migrations.ts";
 export * from "./inquiry-run-store.ts";
 
 import type { SignalClassificationUpdate, SignalStorePort } from "@atlas/application";
-import type {
-  GeoRegion,
-  RegionTopicBreakdown,
-  Signal,
-  SignalSource,
-  Topic,
-  TopicCount,
-  TopicSentimentSummary,
-} from "@atlas/domain";
+import type { GeoRegion, Signal, SignalSource, Topic, TopicSentimentSummary } from "@atlas/domain";
 import { makeSignalId } from "@atlas/domain";
 import type { Db } from "mongodb";
 import type { SignalDoc } from "./collections.ts";
@@ -78,68 +70,6 @@ export class MongoSignalStore implements SignalStorePort {
       },
     }));
     await this.db.collection<SignalDoc>("signals").bulkWrite(operations, { ordered: false });
-  }
-
-  async listRegionTopicBreakdowns(filter?: {
-    source?: SignalSource;
-    topic?: Topic;
-    region?: GeoRegion;
-    since?: Date;
-    limit?: number;
-  }): Promise<RegionTopicBreakdown[]> {
-    const match: Record<string, unknown> = {};
-    if (filter?.source) match.source = filter.source;
-    if (filter?.topic) match.topic = filter.topic;
-    if (filter?.region) match.regions = filter.region;
-    if (filter?.since) match.timestamp = { $gte: filter.since };
-
-    const rows = await this.db
-      .collection<SignalDoc>("signals")
-      .aggregate<{
-        _id: GeoRegion;
-        signalCount: number;
-        totalWeight: number;
-        weightedSentiment: number;
-        topics: TopicCount[];
-      }>([
-        { $match: match },
-        { $unwind: "$regions" },
-        ...(filter?.region ? [{ $match: { regions: filter.region } }] : []),
-        {
-          $group: {
-            _id: { region: "$regions", topic: "$topic" },
-            signalCount: { $sum: 1 },
-            totalWeight: { $sum: "$weight" },
-            weightedSentiment: { $sum: { $multiply: ["$weight", "$sentiment"] } },
-          },
-        },
-        {
-          $group: {
-            _id: "$_id.region",
-            signalCount: { $sum: "$signalCount" },
-            totalWeight: { $sum: "$totalWeight" },
-            weightedSentiment: { $sum: "$weightedSentiment" },
-            topics: {
-              $push: {
-                topic: "$_id.topic",
-                signalCount: "$signalCount",
-                totalWeight: "$totalWeight",
-              },
-            },
-          },
-        },
-      ])
-      .toArray();
-
-    const breakdowns = rows.map((row) => ({
-      region: row._id,
-      signalCount: row.signalCount,
-      totalWeight: row.totalWeight,
-      sentiment: row.totalWeight > 0 ? row.weightedSentiment / row.totalWeight : 0,
-      topics: [...row.topics].sort((left, right) => right.signalCount - left.signalCount),
-    }));
-    breakdowns.sort((left, right) => right.signalCount - left.signalCount);
-    return typeof filter?.limit === "number" ? breakdowns.slice(0, filter.limit) : breakdowns;
   }
 
   async listTopicSentimentSummaries(filter?: {

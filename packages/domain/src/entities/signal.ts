@@ -46,20 +46,6 @@ export function scoreSignalRelevance(signal: Signal, now: Date): number {
   return signal.weight * recency;
 }
 
-export interface TopicCount {
-  topic: Topic;
-  signalCount: number;
-  totalWeight: number;
-}
-
-export interface RegionTopicBreakdown {
-  region: GeoRegion;
-  signalCount: number;
-  totalWeight: number;
-  sentiment: number;
-  topics: TopicCount[];
-}
-
 export interface TopicSentimentSummary {
   topic: Topic;
   signalCount: number;

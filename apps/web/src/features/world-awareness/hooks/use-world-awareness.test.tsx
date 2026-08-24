@@ -2,7 +2,6 @@ import { afterEach, expect, test } from "bun:test";
 import { inquiryRunRequested } from "@/features/inquiry/infra/store/inquiry.commands.ts";
 import { buildInquiryRunSummary } from "@/features/inquiry/testing/inquiry-builder.ts";
 import { inMemoryAskInquiryRepository } from "@/features/inquiry/testing/inquiry-repository.fake.ts";
-import { inMemoryWorldRepository } from "@/features/world-awareness/testing/world-repository.fake.ts";
 import { makeStore } from "@/store/index.ts";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
@@ -16,7 +15,6 @@ test("a run picked while an ask is in flight holds — the ask's own URL write m
   const asked = buildInquiryRunSummary({ id: "run-asked" });
   const picked = buildInquiryRunSummary({ id: "run-picked" });
   const store = makeStore({
-    worldRepository: inMemoryWorldRepository(),
     inquiryRepository: inMemoryAskInquiryRepository({ runs: [asked, picked] }),
   });
   const wrapper = ({ children }: { children: ReactNode }) => (

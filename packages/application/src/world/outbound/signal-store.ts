@@ -1,6 +1,5 @@
 import type {
   GeoRegion,
-  RegionTopicBreakdown,
   Signal,
   SignalId,
   SignalSource,
@@ -17,13 +16,6 @@ export interface SignalClassificationUpdate {
 export interface SignalStorePort {
   upsertSignals(signals: Signal[]): Promise<void>;
   updateSignalClassifications(updates: SignalClassificationUpdate[]): Promise<void>;
-  listRegionTopicBreakdowns(filter?: {
-    source?: SignalSource;
-    topic?: Topic;
-    region?: GeoRegion;
-    since?: Date;
-    limit?: number;
-  }): Promise<RegionTopicBreakdown[]>;
   listTopicSentimentSummaries(filter?: {
     region?: GeoRegion;
     since?: Date;

@@ -136,14 +136,36 @@ describe("selectAwarenessRun", () => {
   });
 });
 
-describe("the pinned research the map opens on", () => {
+describe("the pinned research the map falls back to", () => {
   const PINNED = "run-pinned";
 
-  test("paints instead of the newest run when nothing was asked for", () => {
+  test("gives way to the newest run with coverage when nothing was asked for", () => {
     const runs = [
       buildInquiryRunSummary({ id: "run-new" }),
       buildInquiryRunSummary({ id: PINNED, question: "Where are new undersea cables being laid?" }),
     ];
+
+    const selection = selectAwarenessRun(runs, null, PINNED);
+
+    expect(selection.run?.id).toBe("run-new");
+    expect(selection.isPinned).toBe(false);
+    expect(selection.isFallback).toBe(false);
+  });
+
+  test("paints for a visitor whose own runs have nothing to plot", () => {
+    const runs = [
+      buildInquiryRunSummary({ id: "run-new", status: "no_coverage", placeCount: 0 }),
+      buildInquiryRunSummary({ id: PINNED, question: "Where are new undersea cables being laid?" }),
+    ];
+
+    const selection = selectAwarenessRun(runs, null, PINNED);
+
+    expect(selection.run?.id).toBe(PINNED);
+    expect(selection.isPinned).toBe(true);
+  });
+
+  test("is all a brand-new visitor has, and is not called a fallback", () => {
+    const runs = [buildInquiryRunSummary({ id: PINNED })];
 
     const selection = selectAwarenessRun(runs, null, PINNED);
 

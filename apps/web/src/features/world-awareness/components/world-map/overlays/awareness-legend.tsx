@@ -19,7 +19,7 @@ const REQUEST_MISS: Record<AwarenessRequestMiss, string> = {
 };
 
 const SHOWING_INSTEAD = {
-  pinned: "Showing the research this map opens on.",
+  pinned: "Showing the starter research.",
   fallback: "Showing your last run with placed claims.",
   latest: "Showing your most recent run with placed claims.",
   empty: "The map has nothing to plot yet.",

@@ -21,8 +21,6 @@ export type {
   SignalSource,
   Topic,
   Signal,
-  TopicCount,
-  RegionTopicBreakdown,
   TopicSentimentSummary,
 } from "./entities/signal.ts";
 export { makeSignalId, scoreSignalRelevance } from "./entities/signal.ts";

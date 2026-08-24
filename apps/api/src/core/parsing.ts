@@ -1,5 +1,5 @@
-import type { GeoRegion, SignalSource, Topic } from "@atlas/domain";
-import { GEO_REGIONS, SIGNAL_SOURCES, TOPICS } from "@atlas/domain";
+import type { GeoRegion } from "@atlas/domain";
+import { GEO_REGIONS } from "@atlas/domain";
 
 export type RawQuery = Record<string, unknown>;
 
@@ -17,14 +17,6 @@ export function parseEnum<T extends string>(allowed: readonly T[], value: unknow
 
 export function parseRegion(value: unknown): GeoRegion | undefined {
   return parseEnum(GEO_REGIONS, value);
-}
-
-export function parseSource(value: unknown): SignalSource | undefined {
-  return parseEnum(SIGNAL_SOURCES, value);
-}
-
-export function parseTopic(value: unknown): Topic | undefined {
-  return parseEnum(TOPICS, value);
 }
 
 export function parseSince(value: unknown): Date | undefined {

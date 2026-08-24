@@ -27,7 +27,6 @@ export function recordingSignalStore(
     updateSignalClassifications: () => {
       throw new UnsupportedPortMethodError("recordingSignalStore", "updateSignalClassifications");
     },
-    listRegionTopicBreakdowns: () => Promise.resolve([]),
     listTopicSentimentSummaries: () => Promise.resolve([]),
     listSignals(filter) {
       listFilters.push(filter);
@@ -66,9 +65,6 @@ export function inMemorySignalStore(seed: Signal[] = []): InMemorySignalStore {
         held.set(update.id, { ...signal, topic: update.topic, sentiment: update.sentiment });
       }
       return Promise.resolve();
-    },
-    listRegionTopicBreakdowns: () => {
-      throw new UnsupportedPortMethodError("inMemorySignalStore", "listRegionTopicBreakdowns");
     },
     listTopicSentimentSummaries: () => {
       throw new UnsupportedPortMethodError("inMemorySignalStore", "listTopicSentimentSummaries");

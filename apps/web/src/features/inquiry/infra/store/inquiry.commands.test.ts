@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test";
-import { inMemoryWorldRepository } from "@/features/world-awareness/testing/world-repository.fake.ts";
 import { makeStore } from "@/store/index.ts";
 import { buildInquiryRunSummary } from "../../testing/inquiry-builder.ts";
 import { inMemoryAskInquiryRepository } from "../../testing/inquiry-repository.fake.ts";
@@ -8,7 +7,6 @@ import { askInquiryQuestion } from "./inquiry.commands.ts";
 test("the asked run is in the list before its id is announced — announced first, the map calls it unknown", async () => {
   const asked = buildInquiryRunSummary({ id: "run-asked" });
   const store = makeStore({
-    worldRepository: inMemoryWorldRepository(),
     inquiryRepository: inMemoryAskInquiryRepository({ runs: [], requested: asked }),
   });
   const listedWhenAnnounced: string[][] = [];
