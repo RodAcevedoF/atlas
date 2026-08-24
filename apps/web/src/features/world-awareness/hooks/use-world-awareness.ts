@@ -5,7 +5,7 @@ import {
   useRecentInquiryRuns,
 } from "@/features/inquiry";
 import type { InquiryRunStatus } from "@atlas/domain";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { type AwarenessLayer, useAwarenessLayer } from "./use-awareness-layer.ts";
 
@@ -24,17 +24,17 @@ export interface UseWorldAwarenessResult {
   error: string | null;
   selectRun: (runId: string) => void;
   refresh: WorldRefresh;
-  clearRequestedRun: () => void;
 }
 
 export function useWorldAwareness(): UseWorldAwarenessResult {
-  const { runs, error } = useRecentInquiryRuns();
+  const { runs, pinnedRunId, error } = useRecentInquiryRuns();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedRunId = searchParams.get("run");
-  const awareness = useAwarenessLayer(runs, requestedRunId);
+  const awareness = useAwarenessLayer(runs, requestedRunId, pinnedRunId);
   const {
     refresh,
     dismissError,
+    startedRunId,
     isAsking,
     isRefresh,
     watchedStatus,
@@ -42,12 +42,11 @@ export function useWorldAwareness(): UseWorldAwarenessResult {
   } = useInquiryAsk();
 
   const setRequestedRun = useCallback(
-    (runId: string | null) => {
+    (runId: string) => {
       setSearchParams(
         (current) => {
           const params = new URLSearchParams(current);
-          if (runId) params.set("run", runId);
-          else params.delete("run");
+          params.set("run", runId);
           return params;
         },
         { replace: true },
@@ -56,17 +55,22 @@ export function useWorldAwareness(): UseWorldAwarenessResult {
     [setSearchParams],
   );
 
-  const clearRequestedRun = useCallback(() => {
-    if (!requestedRunId) return;
-    setRequestedRun(null);
-  }, [requestedRunId, setRequestedRun]);
+  const syncedStartedRunId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!startedRunId) {
+      syncedStartedRunId.current = null;
+      return;
+    }
+    if (syncedStartedRunId.current === startedRunId) return;
+    syncedStartedRunId.current = startedRunId;
+    setRequestedRun(startedRunId);
+  }, [startedRunId, setRequestedRun]);
 
   const shownRun = awareness.run;
   const refreshRun = useCallback(() => {
     if (!shownRun) return;
-    clearRequestedRun();
     refresh(shownRun.question);
-  }, [clearRequestedRun, refresh, shownRun]);
+  }, [refresh, shownRun]);
 
   const hasRunInFlight = awareness.latest !== null && !isInquiryRunSettled(awareness.latest.status);
 
@@ -83,6 +87,5 @@ export function useWorldAwareness(): UseWorldAwarenessResult {
       run: refreshRun,
       dismissError,
     },
-    clearRequestedRun,
   };
 }

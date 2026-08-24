@@ -9,13 +9,14 @@ const LIST_POLL_INTERVAL_MS = 6_000;
 
 export interface UseRecentInquiryRunsResult {
   runs: InquiryRunSummaryRecord[];
+  pinnedRunId: string | null;
   isLoading: boolean;
   error: string | null;
 }
 
 export function useRecentInquiryRuns(): UseRecentInquiryRunsResult {
   const dispatch = useAppDispatch();
-  const { runs, isLoading, error } = useAppSelector(selectInquiry);
+  const { runs, pinnedRunId, isLoading, error } = useAppSelector(selectInquiry);
   const isLoaded = runs.length > 0;
   const isWatching = hasRunInFlight(runs);
 
@@ -32,5 +33,5 @@ export function useRecentInquiryRuns(): UseRecentInquiryRunsResult {
     return () => clearInterval(poll);
   }, [dispatch, isWatching]);
 
-  return { runs, isLoading, error };
+  return { runs, pinnedRunId, isLoading, error };
 }

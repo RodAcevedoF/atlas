@@ -21,6 +21,7 @@ export interface InquiryRunStorePort {
   saveInquiryRun(run: InquiryRun): Promise<void>;
   findInquiryRunById(id: InquiryRunId): Promise<InquiryRun | null>;
   findInquiryRunByQuestionDay(questionKey: string, day: string): Promise<InquiryRun | null>;
+  findInquiryRunListRowById(id: InquiryRunId): Promise<InquiryRunListRow | null>;
   countInquiryRunsForDay(day: string): Promise<number>;
   claimNextInquiryRun(input: ClaimInquiryRunInput): Promise<InquiryRun | null>;
   completeInquiryRun(input: CompleteInquiryRunInput): Promise<void>;

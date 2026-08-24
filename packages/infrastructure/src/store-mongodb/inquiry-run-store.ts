@@ -105,6 +105,13 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
     return doc ? docToInquiryRun(doc) : null;
   }
 
+  async findInquiryRunListRowById(id: InquiryRunId): Promise<InquiryRunListRow | null> {
+    const doc = await this.db
+      .collection<InquiryRunDoc>(COLLECTION)
+      .findOne<InquiryRunListDoc>({ _id: id }, { projection: LIST_PROJECTION });
+    return doc ? docToListRow(doc) : null;
+  }
+
   async findInquiryRunByQuestionDay(questionKey: string, day: string): Promise<InquiryRun | null> {
     const doc = await this.db
       .collection<InquiryRunDoc>(COLLECTION)

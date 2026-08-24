@@ -5,6 +5,7 @@ export type {
   InquiryPlace,
   InquiryRun,
   PublicInquiryRun,
+  InquiryRunList,
   InquiryRunListRow,
   InquiryRunSummary,
 } from "./entities/inquiry-run.ts";

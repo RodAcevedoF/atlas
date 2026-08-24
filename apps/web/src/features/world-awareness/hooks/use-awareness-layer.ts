@@ -21,6 +21,7 @@ export interface AwarenessLayer {
   points: ClaimFeatureCollection | null;
   plotted: number;
   isPainting: boolean;
+  isPinned: boolean;
   isFallback: boolean;
   requestMiss: AwarenessRequestMiss | null;
   showsNotice: boolean;
@@ -32,20 +33,30 @@ export interface AwarenessLayer {
 interface NoticeInputs {
   selection: AwarenessSelection;
   isPainting: boolean;
+  isPinned: boolean;
   isFallback: boolean;
 }
 
-function noticeIdentity({ selection, isPainting, isFallback }: NoticeInputs): string | null {
+function noticeIdentity({
+  selection,
+  isPainting,
+  isPinned,
+  isFallback,
+}: NoticeInputs): string | null {
   if (!selection.latest) return null;
   const miss = selection.requestMiss ?? "none";
-  return `${selection.latest.id}:${selection.latest.status}:${miss}:${isPainting}:${isFallback}`;
+  return `${selection.latest.id}:${selection.latest.status}:${miss}:${isPainting}:${isPinned}:${isFallback}`;
 }
 
 export function useAwarenessLayer(
   runs: InquiryRunSummaryRecord[],
   requestedRunId: string | null,
+  pinnedRunId: string | null,
 ): AwarenessLayer {
-  const selection = useMemo(() => selectAwarenessRun(runs, requestedRunId), [runs, requestedRunId]);
+  const selection = useMemo(
+    () => selectAwarenessRun(runs, requestedRunId, pinnedRunId),
+    [runs, requestedRunId, pinnedRunId],
+  );
   const detail = useInquiryRun(selection.run?.id ?? null);
   const points = useMemo(
     () => (detail.run ? buildClaimPoints(detail.run.places) : null),
@@ -54,11 +65,12 @@ export function useAwarenessLayer(
 
   const plotted = points?.features.length ?? 0;
   const isPainting = plotted > 0;
+  const isPinned = isPainting && selection.isPinned;
   const isFallback = isPainting && selection.isFallback;
   const isResolvingRun = selection.run !== null && detail.run === null;
 
   const [dismissedNotice, setDismissedNotice] = useState<string | null>(null);
-  const noticeKey = noticeIdentity({ selection, isPainting, isFallback });
+  const noticeKey = noticeIdentity({ selection, isPainting, isPinned, isFallback });
   const dismissNotice = useCallback(() => setDismissedNotice(noticeKey), [noticeKey]);
 
   const showsNotice =
@@ -74,6 +86,7 @@ export function useAwarenessLayer(
     points,
     plotted,
     isPainting,
+    isPinned,
     isFallback,
     requestMiss: selection.requestMiss,
     showsNotice,

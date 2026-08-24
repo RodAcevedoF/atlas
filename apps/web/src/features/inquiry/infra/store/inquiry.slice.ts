@@ -8,11 +8,13 @@ import type {
 import {
   askInquiryQuestion,
   inquiryRunProgressed,
+  inquiryRunRequested,
   loadInquiryRun,
   loadRecentInquiryRuns,
 } from "./inquiry.commands.ts";
 
 export interface InquiryAskState {
+  startedRunId: string | null;
   isAsking: boolean;
   isRefresh: boolean;
   watchedStatus: InquiryRunStatus | null;
@@ -34,6 +36,7 @@ export interface InquiryDetailState {
 
 export interface InquiryState {
   runs: InquiryRunSummaryRecord[];
+  pinnedRunId: string | null;
   isLoading: boolean;
   error: string | null;
   detail: InquiryDetailState;
@@ -41,6 +44,7 @@ export interface InquiryState {
 }
 
 const idleAsk: InquiryAskState = {
+  startedRunId: null,
   isAsking: false,
   isRefresh: false,
   watchedStatus: null,
@@ -51,6 +55,7 @@ const idleAsk: InquiryAskState = {
 
 const initialState: InquiryState = {
   runs: [],
+  pinnedRunId: null,
   isLoading: true,
   error: null,
   detail: { byId: {}, loadingId: null, failure: null },
@@ -82,9 +87,10 @@ const inquirySlice = createSlice({
         state.error = null;
       })
       .addCase(loadRecentInquiryRuns.fulfilled, (state, action) => {
-        state.runs = action.payload;
+        state.runs = action.payload.runs;
+        state.pinnedRunId = action.payload.pinnedRunId;
         state.isLoading = false;
-        state.detail.byId = keepFreshDetails(state.detail.byId, action.payload);
+        state.detail.byId = keepFreshDetails(state.detail.byId, action.payload.runs);
       })
       .addCase(loadRecentInquiryRuns.rejected, (state, action) => {
         state.isLoading = false;
@@ -107,6 +113,9 @@ const inquirySlice = createSlice({
       })
       .addCase(askInquiryQuestion.pending, (state, action) => {
         state.ask = { ...idleAsk, isAsking: true, isRefresh: action.meta.arg.refresh };
+      })
+      .addCase(inquiryRunRequested, (state, action) => {
+        state.ask.startedRunId = action.payload;
       })
       .addCase(inquiryRunProgressed, (state, action) => {
         state.ask.watchedStatus = action.payload;

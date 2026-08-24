@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { InquiryPlace, InquiryRun } from "@atlas/domain";
+import type { InquiryPlace, InquiryRun, InquiryRunId } from "@atlas/domain";
 import { makeInquiryRunId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import { ListInquiryRunsUseCase } from "./list-inquiry-runs.ts";
@@ -47,11 +47,11 @@ function place(name: string): InquiryPlace {
   };
 }
 
-function useCaseOverSeeded(): ListInquiryRunsUseCase {
+function useCaseOverSeeded(pinnedRunId: InquiryRunId | null = null): ListInquiryRunsUseCase {
   const { store } = inMemoryInquiryRunStore(
     Array.from({ length: SEEDED }, (_unused, index) => run(index)),
   );
-  return new ListInquiryRunsUseCase(store);
+  return new ListInquiryRunsUseCase(store, pinnedRunId);
 }
 
 describe("ListInquiryRunsUseCase", () => {
@@ -66,7 +66,7 @@ describe("ListInquiryRunsUseCase", () => {
     test(name, async () => {
       const useCase = useCaseOverSeeded();
 
-      const runs = await useCase.execute({ limit: asked });
+      const { runs } = await useCase.execute({ limit: asked });
 
       expect(runs).toHaveLength(expected);
     });
@@ -77,9 +77,11 @@ describe("ListInquiryRunsUseCase", () => {
     measured.synthesis = "a long synthesis the list has no use for";
     measured.places = [place("Khartoum"), place("El Fasher")];
     const { store } = inMemoryInquiryRunStore([measured]);
-    const useCase = new ListInquiryRunsUseCase(store);
+    const useCase = new ListInquiryRunsUseCase(store, null);
 
-    const [listed] = await useCase.execute();
+    const {
+      runs: [listed],
+    } = await useCase.execute();
 
     expect(listed).toEqual({
       id: makeInquiryRunId("run-0"),
@@ -97,12 +99,53 @@ describe("ListInquiryRunsUseCase", () => {
   test("the newest run is served first", async () => {
     const useCase = useCaseOverSeeded();
 
-    const runs = await useCase.execute({ limit: 3 });
+    const { runs } = await useCase.execute({ limit: 3 });
 
     expect(runs.map((entry) => entry.id)).toEqual([
       makeInquiryRunId("run-129"),
       makeInquiryRunId("run-128"),
       makeInquiryRunId("run-127"),
     ]);
+  });
+});
+
+describe("the pinned run the map opens on", () => {
+  test("is named on the list so the map can prefer it over the newest run", async () => {
+    const useCase = useCaseOverSeeded(makeInquiryRunId("run-129"));
+
+    const { pinnedRunId } = await useCase.execute({ limit: 3 });
+
+    expect(pinnedRunId).toBe(makeInquiryRunId("run-129"));
+  });
+
+  test("rides along when it aged out of the page, or the map could never select it", async () => {
+    const useCase = useCaseOverSeeded(makeInquiryRunId("run-0"));
+
+    const { runs, pinnedRunId } = await useCase.execute({ limit: 3 });
+
+    expect(runs.map((entry) => entry.id)).toEqual([
+      makeInquiryRunId("run-129"),
+      makeInquiryRunId("run-128"),
+      makeInquiryRunId("run-127"),
+      makeInquiryRunId("run-0"),
+    ]);
+    expect(pinnedRunId).toBe(makeInquiryRunId("run-0"));
+  });
+
+  test("is reported as unpinned when the configured run does not exist", async () => {
+    const useCase = useCaseOverSeeded(makeInquiryRunId("run-gone"));
+
+    const { runs, pinnedRunId } = await useCase.execute({ limit: 3 });
+
+    expect(runs).toHaveLength(3);
+    expect(pinnedRunId).toBeNull();
+  });
+
+  test("is absent when nothing is pinned", async () => {
+    const useCase = useCaseOverSeeded();
+
+    const { pinnedRunId } = await useCase.execute({ limit: 3 });
+
+    expect(pinnedRunId).toBeNull();
   });
 });

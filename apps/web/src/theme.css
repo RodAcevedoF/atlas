@@ -24,6 +24,7 @@
   --positive: #4fe3c1;
   --negative: #ff6e8a;
   --info: #8aa4ff;
+  --warning: #ffab58;
   --destructive: #ff6e8a;
   --destructive-foreground: #05081a;
   --border: rgba(150, 175, 255, 0.13);
@@ -110,6 +111,7 @@
   --color-positive: var(--positive);
   --color-negative: var(--negative);
   --color-info: var(--info);
+  --color-warning: var(--warning);
   --color-sentiment-negative: var(--sentiment-negative);
   --color-sentiment-neutral: var(--sentiment-neutral);
   --color-sentiment-positive: var(--sentiment-positive);

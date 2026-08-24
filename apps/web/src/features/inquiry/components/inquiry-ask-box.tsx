@@ -62,7 +62,7 @@ function askMessage(state: InquiryAskState): AskMessage | null {
   return null;
 }
 
-export function InquiryAskBox({ onAsk }: { onAsk: () => void }) {
+export function InquiryAskBox() {
   const { ask, ...state } = useInquiryAsk();
   const [question, setQuestion] = useState("");
   const message = askMessage(state);
@@ -71,7 +71,6 @@ export function InquiryAskBox({ onAsk }: { onAsk: () => void }) {
     event.preventDefault();
     if (state.isAsking || !question.trim()) return;
     ask(question);
-    onAsk();
     setQuestion("");
   };
 
@@ -80,7 +79,7 @@ export function InquiryAskBox({ onAsk }: { onAsk: () => void }) {
       <form onSubmit={submit} className="flex items-center gap-2">
         <input
           aria-label="Ask a question"
-          placeholder="Where is lithium mining expanding?"
+          placeholder="Where are wildfires burning right now?"
           value={question}
           maxLength={INQUIRY_QUESTION_MAX_CHARS}
           onChange={(event) => setQuestion(event.target.value)}

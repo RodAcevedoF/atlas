@@ -12,6 +12,7 @@ import {
   ListInquiryRunsUseCase,
   RequestInquiryRunUseCase,
 } from "@atlas/application";
+import type { InquiryRunId } from "@atlas/domain";
 
 export interface InquiryDeps {
   executeInquiryRun: ExecuteInquiryRun;
@@ -28,6 +29,7 @@ export function makeInquiryDependencies(deps: {
   runTimeoutMs: number;
   pollIntervalMs: number;
   dailyCap: number;
+  pinnedRunId: InquiryRunId | null;
 }): InquiryDeps {
   return {
     executeInquiryRun: new ExecuteInquiryRunUseCase(
@@ -38,7 +40,7 @@ export function makeInquiryDependencies(deps: {
     ),
     requestInquiryRun: new RequestInquiryRunUseCase(deps.store, deps.dailyCap),
     getInquiryRun: new GetInquiryRunUseCase(deps.store),
-    listInquiryRuns: new ListInquiryRunsUseCase(deps.store),
+    listInquiryRuns: new ListInquiryRunsUseCase(deps.store, deps.pinnedRunId),
     pollIntervalMs: deps.pollIntervalMs,
   };
 }

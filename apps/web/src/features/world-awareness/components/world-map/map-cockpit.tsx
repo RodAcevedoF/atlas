@@ -9,10 +9,9 @@ import { WorldMap } from "./world-map.tsx";
 interface MapCockpitProps {
   awareness: AwarenessLayer;
   error: string | null;
-  onAsk: () => void;
 }
 
-export function MapCockpit({ awareness, error, onAsk }: MapCockpitProps) {
+export function MapCockpit({ awareness, error }: MapCockpitProps) {
   const { selected, select, clear } = usePlaceSelection(awareness.detail);
 
   return (
@@ -27,12 +26,13 @@ export function MapCockpit({ awareness, error, onAsk }: MapCockpitProps) {
 
       <div className="pointer-events-none absolute left-1/2 top-4 z-10 flex w-full max-w-[22rem] -translate-x-1/2 flex-col items-center gap-2 px-4 lg:max-w-[min(32rem,calc(100vw-36rem))]">
         <div className="pointer-events-auto w-full">
-          <InquiryAskBox onAsk={onAsk} />
+          <InquiryAskBox />
         </div>
         {error ? <MapError message={error} /> : null}
         {awareness.showsNotice && awareness.latest ? (
           <AwarenessRunNotice
             latest={awareness.latest}
+            isPinned={awareness.isPinned}
             isFallback={awareness.isFallback}
             requestMiss={awareness.requestMiss}
             isPainting={awareness.isPainting}

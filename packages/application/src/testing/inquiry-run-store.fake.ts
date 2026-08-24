@@ -50,6 +50,10 @@ export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquir
       return Promise.resolve();
     },
     findInquiryRunById: (id) => Promise.resolve(held.get(id) ?? null),
+    findInquiryRunListRowById(id) {
+      const run = held.get(id);
+      return Promise.resolve(run ? toListRow(run) : null);
+    },
     findInquiryRunByQuestionDay(questionKey, day) {
       const [newest] = [...held.values()]
         .filter((run) => run.questionKey === questionKey && run.day === day)

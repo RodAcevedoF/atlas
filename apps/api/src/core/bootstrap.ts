@@ -1,3 +1,5 @@
+import type { InquiryRunId } from "@atlas/domain";
+import { makeInquiryRunId } from "@atlas/domain";
 import { PasswordIdentityProvider } from "@atlas/infra/identity-password";
 import { ExaNewsAdapter } from "@atlas/infra/news-exa";
 import { HttpOrchestration } from "@atlas/infra/orchestration-http";
@@ -39,6 +41,11 @@ function readPositiveNumber(name: string, fallback: number): number {
   const parsed = Number(raw);
   if (!Number.isFinite(parsed) || parsed <= 0) throw new Error(`${name} must be a positive number`);
   return parsed;
+}
+
+function readInquiryRunId(name: string): InquiryRunId | null {
+  const raw = process.env[name]?.trim();
+  return raw ? makeInquiryRunId(raw) : null;
 }
 
 function readPositiveInt(name: string, fallback: number): number {
@@ -102,6 +109,7 @@ export async function bootstrap(): Promise<AppDeps> {
       DEFAULT_INQUIRY_POLL_INTERVAL_MS,
     ),
     dailyCap: readPositiveInt("INQUIRY_DAILY_CAP", DEFAULT_INQUIRY_DAILY_CAP),
+    pinnedRunId: readInquiryRunId("INQUIRY_PINNED_RUN_ID"),
   });
 
   return { auth, profile, news, world, inquiry, redis };

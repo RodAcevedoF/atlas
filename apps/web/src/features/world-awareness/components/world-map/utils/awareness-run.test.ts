@@ -20,7 +20,7 @@ describe("selectAwarenessRun", () => {
       buildInquiryRunSummary({ id: "run-old", question: "An older question" }),
     ];
 
-    const selection = selectAwarenessRun(runs, null);
+    const selection = selectAwarenessRun(runs, null, null);
 
     expect(selection.run?.id).toBe("run-new");
     expect(selection.isFallback).toBe(false);
@@ -33,7 +33,7 @@ describe("selectAwarenessRun", () => {
         buildInquiryRunSummary({ id: "run-old", question: "An older question" }),
       ];
 
-      const selection = selectAwarenessRun(runs, null);
+      const selection = selectAwarenessRun(runs, null, null);
 
       expect(selection.run?.id).toBe("run-old");
       expect(selection.isFallback).toBe(true);
@@ -46,7 +46,7 @@ describe("selectAwarenessRun", () => {
       buildInquiryRunSummary({ id: "run-old" }),
     ];
 
-    const selection = selectAwarenessRun(runs, null);
+    const selection = selectAwarenessRun(runs, null, null);
 
     expect(selection.latest?.id).toBe("run-new");
     expect(selection.latest?.status).toBe("below_floor");
@@ -59,7 +59,7 @@ describe("selectAwarenessRun", () => {
       buildInquiryRunSummary({ id: "run-1" }),
     ];
 
-    const selection = selectAwarenessRun(runs, null);
+    const selection = selectAwarenessRun(runs, null, null);
 
     expect(selection.run?.id).toBe("run-1");
   });
@@ -70,7 +70,7 @@ describe("selectAwarenessRun", () => {
       buildInquiryRunSummary({ id: "run-1", placeCount: 0 }),
     ];
 
-    const selection = selectAwarenessRun(runs, null);
+    const selection = selectAwarenessRun(runs, null, null);
 
     expect(selection.latest?.id).toBe("run-2");
     expect(selection.run).toBeNull();
@@ -83,7 +83,7 @@ describe("selectAwarenessRun", () => {
       buildInquiryRunSummary({ id: "run-old", question: "An older question" }),
     ];
 
-    const selection = selectAwarenessRun(runs, "run-old");
+    const selection = selectAwarenessRun(runs, "run-old", null);
 
     expect(selection.run?.id).toBe("run-old");
     expect(selection.isFallback).toBe(false);
@@ -102,6 +102,15 @@ describe("selectAwarenessRun", () => {
       miss: "unpaintable",
     },
     {
+      name: "the asked-for run has not settled — nothing is known about it to judge yet",
+      runs: [
+        buildInquiryRunSummary({ id: "run-new" }),
+        buildInquiryRunSummary({ id: "run-old", status: "running", placeCount: 0 }),
+      ],
+      requested: "run-old",
+      miss: "pending",
+    },
+    {
       name: "the asked-for run aged out of the window — we know nothing about what it measured",
       runs: [buildInquiryRunSummary({ id: "run-new" })],
       requested: "run-gone",
@@ -110,8 +119,8 @@ describe("selectAwarenessRun", () => {
   ] as const;
 
   for (const { name, runs, requested, miss } of MISSED_REQUESTS) {
-    test(`tells the two misses apart when ${name}`, () => {
-      const selection = selectAwarenessRun([...runs], requested);
+    test(`tells the misses apart when ${name}`, () => {
+      const selection = selectAwarenessRun([...runs], requested, null);
 
       expect(selection.run?.id).toBe("run-new");
       expect(selection.requestMiss).toBe(miss);
@@ -120,9 +129,63 @@ describe("selectAwarenessRun", () => {
   }
 
   test("reports nothing at all when the user has never run a question", () => {
-    const selection = selectAwarenessRun([], null);
+    const selection = selectAwarenessRun([], null, null);
 
     expect(selection.latest).toBeNull();
     expect(selection.run).toBeNull();
+  });
+});
+
+describe("the pinned research the map opens on", () => {
+  const PINNED = "run-pinned";
+
+  test("paints instead of the newest run when nothing was asked for", () => {
+    const runs = [
+      buildInquiryRunSummary({ id: "run-new" }),
+      buildInquiryRunSummary({ id: PINNED, question: "Where are new undersea cables being laid?" }),
+    ];
+
+    const selection = selectAwarenessRun(runs, null, PINNED);
+
+    expect(selection.run?.id).toBe(PINNED);
+    expect(selection.isPinned).toBe(true);
+    expect(selection.isFallback).toBe(false);
+  });
+
+  test("gives way to the run the caller asked for", () => {
+    const runs = [
+      buildInquiryRunSummary({ id: "run-new" }),
+      buildInquiryRunSummary({ id: PINNED }),
+    ];
+
+    const selection = selectAwarenessRun(runs, "run-new", PINNED);
+
+    expect(selection.run?.id).toBe("run-new");
+    expect(selection.isPinned).toBe(false);
+  });
+
+  test("holds the map while the run just asked for is still working", () => {
+    const runs = [
+      buildInquiryRunSummary({ id: "run-new", status: "running", placeCount: 0 }),
+      buildInquiryRunSummary({ id: PINNED }),
+    ];
+
+    const selection = selectAwarenessRun(runs, "run-new", PINNED);
+
+    expect(selection.run?.id).toBe(PINNED);
+    expect(selection.isPinned).toBe(true);
+    expect(selection.requestMiss).toBe("pending");
+  });
+
+  test("is walked past when it has nothing to paint", () => {
+    const runs = [
+      buildInquiryRunSummary({ id: "run-new" }),
+      buildInquiryRunSummary({ id: PINNED, placeCount: 0 }),
+    ];
+
+    const selection = selectAwarenessRun(runs, null, PINNED);
+
+    expect(selection.run?.id).toBe("run-new");
+    expect(selection.isPinned).toBe(false);
   });
 });

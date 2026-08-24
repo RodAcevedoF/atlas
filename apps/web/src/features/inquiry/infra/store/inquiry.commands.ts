@@ -2,9 +2,9 @@ import type { AppThunkExtra, RootState } from "@/store/index.ts";
 import type { InquiryRunStatus } from "@atlas/domain";
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import type {
+  InquiryRunListRecord,
   InquiryRunRecord,
   InquiryRunRequestInput,
-  InquiryRunSummaryRecord,
 } from "../../repositories/inquiry-repository.ts";
 import { makeLoadInquiryRun } from "../../use-cases/load-inquiry-run.ts";
 import { makeLoadRecentInquiryRuns } from "../../use-cases/load-recent-inquiry-runs.ts";
@@ -13,6 +13,7 @@ import { makeRequestInquiryRun } from "../../use-cases/request-inquiry-run.ts";
 import type { WatchInquiryRunOutcome } from "../../use-cases/watch-inquiry-run.ts";
 
 export const inquiryRunProgressed = createAction<InquiryRunStatus>("inquiry/progressed");
+export const inquiryRunRequested = createAction<string>("inquiry/requested");
 
 export interface AskInquiryQuestionOutcome extends WatchInquiryRunOutcome {
   deduped: boolean;
@@ -28,11 +29,10 @@ function reasonFor(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause);
 }
 
-export const loadRecentInquiryRuns = createAsyncThunk<
-  InquiryRunSummaryRecord[],
-  void,
-  CommandConfig
->("inquiry/loadRecent", (_input, { extra }) => makeLoadRecentInquiryRuns(extra)());
+export const loadRecentInquiryRuns = createAsyncThunk<InquiryRunListRecord, void, CommandConfig>(
+  "inquiry/loadRecent",
+  (_input, { extra }) => makeLoadRecentInquiryRuns(extra)(),
+);
 
 export const loadInquiryRun = createAsyncThunk<InquiryRunRecord, string, CommandConfig>(
   "inquiry/loadRun",
@@ -45,6 +45,8 @@ export const askInquiryQuestion = createAsyncThunk<
   CommandConfig
 >("inquiry/ask", async (request, { extra, dispatch }) => {
   const requested = await makeRequestInquiryRun(extra)(request);
+  await dispatch(loadRecentInquiryRuns());
+  dispatch(inquiryRunRequested(requested.runId));
   const watchInquiryRun = makePollInquiryRun(extra, INQUIRY_POLL_SCHEDULE);
 
   try {

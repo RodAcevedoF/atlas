@@ -12,7 +12,7 @@ import { createPortal } from "react-dom";
 import { Button } from "./button.tsx";
 import { cn } from "./utils.ts";
 
-export type ToastVariant = "default" | "success" | "error";
+export type ToastVariant = "default" | "info" | "success" | "warning" | "error";
 
 interface ToastItem {
   id: number;
@@ -80,7 +80,7 @@ export function useToast(): ToastContextValue {
 function Toaster({ toasts, onDismiss }: { toasts: ToastItem[]; onDismiss: (id: number) => void }) {
   if (typeof document === "undefined") return null;
   return createPortal(
-    <div className="pointer-events-none fixed inset-x-0 top-3 z-[100] flex flex-col items-center gap-2 px-4">
+    <div className="pointer-events-none fixed right-4 bottom-4 z-[100] flex w-[min(23rem,calc(100vw-2rem))] flex-col gap-2">
       {toasts.map((item) => (
         <ToastCard key={item.id} item={item} onDismiss={() => onDismiss(item.id)} />
       ))}
@@ -89,10 +89,12 @@ function Toaster({ toasts, onDismiss }: { toasts: ToastItem[]; onDismiss: (id: n
   );
 }
 
-const VARIANT_DOT: Record<ToastVariant, string> = {
-  default: "bg-muted-foreground",
-  success: "bg-positive",
-  error: "bg-destructive",
+const VARIANT_ORB: Record<ToastVariant, string> = {
+  default: "bg-muted-foreground ring-muted-foreground/15",
+  info: "bg-info ring-info/15",
+  success: "bg-positive ring-positive/15",
+  warning: "bg-warning ring-warning/15",
+  error: "bg-destructive ring-destructive/15",
 };
 
 function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: () => void }) {
@@ -107,19 +109,24 @@ function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
     <output
       aria-live="polite"
       className={cn(
-        "pointer-events-auto flex max-w-sm items-center gap-2.5 rounded-xl border border-border bg-card px-4 py-2.5 text-[12.5px] text-card-foreground shadow-lg transition-all duration-200",
-        shown ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0",
+        "pointer-events-auto flex items-start gap-3 rounded-2xl border border-border-strong bg-popover/95 py-3 pr-2.5 pl-4 text-[12.5px] text-popover-foreground shadow-2xl backdrop-blur-md transition-all duration-300 ease-out",
+        shown ? "translate-y-0 scale-100 opacity-100" : "translate-y-3 scale-[0.97] opacity-0",
       )}
     >
-      <span className={cn("h-1.5 w-1.5 flex-none rounded-full", VARIANT_DOT[item.variant])} />
-      <span className="flex-1">{item.message}</span>
+      <span
+        className={cn(
+          "mt-[5px] h-2.5 w-2.5 flex-none rounded-full ring-4",
+          VARIANT_ORB[item.variant],
+        )}
+      />
+      <span className="flex-1 leading-relaxed">{item.message}</span>
       <Button
         type="button"
         variant="ghost"
         size="icon"
         aria-label="Dismiss"
         onClick={onDismiss}
-        className="h-6 w-6 flex-none text-muted-foreground hover:text-foreground"
+        className="-mt-0.5 h-6 w-6 flex-none rounded-lg text-muted-foreground hover:text-foreground"
       >
         ✕
       </Button>

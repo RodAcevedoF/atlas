@@ -13,11 +13,13 @@ const LATEST_RUN_OUTCOME: Record<InquiryRunSummaryRecord["status"], string> = {
 };
 
 const REQUEST_MISS: Record<AwarenessRequestMiss, string> = {
+  pending: "That run is still working.",
   unpaintable: "That run has nothing this map can plot.",
   unknown: "That run isn't in your recent history.",
 };
 
 const SHOWING_INSTEAD = {
+  pinned: "Showing the research this map opens on.",
   fallback: "Showing your last run with placed claims.",
   latest: "Showing your most recent run with placed claims.",
   empty: "The map has nothing to plot yet.",
@@ -25,19 +27,22 @@ const SHOWING_INSTEAD = {
 
 interface AwarenessRunNoticeProps {
   latest: InquiryRunSummaryRecord;
+  isPinned: boolean;
   isFallback: boolean;
   requestMiss: AwarenessRequestMiss | null;
   isPainting: boolean;
   onDismiss: () => void;
 }
 
-function showingInstead(isPainting: boolean, isFallback: boolean): string {
+function showingInstead(isPainting: boolean, isPinned: boolean, isFallback: boolean): string {
   if (!isPainting) return SHOWING_INSTEAD.empty;
+  if (isPinned) return SHOWING_INSTEAD.pinned;
   return isFallback ? SHOWING_INSTEAD.fallback : SHOWING_INSTEAD.latest;
 }
 
 export function AwarenessRunNotice({
   latest,
+  isPinned,
   isFallback,
   requestMiss,
   isPainting,
@@ -46,7 +51,7 @@ export function AwarenessRunNotice({
   return (
     <div className="pointer-events-auto relative max-w-md rounded-xl border border-border bg-card/86 py-2 pl-4 pr-9 text-center text-[12.5px] text-muted-foreground backdrop-blur-md">
       {requestMiss ? REQUEST_MISS[requestMiss] : LATEST_RUN_OUTCOME[latest.status]}{" "}
-      {showingInstead(isPainting, isFallback)}
+      {showingInstead(isPainting, isPinned, isFallback)}
       <button
         type="button"
         aria-label="Dismiss run notice"

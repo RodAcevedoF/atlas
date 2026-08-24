@@ -87,6 +87,11 @@ export interface InquiryRunSummary {
   completedAt: Date | null;
 }
 
+export interface InquiryRunList {
+  runs: InquiryRunSummary[];
+  pinnedRunId: InquiryRunId | null;
+}
+
 export type InquiryRunListRow = Pick<
   InquiryRun,
   "id" | "question" | "day" | "window" | "status" | "createdAt" | "startedAt" | "completedAt"
