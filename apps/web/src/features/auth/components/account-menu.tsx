@@ -122,16 +122,18 @@ export function AccountMenu() {
               Preferences fill in the world scan when you don't pick a topic or region.
             </p>
 
-            <div className="flex items-center gap-3.5">
-              <Button size="sm" className="flex-1" onClick={save} disabled={isSaving}>
+            <div className="flex flex-col gap-2">
+              <Button size="sm" onClick={save} disabled={isSaving}>
                 {isSaving ? "Saving…" : "Save preferences"}
               </Button>
-              <Button asChild size="sm" variant="ghost" className="px-0">
-                <Link to="/about">About</Link>
-              </Button>
-              <Button size="sm" variant="ghost" className="px-0" onClick={() => void logout()}>
-                Sign out
-              </Button>
+              <div className="flex items-center justify-between">
+                <Button asChild size="sm" variant="ghost">
+                  <Link to="/about">About</Link>
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => void logout()}>
+                  Sign out
+                </Button>
+              </div>
             </div>
           </Card>
         </>
