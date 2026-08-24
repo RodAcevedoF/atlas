@@ -1,7 +1,6 @@
 import { RunMigrationsUseCase } from "@atlas/application";
 import {
   MongoMigrationLedger,
-  MongoSignalStore,
   createMongoClient,
   dropGdeltEraInquiryRuns,
   dropSavedReportIds,
@@ -9,7 +8,6 @@ import {
   regroupInquiryPlacesOntoCoordinates,
   renameResearchRunsToInquiryRuns,
 } from "@atlas/infra/store-mongodb";
-import { buildMigrations } from "./migrations.ts";
 
 async function migrate(): Promise<void> {
   const uri = process.env.MONGODB_URI;
@@ -21,19 +19,15 @@ async function migrate(): Promise<void> {
   await client.connect();
   try {
     const db = client.db(dbName);
-    const store = new MongoSignalStore(db);
     const ledger = new MongoMigrationLedger(db);
 
-    const result = await new RunMigrationsUseCase(
-      ledger,
-      buildMigrations(store, [
-        renameResearchRunsToInquiryRuns(db),
-        dropSavedReportIds(db),
-        emptyGdeltEraInquiryRuns(db),
-        dropGdeltEraInquiryRuns(db),
-        regroupInquiryPlacesOntoCoordinates(db),
-      ]),
-    ).execute({
+    const result = await new RunMigrationsUseCase(ledger, [
+      renameResearchRunsToInquiryRuns(db),
+      dropSavedReportIds(db),
+      emptyGdeltEraInquiryRuns(db),
+      dropGdeltEraInquiryRuns(db),
+      regroupInquiryPlacesOntoCoordinates(db),
+    ]).execute({
       dryRun,
     });
 

@@ -1,19 +1,4 @@
-import type { GeoRegion, InquiryPlace, InquiryRunStatus, SignalSource, Topic } from "@atlas/domain";
-
-export interface SignalDoc {
-  _id: string;
-  source: SignalSource;
-  topic: Topic;
-  primaryRegion: GeoRegion;
-  regions: GeoRegion[];
-  sourceCountry?: string | null;
-  weight: number;
-  sentiment: number;
-  title: string;
-  ref: string;
-  timestamp: Date;
-  createdAt: Date;
-}
+import type { InquiryPlace, InquiryRunStatus } from "@atlas/domain";
 
 export interface MigrationDoc {
   _id: string;

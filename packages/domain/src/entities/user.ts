@@ -1,5 +1,4 @@
-import type { GeoRegion } from "./geography.ts";
-import type { Topic } from "./signal.ts";
+import type { GeoRegion, Topic } from "./taxonomy.ts";
 
 export type UserId = string & { readonly _brand: "UserId" };
 export function makeUserId(value: string): UserId {

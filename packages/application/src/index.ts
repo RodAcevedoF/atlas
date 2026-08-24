@@ -1,8 +1,4 @@
 // outbound ports
-export type {
-  SignalClassificationUpdate,
-  SignalStorePort,
-} from "./world/outbound/signal-store.ts";
 export type { MigrationLedgerPort } from "./migrations/outbound/migration-ledger.ts";
 export type {
   ClaimInquiryRunInput,
@@ -28,15 +24,6 @@ export type {
 } from "./auth/outbound/identity-provider.ts";
 export type { EmailMessage, EmailPort } from "./auth/outbound/email.ts";
 export type { VerificationTokenStorePort } from "./auth/outbound/verification-token-store.ts";
-
-// world
-export type {
-  RegionDiagnostics,
-  ReclassifySignalsInput,
-  ReclassifySignalsOutput,
-  ReclassifySignals,
-} from "./world/inbound/reclassify-signals.ts";
-export { ReclassifySignalsUseCase } from "./world/inbound/reclassify-signals.ts";
 
 // inquiry
 export type {
