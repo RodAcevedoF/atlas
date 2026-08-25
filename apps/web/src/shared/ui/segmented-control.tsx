@@ -2,11 +2,11 @@ import { cn } from "@atlas/ui";
 
 /** Pill container shared by the segmented button control and the nav-tab variant. */
 export const SEGMENT_GROUP =
-  "flex items-center gap-0.5 rounded-[11px] border border-border bg-muted p-0.75";
+  "flex items-center gap-0.5 rounded-full border border-border bg-coverage/[0.05] p-1";
 
 export function segmentItemClass(isActive: boolean): string {
   return cn(
-    "flex h-6.75 items-center rounded-lg px-3.25 text-xs font-medium transition-colors",
+    "flex h-7 items-center rounded-full px-4 text-[12.5px] font-medium transition-colors",
     isActive
       ? "atlas-segment-active text-foreground"
       : "text-muted-foreground hover:text-foreground",

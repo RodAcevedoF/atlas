@@ -1,5 +1,6 @@
+import { CTA_PRIMARY, PANEL_GLASS } from "@/shared/ui";
 import type { InquiryRunStatus } from "@atlas/domain";
-import { cn } from "@atlas/ui";
+import { Button, cn } from "@atlas/ui";
 import { type FormEvent, useState } from "react";
 import { useInquiryAsk } from "../hooks/use-inquiry-ask.ts";
 import type { InquiryAskState } from "../infra/store/inquiry.slice.ts";
@@ -75,7 +76,12 @@ export function InquiryAskBox() {
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-card/85 p-2 shadow-lg shadow-black/25 backdrop-blur-md transition-colors focus-within:border-ring/50">
+    <div
+      className={cn(
+        PANEL_GLASS,
+        "border border-transparent p-2 transition-colors focus-within:border-ring/50",
+      )}
+    >
       <form onSubmit={submit} className="flex items-center gap-2">
         <input
           aria-label="Ask a question"
@@ -83,15 +89,17 @@ export function InquiryAskBox() {
           value={question}
           maxLength={INQUIRY_QUESTION_MAX_CHARS}
           onChange={(event) => setQuestion(event.target.value)}
-          className="min-w-0 flex-1 rounded-xl bg-transparent px-3 py-2.5 text-[15px] leading-tight text-card-foreground outline-none placeholder:text-muted-foreground/80"
+          className="min-w-0 flex-1 bg-transparent px-3.5 py-2.5 text-[15.5px] leading-tight tracking-[-0.01em] text-card-foreground outline-none placeholder:text-muted-foreground/80"
         />
-        <button
+        <Button
           type="submit"
+          variant={null}
+          size="pillSm"
           disabled={state.isAsking || question.trim().length === 0}
-          className="shrink-0 rounded-xl bg-primary px-5 py-2.5 text-[13px] font-semibold text-primary-foreground transition-[filter,opacity] hover:brightness-[1.07] disabled:bg-muted disabled:text-muted-foreground"
+          className={cn(CTA_PRIMARY, "shrink-0 font-semibold")}
         >
           Ask
-        </button>
+        </Button>
       </form>
 
       {message ? (

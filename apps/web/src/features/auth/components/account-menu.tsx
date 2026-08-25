@@ -1,4 +1,4 @@
-import { Avatar, Eyebrow } from "@/shared/ui";
+import { Avatar, Eyebrow, PANEL } from "@/shared/ui";
 import type { GeoRegion, Topic } from "@atlas/domain";
 import { GEO_REGIONS, TOPICS } from "@atlas/domain";
 import { Button, Card, cn, useToast } from "@atlas/ui";
@@ -82,7 +82,12 @@ export function AccountMenu() {
             className="fixed inset-0 z-40 cursor-default"
             onClick={() => setOpen(false)}
           />
-          <Card className="atlas-popover-shadow absolute right-0 top-11 z-50 flex max-h-[calc(100vh-5rem)] w-74 flex-col gap-4 overflow-y-auto border-border-strong p-4.5">
+          <Card
+            className={cn(
+              PANEL,
+              "absolute right-0 top-12 z-50 flex max-h-[calc(100vh-6rem)] w-80 flex-col gap-4 overflow-y-auto p-5",
+            )}
+          >
             <div className="flex flex-col gap-1.5">
               <Eyebrow>Signed in</Eyebrow>
               <span className="truncate text-sm font-medium" title={user.email}>

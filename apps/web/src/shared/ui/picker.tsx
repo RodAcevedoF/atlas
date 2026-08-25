@@ -1,7 +1,16 @@
 import { Card, cn } from "@atlas/ui";
 import { ChevronDown } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { Eyebrow } from "./eyebrow.tsx";
+import { eyebrowVariants } from "./eyebrow.tsx";
+import {
+  HEADER_CONTROL,
+  HEADER_CONTROL_DISABLED,
+  PANEL,
+  PANEL_HEAD,
+  headerControlTone,
+} from "./surface.ts";
+
+const POPOVER_HEAD_CLASS = cn(eyebrowVariants({ variant: "meta" }), PANEL_HEAD);
 
 interface PickerProps {
   /** What the closed trigger reads — usually the current selection. */
@@ -41,13 +50,7 @@ export function Picker({ trigger, label, title, disabled, children }: PickerProp
         aria-haspopup="menu"
         disabled={disabled}
         onClick={() => setOpen((value) => !value)}
-        className={cn(
-          "flex h-8.5 max-w-60 items-center gap-2 rounded-[10px] border px-3 text-[12.5px] transition-colors",
-          open
-            ? "border-primary/40 bg-primary/10 text-primary"
-            : "border-border-strong bg-secondary text-foreground hover:border-primary/40 hover:bg-primary/10 hover:text-primary",
-          "disabled:text-muted-foreground/60 disabled:hover:border-border-strong disabled:hover:bg-secondary disabled:hover:text-muted-foreground/60",
-        )}
+        className={cn(HEADER_CONTROL, "max-w-60", headerControlTone(open), HEADER_CONTROL_DISABLED)}
       >
         <span className="min-w-0 truncate">{trigger}</span>
         <ChevronDown
@@ -64,9 +67,14 @@ export function Picker({ trigger, label, title, disabled, children }: PickerProp
             className="fixed inset-0 z-40 cursor-default"
             onClick={close}
           />
-          <Card className="atlas-popover-shadow absolute right-0 top-11 z-50 flex max-h-[calc(100vh-5rem)] w-80 flex-col gap-2.5 overflow-y-auto border-border-strong p-3.5">
-            {title ? <Eyebrow>{title}</Eyebrow> : null}
-            {children(close)}
+          <Card
+            className={cn(
+              PANEL,
+              "absolute right-0 top-12 z-50 flex max-h-[calc(100vh-6rem)] w-88 flex-col overflow-hidden",
+            )}
+          >
+            {title ? <div className={POPOVER_HEAD_CLASS}>{title}</div> : null}
+            <div className="min-h-0 flex-1 overflow-y-auto">{children(close)}</div>
           </Card>
         </>
       ) : null}

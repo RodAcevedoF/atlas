@@ -31,19 +31,21 @@ function LivePulse() {
 
 export function AppHeader({ subtitle, actions, account }: AppHeaderProps) {
   return (
-    <header className="relative z-40 flex h-15 flex-none items-center gap-5.5 border-b border-border bg-card px-4.5">
-      <div className="flex items-center gap-2.5">
-        <img src="/atlas_emblem.svg" alt="Atlas" className="h-6.5 w-6.5" />
+    <header className="relative z-40 flex h-17 flex-none items-center gap-6 border-b border-border px-8.5">
+      <div className="flex items-center gap-3">
+        <img src="/atlas_emblem.svg" alt="Atlas" className="h-7 w-7" />
         <div className="flex flex-col leading-none">
-          <span className="text-base font-semibold tracking-[-0.01em]">Atlas</span>
-          <Eyebrow className="mt-0.75">{subtitle}</Eyebrow>
+          <span className="text-[17px] font-semibold tracking-[-0.02em]">Atlas</span>
+          <Eyebrow variant="header" className="mt-1 text-[9.5px]">
+            {subtitle}
+          </Eyebrow>
         </div>
       </div>
 
       <LivePulse />
       <AppNavTabs />
 
-      <div className="ml-auto flex items-center gap-2.5">{actions}</div>
+      <div className="ml-auto flex items-center gap-3">{actions}</div>
       {account}
     </header>
   );

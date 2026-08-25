@@ -1,5 +1,6 @@
-import { Eyebrow } from "@/shared/ui";
-import { Button, useToast } from "@atlas/ui";
+import { CTA_OUTLINE, Eyebrow, PANEL_GLASS } from "@/shared/ui";
+import { Button, cn, useToast } from "@atlas/ui";
+import { X } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../auth-provider.tsx";
 
@@ -24,41 +25,30 @@ export function VerifyEmailCard() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 flex w-72 flex-col gap-2 rounded-xl border border-border bg-card/86 p-3.5 backdrop-blur-md">
+    <div className={cn(PANEL_GLASS, "fixed bottom-6 right-6 z-40 flex w-76 flex-col gap-2.5 p-4")}>
       <div className="flex items-start justify-between gap-2">
-        <Eyebrow>Verify your email</Eyebrow>
+        <Eyebrow variant="meta">verify your email</Eyebrow>
         <button
           type="button"
           aria-label="Hide the verification reminder"
           onClick={() => setIsDismissed(true)}
-          className="text-muted-foreground transition-colors hover:text-card-foreground"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-coverage/[0.14] hover:text-foreground"
         >
-          <svg
-            width="11"
-            height="11"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            aria-hidden="true"
-          >
-            <path d="M6 6l12 12M18 6 6 18" />
-          </svg>
+          <X aria-hidden="true" className="h-3 w-3" />
         </button>
       </div>
 
-      <p className="text-[12px] leading-relaxed text-muted-foreground">
+      <p className="text-[12.5px] leading-relaxed text-muted-foreground">
         Confirm your address so we know it's you. We sent a link to{" "}
         <strong className="font-medium text-card-foreground">{user.email}</strong>.
       </p>
 
       <Button
-        size="sm"
-        variant="outline"
+        variant={null}
+        size="pillSm"
         disabled={isSending}
         onClick={() => void resend()}
-        className="self-start"
+        className={cn(CTA_OUTLINE, "self-start")}
       >
         {isSending ? "Sending…" : "Resend link"}
       </Button>

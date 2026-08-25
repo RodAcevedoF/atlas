@@ -89,6 +89,12 @@
     var(--background-deep) 100%
   );
 
+  --panel-lift: 0 46px 100px -34px rgba(2, 6, 24, 0.85);
+  --panel-ring: inset 0 0 0 1px color-mix(in srgb, var(--coverage) 13%, transparent);
+  --panel-top: color-mix(in srgb, var(--card) 76%, var(--secondary));
+  --panel-base: color-mix(in srgb, var(--card-2) 55%, var(--background-deep));
+  --panel-cell: color-mix(in srgb, var(--card-2) 45%, var(--background));
+
   --map-orb-gradient: linear-gradient(
     90deg,
     var(--map-orb-quietest),
@@ -105,6 +111,7 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-card-2: var(--card-2);
+  --color-panel-cell: var(--panel-cell);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
@@ -353,9 +360,17 @@ body {
   background: var(--page-field);
 }
 .atlas4-panel {
-  background: linear-gradient(168deg, var(--card) 0%, var(--card-2) 54%, var(--card-deep) 100%);
-  box-shadow: 0 46px 100px -34px rgba(2, 6, 24, 0.85), inset 0 0 0 1px
-    color-mix(in srgb, var(--coverage) 13%, transparent);
+  background: linear-gradient(168deg, var(--panel-top) 0%, var(--card) 54%, var(--panel-base) 100%);
+  box-shadow: var(--panel-lift), var(--panel-ring);
+}
+.atlas4-panel-glass {
+  background: linear-gradient(
+    168deg,
+    color-mix(in srgb, var(--panel-top) 86%, transparent) 0%,
+    color-mix(in srgb, var(--panel-base) 86%, transparent) 100%
+  );
+  backdrop-filter: blur(14px);
+  box-shadow: var(--panel-lift), var(--panel-ring);
 }
 .atlas4-scan-line {
   background: linear-gradient(
@@ -376,9 +391,6 @@ body {
       color-mix(in srgb, var(--conviction) 16%, transparent),
       transparent 70%
     );
-}
-.atlas-popover-shadow {
-  box-shadow: 0 24px 60px rgba(2, 6, 18, 0.6);
 }
 .atlas-segment-active {
   background: var(--segment-active);

@@ -1,11 +1,12 @@
 import { RUN_STATUS_LABEL } from "@/features/inquiry";
+import { HEADER_CONTROL, HEADER_CONTROL_DISABLED, headerControlTone } from "@/shared/ui";
 import type { InquiryRunStatus } from "@atlas/domain";
 import { cn } from "@atlas/ui";
 import { RefreshCw, X } from "lucide-react";
 import type { WorldRefresh } from "../../hooks/use-world-awareness.ts";
 
 const PILL_BASE =
-  "flex items-center gap-1.75 rounded-full border px-2.5 py-1 text-[11px] leading-none";
+  "flex items-center gap-1.75 rounded-full border px-3 py-1 text-[11px] leading-none";
 
 function StagePill({ status }: { status: InquiryRunStatus | null }) {
   return (
@@ -52,13 +53,10 @@ export function RefreshControl({ refresh }: { refresh: WorldRefresh }) {
         disabled={!canRefresh}
         aria-label="Refresh this run"
         className={cn(
-          "flex h-8.5 items-center gap-2 rounded-[10px] border px-3.5 text-[12.5px] font-semibold transition-colors",
-          isRefreshing
-            ? "border-primary/40 bg-primary/10 text-primary"
-            : "border-border-strong bg-secondary text-foreground hover:border-primary/40 hover:bg-primary/10 hover:text-primary",
-          !canRefresh &&
-            !isRefreshing &&
-            "text-muted-foreground/60 hover:border-border-strong hover:bg-secondary hover:text-muted-foreground/60",
+          HEADER_CONTROL,
+          "font-semibold",
+          headerControlTone(isRefreshing),
+          HEADER_CONTROL_DISABLED,
         )}
       >
         <RefreshCw
