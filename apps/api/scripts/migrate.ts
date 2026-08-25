@@ -3,6 +3,7 @@ import {
   MongoMigrationLedger,
   createMongoClient,
   dropGdeltEraInquiryRuns,
+  dropOrphanedMarketEraCollections,
   dropSavedReportIds,
   emptyGdeltEraInquiryRuns,
   regroupInquiryPlacesOntoCoordinates,
@@ -27,6 +28,7 @@ async function migrate(): Promise<void> {
       emptyGdeltEraInquiryRuns(db),
       dropGdeltEraInquiryRuns(db),
       regroupInquiryPlacesOntoCoordinates(db),
+      dropOrphanedMarketEraCollections(db),
     ]).execute({
       dryRun,
     });

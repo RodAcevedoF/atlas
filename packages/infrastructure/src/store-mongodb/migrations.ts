@@ -7,9 +7,26 @@ import { regroupPlacesOntoCoordinates } from "./regroup-places.ts";
 const RESEARCH_RUNS = "research_runs";
 const INQUIRY_RUNS = "inquiry_runs";
 
+const ORPHANED_MARKET_ERA_COLLECTIONS = [
+  "analysis_runs",
+  "atlas",
+  "insights",
+  "market_snapshots",
+  "markets",
+  "prediction_events",
+  "price_ticks",
+  "trades",
+  "watchlists",
+];
+
 async function hasCollection(db: Db, name: string): Promise<boolean> {
   const found = await db.listCollections({ name }, { nameOnly: true }).toArray();
   return found.length > 0;
+}
+
+async function presentCollections(db: Db, names: string[]): Promise<string[]> {
+  const found = await db.listCollections({}, { nameOnly: true }).toArray();
+  return found.map((collection) => collection.name).filter((name) => names.includes(name));
 }
 
 async function countIn(db: Db, name: string): Promise<number> {
@@ -146,6 +163,28 @@ export function dropGdeltEraInquiryRuns(db: Db): Migration {
 
       const result = await db.collection(INQUIRY_RUNS).deleteMany(stale);
       return `dropped ${result.deletedCount} GDELT-era runs`;
+    },
+  };
+}
+
+export function dropOrphanedMarketEraCollections(db: Db): Migration {
+  return {
+    id: "2026-08-25-drop-orphaned-market-era-collections",
+    async execute({ dryRun }) {
+      const present = await presentCollections(db, ORPHANED_MARKET_ERA_COLLECTIONS);
+      if (present.length === 0) return "no orphaned market-era collection left";
+
+      const counted = await Promise.all(
+        present.map(async (name) => ({ name, held: await db.collection(name).countDocuments() })),
+      );
+      const summary = counted
+        .map((collection) => `${collection.name} (${collection.held})`)
+        .join(", ");
+
+      if (dryRun) return `would drop ${present.length} orphaned collections: ${summary}`;
+
+      await Promise.all(present.map((name) => db.dropCollection(name)));
+      return `dropped ${present.length} orphaned collections: ${summary}`;
     },
   };
 }
