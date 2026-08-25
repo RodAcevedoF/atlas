@@ -82,6 +82,13 @@
   --map-orb-mid: #22b3c4;
   --map-orb-loud: #4fe3c1;
   --map-orb-loudest: #c2ffe8;
+  --page-field: linear-gradient(
+    172deg,
+    var(--secondary) 0%,
+    var(--background) 46%,
+    var(--background-deep) 100%
+  );
+
   --map-orb-gradient: linear-gradient(
     90deg,
     var(--map-orb-quietest),
@@ -137,7 +144,8 @@ body {
 
 body {
   margin: 0;
-  background: var(--background);
+  background: var(--page-field);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -342,12 +350,7 @@ body {
   -webkit-text-stroke: 1.5px color-mix(in srgb, var(--coverage) 46%, transparent);
 }
 .atlas4-page {
-  background: linear-gradient(
-    172deg,
-    var(--secondary) 0%,
-    var(--background) 46%,
-    var(--background-deep) 100%
-  );
+  background: var(--page-field);
 }
 .atlas4-panel {
   background: linear-gradient(168deg, var(--card) 0%, var(--card-2) 54%, var(--card-deep) 100%);

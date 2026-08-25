@@ -25,7 +25,7 @@ interface InquiryHistoryProps {
 function Notice({ children }: { children: ReactNode }) {
   return (
     <div className="px-6 py-6">
-      <Card className="p-5 text-[12.5px] text-muted-foreground">{children}</Card>
+      <Card className="p-5 text-[13.5px] text-muted-foreground">{children}</Card>
     </div>
   );
 }
@@ -38,8 +38,8 @@ function DetailPane({
   onDelete: (() => void) | null;
 }) {
   if (detail.run) return <RunDetail run={detail.run} onDelete={onDelete} />;
-  if (detail.error) return <p className="text-[12.5px] text-destructive">{detail.error}</p>;
-  return <p className="text-[12.5px] text-muted-foreground">{LOADING_RUN}</p>;
+  if (detail.error) return <p className="text-[13.5px] text-destructive">{detail.error}</p>;
+  return <p className="text-[13.5px] text-muted-foreground">{LOADING_RUN}</p>;
 }
 
 export function InquiryHistory({
@@ -79,16 +79,20 @@ export function InquiryHistory({
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3.5 px-6 py-6">
-      {error ? <Card className="px-4 py-2.5 text-[12.5px] text-destructive">{error}</Card> : null}
+      {error ? <Card className="px-4 py-2.5 text-[13.5px] text-destructive">{error}</Card> : null}
 
       <div className="flex min-h-0 flex-1 gap-3.5">
-        <Card className="flex w-72 shrink-0 flex-col gap-2.5 overflow-y-auto p-3.5">
-          <Eyebrow>Inquiry runs</Eyebrow>
-          <RunList runs={runs} selectedId={selectedId} onSelect={onSelect} />
+        <Card className="flex w-72 shrink-0 flex-col overflow-hidden">
+          <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-3.5">
+            <Eyebrow>Inquiry runs</Eyebrow>
+            <RunList runs={runs} selectedId={selectedId} onSelect={onSelect} />
+          </div>
         </Card>
 
-        <Card className="min-w-0 flex-1 overflow-y-auto p-5">
-          <DetailPane detail={detail} onDelete={deleteSelected} />
+        <Card className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto p-5">
+            <DetailPane detail={detail} onDelete={deleteSelected} />
+          </div>
         </Card>
       </div>
     </div>

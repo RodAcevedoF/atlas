@@ -1,5 +1,7 @@
+import { ErrorView } from "@/features/errors";
 import { AtlasLoader } from "@/shared/ui";
 import { Button } from "@atlas/ui";
+import { SatelliteDish } from "lucide-react";
 import type { PropsWithChildren } from "react";
 import { Navigate } from "react-router-dom";
 import type { AuthStatus } from "../auth-provider.tsx";
@@ -7,12 +9,18 @@ import { useAuth } from "../auth-provider.tsx";
 
 function ErrorScreen({ onRetry }: { onRetry: () => void }) {
   return (
-    <main className="flex h-screen flex-col items-center justify-center gap-3 bg-background text-[13px] text-muted-foreground">
-      Couldn't reach the server.
+    <ErrorView
+      code="No connection"
+      tone="negative"
+      icon={SatelliteDish}
+      reaching
+      title="Can't reach Atlas"
+      message="Your session can't be confirmed right now. Check your connection, then try again."
+    >
       <Button size="sm" onClick={onRetry}>
         Retry
       </Button>
-    </main>
+    </ErrorView>
   );
 }
 
@@ -21,7 +29,6 @@ interface AuthRouteGuardProps extends PropsWithChildren {
   redirectTo: string;
 }
 
-/** Gates a route on a single required auth status, showing a loader/retry screen while status resolves. */
 export function AuthRouteGuard({ allow, redirectTo, children }: AuthRouteGuardProps) {
   const { status, retry } = useAuth();
 

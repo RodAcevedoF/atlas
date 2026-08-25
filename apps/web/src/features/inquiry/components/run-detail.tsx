@@ -32,7 +32,7 @@ function ClaimRow({ claim }: { claim: InquiryClaimRecord }) {
       >
         {claim.text}
       </a>
-      <span className="ml-2 font-mono text-[10.5px] text-muted-foreground tabular-nums">
+      <span className="ml-2 font-mono text-[11px] text-muted-foreground tabular-nums">
         {claim.confidence.toFixed(2)}
         {claim.publishedDate ? ` · ${claim.publishedDate.slice(0, 10)}` : null}
       </span>
@@ -44,17 +44,17 @@ function PlaceBlock({ place }: { place: InquiryPlaceRecord }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[12.5px] font-semibold text-card-foreground">
+        <span className="text-[13.5px] font-semibold text-card-foreground">
           {place.place}
           {place.country ? (
             <span className="font-normal text-muted-foreground"> · {place.country}</span>
           ) : null}
         </span>
-        <span className="font-mono text-[10.5px] text-muted-foreground tabular-nums">
+        <span className="font-mono text-[11px] text-muted-foreground tabular-nums">
           {place.claimCount} claims
         </span>
       </div>
-      <ul className="text-[12px] leading-relaxed">
+      <ul className="text-[13px] leading-relaxed">
         {place.claims.map((claim) => (
           <ClaimRow key={`${claim.sourceUrl}:${claim.text}`} claim={claim} />
         ))}
@@ -68,11 +68,11 @@ function FailureReason({ run }: { run: InquiryRunRecord }) {
     <div className="flex flex-col gap-1.5">
       <div className="flex items-baseline justify-between gap-3">
         <Eyebrow>Why it failed</Eyebrow>
-        <span className="font-mono text-[10.5px] text-muted-foreground tabular-nums">
+        <span className="font-mono text-[11px] text-muted-foreground tabular-nums">
           {run.attempts} {run.attempts === 1 ? "attempt" : "attempts"}
         </span>
       </div>
-      <p className="text-[12.5px] leading-relaxed text-destructive">
+      <p className="text-[13.5px] leading-relaxed text-destructive">
         {run.error || <span className="text-muted-foreground">{NO_REASON}</span>}
       </p>
     </div>
@@ -89,7 +89,7 @@ function RetrievalCost({ costUsd }: { costUsd: number }) {
 
 function Places({ places }: { places: InquiryPlaceRecord[] }) {
   if (places.length === 0) {
-    return <p className="text-[12px] text-muted-foreground">{NO_PLACES}</p>;
+    return <p className="text-[13px] text-muted-foreground">{NO_PLACES}</p>;
   }
 
   return (
@@ -113,10 +113,10 @@ export function RunDetail({
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1.5">
           <Eyebrow>Run · {run.window} window</Eyebrow>
-          <h2 className="text-[15px] font-semibold leading-snug text-card-foreground">
+          <h2 className="text-[16.5px] font-semibold leading-snug text-card-foreground">
             {run.question}
           </h2>
-          <span className="flex items-center gap-1.5 font-mono text-[10.5px] text-muted-foreground">
+          <span className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
             {formatRelativeTime(run.createdAt)}
             <span className={runStatusClass(run.status)}>· {RUN_STATUS_LABEL[run.status]}</span>
             <RetrievalCost costUsd={run.retrievalCostUsd} />
@@ -137,7 +137,7 @@ export function RunDetail({
 
       <div className="flex flex-col gap-1.5">
         <Eyebrow>Synthesis</Eyebrow>
-        <p className="text-[12.5px] leading-relaxed text-card-foreground">
+        <p className="text-[13.5px] leading-relaxed text-card-foreground">
           {run.synthesis ?? <span className="text-muted-foreground">{NO_SYNTHESIS}</span>}
         </p>
       </div>
@@ -145,7 +145,7 @@ export function RunDetail({
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-3">
           <Eyebrow>Claims by place</Eyebrow>
-          <span className="font-mono text-[10.5px] text-muted-foreground tabular-nums">
+          <span className="font-mono text-[11px] text-muted-foreground tabular-nums">
             {run.claimCount} claims
             {run.unplacedClaims > 0 ? ` · ${run.unplacedClaims} unplaced` : null}
           </span>

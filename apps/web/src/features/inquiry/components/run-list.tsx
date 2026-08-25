@@ -31,10 +31,10 @@ function RunListItem({
           : "border-border hover:border-primary/25 hover:bg-muted/55",
       )}
     >
-      <span className="line-clamp-2 text-[12.5px] leading-snug text-card-foreground">
+      <span className="line-clamp-2 text-[13.5px] leading-snug text-card-foreground">
         {run.question}
       </span>
-      <span className="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground">
+      <span className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
         {formatRelativeTime(run.createdAt)}
         <span className={runStatusClass(run.status)}>· {RUN_STATUS_LABEL[run.status]}</span>
         {places > 0 ? <span>· {places} places</span> : null}

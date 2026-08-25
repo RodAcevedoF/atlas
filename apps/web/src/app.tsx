@@ -4,6 +4,7 @@ import { GuestRoute } from "@/features/auth/components/guest-route.tsx";
 import { ProtectedRoute } from "@/features/auth/components/protected-route.tsx";
 import { VerifyEmailCard } from "@/features/auth/components/verify-email-card.tsx";
 import { VerifyEmailView } from "@/features/auth/components/verify-email-view.tsx";
+import { NotFoundView } from "@/features/errors";
 import { IntelligencePage } from "@/features/intelligence/intelligence-page.tsx";
 import { LandingPage } from "@/features/marketing/landing-page.tsx";
 import { WorldAwarenessPage } from "@/features/world-awareness/world-awareness-page.tsx";
@@ -60,7 +61,7 @@ export function App() {
         <Route path="/world" element={<WorldAwarenessPage />} />
         <Route path="/intelligence" element={<IntelligencePage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundView />} />
     </Routes>
   );
 }

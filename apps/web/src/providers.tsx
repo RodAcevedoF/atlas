@@ -1,4 +1,5 @@
 import { AuthProvider } from "@/features/auth/auth-provider.tsx";
+import { AppErrorBoundary } from "@/features/errors";
 import { HttpInquiryRepository } from "@/features/inquiry/repositories/http-inquiry-repository.ts";
 import type { InquiryRepository } from "@/features/inquiry/repositories/inquiry-repository.ts";
 import { makeStore } from "@/store/index.ts";
@@ -13,7 +14,9 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <ReduxProvider store={store}>
       <ToastProvider>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <AppErrorBoundary>{children}</AppErrorBoundary>
+        </AuthProvider>
       </ToastProvider>
     </ReduxProvider>
   );
