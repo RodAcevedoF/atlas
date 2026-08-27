@@ -7,6 +7,7 @@ export interface MigrationDoc {
 
 export interface InquiryRunDoc {
   _id: string;
+  ownerId?: string | null;
   question: string;
   questionKey: string;
   day: string;

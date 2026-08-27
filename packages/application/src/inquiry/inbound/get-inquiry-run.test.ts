@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryRun, InquiryRunStatus } from "@atlas/domain";
-import { makeInquiryRunId } from "@atlas/domain";
+import { makeInquiryRunId, makeUserId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import { GetInquiryRunUseCase } from "./get-inquiry-run.ts";
 
@@ -9,6 +9,7 @@ const FAILED_ID = makeInquiryRunId("run-failed");
 function failedRun(status: InquiryRunStatus, error: string | null, attempts: number): InquiryRun {
   return {
     id: FAILED_ID,
+    ownerId: makeUserId("user-1"),
     question: "where are wildfires burning right now",
     questionKey: "where are wildfires burning right now",
     day: "2026-08-23",

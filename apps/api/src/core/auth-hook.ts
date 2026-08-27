@@ -1,6 +1,7 @@
 import type { Authenticate } from "@atlas/application";
-import type { PublicUser } from "@atlas/domain";
+import type { PublicUser, UserRole } from "@atlas/domain";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { ForbiddenError } from "./errors.ts";
 
 export const SESSION_COOKIE = "atlas_session";
 
@@ -43,4 +44,10 @@ export function registerAuthGate(
 export function requireUser(req: FastifyRequest): PublicUser {
   if (!req.user) throw new Error("requireUser called on an unauthenticated request");
   return req.user;
+}
+
+export function requireRole(req: FastifyRequest, role: UserRole): PublicUser {
+  const user = requireUser(req);
+  if (user.role !== role) throw new ForbiddenError();
+  return user;
 }

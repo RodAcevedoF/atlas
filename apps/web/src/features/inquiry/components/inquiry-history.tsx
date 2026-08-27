@@ -1,8 +1,10 @@
+import { useAuth } from "@/features/auth/auth-provider.tsx";
 import { PANEL, PANEL_HEAD, eyebrowVariants } from "@/shared/ui";
 import { Card, cn } from "@atlas/ui";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { UseInquiryRunResult } from "../hooks/use-inquiry-run.ts";
+import { mayDeleteRun } from "../may-delete-run.ts";
 import type { InquiryRunSummaryRecord } from "../repositories/inquiry-repository.ts";
 import { RunDetail } from "./run-detail.tsx";
 import { RunList } from "./run-list.tsx";
@@ -54,7 +56,12 @@ export function InquiryHistory({
   onDelete,
   detail,
 }: InquiryHistoryProps) {
-  const deletableId = selectedId !== null && selectedId !== pinnedRunId ? selectedId : null;
+  const { user } = useAuth();
+  const selectedRun = runs.find((run) => run.id === selectedId) ?? null;
+  const deletableId =
+    selectedRun && mayDeleteRun({ run: selectedRun, deleter: user, pinnedRunId })
+      ? selectedRun.id
+      : null;
   const deleteSelected = deletableId === null ? null : () => onDelete(deletableId);
 
   if (runs.length === 0 && error) {

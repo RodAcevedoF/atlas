@@ -1,15 +1,24 @@
 import { describe, expect, test } from "bun:test";
-import type { InquiryRun } from "@atlas/domain";
-import { makeInquiryRunId } from "@atlas/domain";
+import type { InquiryRun, UserId } from "@atlas/domain";
+import { makeInquiryRunId, makeUserId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
+import type { DeleteInquiryRunOutcome, InquiryActor } from "./delete-inquiry-run.ts";
 import { DeleteInquiryRunUseCase } from "./delete-inquiry-run.ts";
 
 const HELD_ID = makeInquiryRunId("run-held");
 const PINNED_ID = makeInquiryRunId("run-pinned");
 
-function heldRun(id: InquiryRun["id"]): InquiryRun {
+const OWNER_ID = makeUserId("user-owner");
+
+const owner: InquiryActor = { id: OWNER_ID, role: "user" };
+const stranger: InquiryActor = { id: makeUserId("user-stranger"), role: "user" };
+const admin: InquiryActor = { id: makeUserId("user-admin"), role: "admin" };
+const superAdmin: InquiryActor = { id: makeUserId("user-super"), role: "super_admin" };
+
+function heldRun(id: InquiryRun["id"], ownerId: UserId | null = OWNER_ID): InquiryRun {
   return {
     id,
+    ownerId,
     question: "where are wildfires burning right now",
     questionKey: "where are wildfires burning right now",
     day: "2026-08-25",
@@ -28,22 +37,71 @@ function heldRun(id: InquiryRun["id"]): InquiryRun {
   };
 }
 
-describe("DeleteInquiryRunUseCase", () => {
-  test("a deleted run is gone from the store", async () => {
-    const { store, runs } = inMemoryInquiryRunStore([heldRun(HELD_ID)]);
+describe("who may delete a run", () => {
+  const cases: { name: string; actor: InquiryActor; outcome: DeleteInquiryRunOutcome }[] = [
+    {
+      name: "the owner deletes their own inquiry, which is the whole point of the control",
+      actor: owner,
+      outcome: "deleted",
+    },
+    {
+      name: "a stranger cannot delete an inquiry they did not ask for",
+      actor: stranger,
+      outcome: "forbidden",
+    },
+    {
+      name: "an admin is not privileged over someone else's inquiry — only a super admin is",
+      actor: admin,
+      outcome: "forbidden",
+    },
+    {
+      name: "a super admin can clear any inquiry",
+      actor: superAdmin,
+      outcome: "deleted",
+    },
+  ];
+
+  for (const testCase of cases) {
+    test(testCase.name, async () => {
+      const { store, runs } = inMemoryInquiryRunStore([heldRun(HELD_ID)]);
+      const useCase = new DeleteInquiryRunUseCase(store, null);
+
+      const outcome = await useCase.execute(HELD_ID, testCase.actor);
+
+      expect(outcome).toBe(testCase.outcome);
+      expect(runs().length).toBe(testCase.outcome === "deleted" ? 0 : 1);
+    });
+  }
+});
+
+describe("a run with no owner predates ownership", () => {
+  test("no ordinary user inherits it, so it cannot be deleted by whoever finds it", async () => {
+    const { store, runs } = inMemoryInquiryRunStore([heldRun(HELD_ID, null)]);
     const useCase = new DeleteInquiryRunUseCase(store, null);
 
-    const outcome = await useCase.execute(HELD_ID);
+    const outcome = await useCase.execute(HELD_ID, stranger);
+
+    expect(outcome).toBe("forbidden");
+    expect(runs().length).toBe(1);
+  });
+
+  test("a super admin can still clear it, so the old runs are not stranded forever", async () => {
+    const { store, runs } = inMemoryInquiryRunStore([heldRun(HELD_ID, null)]);
+    const useCase = new DeleteInquiryRunUseCase(store, null);
+
+    const outcome = await useCase.execute(HELD_ID, superAdmin);
 
     expect(outcome).toBe("deleted");
     expect(runs()).toEqual([]);
   });
+});
 
+describe("DeleteInquiryRunUseCase", () => {
   test("an unknown run is not found", async () => {
     const { store } = inMemoryInquiryRunStore([]);
     const useCase = new DeleteInquiryRunUseCase(store, null);
 
-    const outcome = await useCase.execute(HELD_ID);
+    const outcome = await useCase.execute(HELD_ID, owner);
 
     expect(outcome).toBe("not_found");
   });
@@ -52,7 +110,17 @@ describe("DeleteInquiryRunUseCase", () => {
     const { store, runs } = inMemoryInquiryRunStore([heldRun(PINNED_ID)]);
     const useCase = new DeleteInquiryRunUseCase(store, PINNED_ID);
 
-    const outcome = await useCase.execute(PINNED_ID);
+    const outcome = await useCase.execute(PINNED_ID, owner);
+
+    expect(outcome).toBe("pinned");
+    expect(runs().map((run) => run.id)).toEqual([PINNED_ID]);
+  });
+
+  test("even a super admin cannot delete the pinned run — the map would lose its backdrop", async () => {
+    const { store, runs } = inMemoryInquiryRunStore([heldRun(PINNED_ID)]);
+    const useCase = new DeleteInquiryRunUseCase(store, PINNED_ID);
+
+    const outcome = await useCase.execute(PINNED_ID, superAdmin);
 
     expect(outcome).toBe("pinned");
     expect(runs().map((run) => run.id)).toEqual([PINNED_ID]);

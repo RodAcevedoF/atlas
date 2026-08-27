@@ -1,3 +1,5 @@
+import type { UserId, UserRole } from "./user.ts";
+
 export type InquiryRunId = string & { readonly _brand: "InquiryRunId" };
 
 export function makeInquiryRunId(v: string): InquiryRunId {
@@ -23,10 +25,6 @@ export interface InquiryClaim {
   publishedDate: string | null;
 }
 
-/**
- * One place with the claims that landed on it — the map's unit, aggregated server-side.
- * The place is where the claim says the event happened, never where it was published.
- */
 export interface InquiryPlace {
   place: string;
   country: string | null;
@@ -38,14 +36,13 @@ export interface InquiryPlace {
 
 export interface InquiryRun {
   id: InquiryRunId;
+  ownerId: UserId | null;
   question: string;
   questionKey: string;
   day: string;
   window: string;
   places: InquiryPlace[];
-  /** every claim retrieved, including the ones no place could be resolved for */
   claimCount: number;
-  /** claims the map cannot show — the difference is a finding, not a rounding error */
   unplacedClaims: number;
   costUsd: number;
   synthesis: string | null;
@@ -59,6 +56,7 @@ export interface InquiryRun {
 
 export interface PublicInquiryRun {
   id: InquiryRunId;
+  ownerId: UserId | null;
   question: string;
   day: string;
   window: string;
@@ -77,6 +75,7 @@ export interface PublicInquiryRun {
 
 export interface InquiryRunSummary {
   id: InquiryRunId;
+  ownerId: UserId | null;
   question: string;
   day: string;
   window: string;
@@ -94,12 +93,21 @@ export interface InquiryRunList {
 
 export type InquiryRunListRow = Pick<
   InquiryRun,
-  "id" | "question" | "day" | "window" | "status" | "createdAt" | "startedAt" | "completedAt"
+  | "id"
+  | "ownerId"
+  | "question"
+  | "day"
+  | "window"
+  | "status"
+  | "createdAt"
+  | "startedAt"
+  | "completedAt"
 > & { placeCount: number };
 
 export function toInquiryRunSummary(run: InquiryRunListRow): InquiryRunSummary {
   return {
     id: run.id,
+    ownerId: run.ownerId,
     question: run.question,
     day: run.day,
     window: run.window,
@@ -111,9 +119,23 @@ export function toInquiryRunSummary(run: InquiryRunListRow): InquiryRunSummary {
   };
 }
 
+export interface InquiryRunActor {
+  id: string;
+  role: UserRole;
+}
+
+export function mayActOnInquiryRun(
+  run: { ownerId: string | null },
+  actor: InquiryRunActor,
+): boolean {
+  if (actor.role === "super_admin") return true;
+  return run.ownerId !== null && run.ownerId === actor.id;
+}
+
 export function toPublicInquiryRun(run: InquiryRun): PublicInquiryRun {
   return {
     id: run.id,
+    ownerId: run.ownerId,
     question: run.question,
     day: run.day,
     window: run.window,

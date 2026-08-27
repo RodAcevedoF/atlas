@@ -1,4 +1,4 @@
-import type { IdentityProvider, PublicUser } from "@atlas/domain";
+import type { GrantableRole, IdentityProvider, PublicUser, UserId } from "@atlas/domain";
 
 export interface RegisterInput {
   email: string;
@@ -71,4 +71,28 @@ export interface ResendVerification {
 
 export interface Authenticate {
   execute(token: string): Promise<PublicUser | null>;
+}
+
+export class RoleChangeForbiddenError extends Error {
+  constructor(reason: string) {
+    super(reason);
+    this.name = "RoleChangeForbiddenError";
+  }
+}
+
+export class UserNotFoundError extends Error {
+  constructor() {
+    super("User not found");
+    this.name = "UserNotFoundError";
+  }
+}
+
+export interface ChangeUserRoleInput {
+  actor: PublicUser;
+  targetUserId: UserId;
+  role: GrantableRole;
+}
+
+export interface ChangeUserRole {
+  execute(input: ChangeUserRoleInput): Promise<PublicUser>;
 }

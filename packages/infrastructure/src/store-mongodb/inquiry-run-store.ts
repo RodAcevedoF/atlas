@@ -5,14 +5,15 @@ import type {
   InquiryRunStorePort,
 } from "@atlas/application";
 import { INQUIRY_MAX_ATTEMPTS } from "@atlas/application";
-import type { InquiryRun, InquiryRunId, InquiryRunListRow } from "@atlas/domain";
-import { makeInquiryRunId } from "@atlas/domain";
+import type { InquiryRun, InquiryRunId, InquiryRunListRow, UserId } from "@atlas/domain";
+import { makeInquiryRunId, makeUserId } from "@atlas/domain";
 import type { Db } from "mongodb";
 import type { InquiryRunDoc } from "./collections.ts";
 
 const COLLECTION = "inquiry_runs";
 
 const LIST_PROJECTION = {
+  ownerId: 1,
   question: 1,
   day: 1,
   window: 1,
@@ -25,12 +26,25 @@ const LIST_PROJECTION = {
 
 type InquiryRunListDoc = Pick<
   InquiryRunDoc,
-  "_id" | "question" | "day" | "window" | "status" | "createdAt" | "startedAt" | "completedAt"
+  | "_id"
+  | "ownerId"
+  | "question"
+  | "day"
+  | "window"
+  | "status"
+  | "createdAt"
+  | "startedAt"
+  | "completedAt"
 > & { places: number };
+
+function docToOwnerId(doc: Pick<InquiryRunDoc, "ownerId">): UserId | null {
+  return doc.ownerId ? makeUserId(doc.ownerId) : null;
+}
 
 function docToListRow(doc: InquiryRunListDoc): InquiryRunListRow {
   return {
     id: makeInquiryRunId(doc._id),
+    ownerId: docToOwnerId(doc),
     question: doc.question,
     day: doc.day,
     window: doc.window,
@@ -44,17 +58,13 @@ function docToListRow(doc: InquiryRunListDoc): InquiryRunListRow {
 
 type ClaimShapeField = "places" | "claimCount" | "unplacedClaims" | "costUsd";
 
-/**
- * What a read can actually hand back. A doc written before the claims shape carries none of these
- * until `2026-08-23-empty-gdelt-era-inquiry-runs` backfills it — the same hole the list projection
- * fills with `$ifNull`. Writes still owe every field, so `InquiryRunDoc` stays the shape we store.
- */
 type StoredInquiryRunDoc = Omit<InquiryRunDoc, ClaimShapeField> &
   Partial<Pick<InquiryRunDoc, ClaimShapeField>>;
 
 function docToInquiryRun(doc: StoredInquiryRunDoc): InquiryRun {
   return {
     id: makeInquiryRunId(doc._id),
+    ownerId: docToOwnerId(doc),
     question: doc.question,
     questionKey: doc.questionKey,
     day: doc.day,
@@ -79,6 +89,7 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
   async saveInquiryRun(run: InquiryRun): Promise<void> {
     const doc: InquiryRunDoc = {
       _id: run.id,
+      ownerId: run.ownerId,
       question: run.question,
       questionKey: run.questionKey,
       day: run.day,
@@ -112,10 +123,14 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
     return doc ? docToListRow(doc) : null;
   }
 
-  async findInquiryRunByQuestionDay(questionKey: string, day: string): Promise<InquiryRun | null> {
+  async findInquiryRunByQuestionDay(
+    ownerId: UserId,
+    questionKey: string,
+    day: string,
+  ): Promise<InquiryRun | null> {
     const doc = await this.db
       .collection<InquiryRunDoc>(COLLECTION)
-      .findOne<StoredInquiryRunDoc>({ questionKey, day }, { sort: { createdAt: -1 } });
+      .findOne<StoredInquiryRunDoc>({ ownerId, questionKey, day }, { sort: { createdAt: -1 } });
     return doc ? docToInquiryRun(doc) : null;
   }
 

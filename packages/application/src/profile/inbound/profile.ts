@@ -5,13 +5,6 @@ export interface ProfileUpdateInput {
   preferredTopics: Topic[];
 }
 
-export class UserNotFoundError extends Error {
-  constructor() {
-    super("User not found");
-    this.name = "UserNotFoundError";
-  }
-}
-
 export interface UpdateProfile {
   execute(userId: UserId, input: ProfileUpdateInput): Promise<UserProfile>;
 }

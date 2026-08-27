@@ -1,7 +1,7 @@
 import type { UserId, UserProfile } from "@atlas/domain";
+import { UserNotFoundError } from "../../auth/inbound/auth.ts";
 import type { UserStorePort } from "../../auth/outbound/user-store.ts";
 import type { ProfileUpdateInput, UpdateProfile } from "./profile.ts";
-import { UserNotFoundError } from "./profile.ts";
 
 export class UpdateProfileUseCase implements UpdateProfile {
   constructor(private readonly users: UserStorePort) {}

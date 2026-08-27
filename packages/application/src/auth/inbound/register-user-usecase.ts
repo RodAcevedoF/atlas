@@ -30,6 +30,7 @@ export class RegisterUserUseCase implements RegisterUser {
       id,
       email,
       emailVerified: false,
+      role: "user",
       identities: [
         {
           provider: "password",

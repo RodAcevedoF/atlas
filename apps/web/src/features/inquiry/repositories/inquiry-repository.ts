@@ -19,6 +19,7 @@ export interface InquiryPlaceRecord {
 
 export interface InquiryRunRecord {
   id: string;
+  ownerId: string | null;
   question: string;
   day: string;
   window: string;
@@ -37,6 +38,7 @@ export interface InquiryRunRecord {
 
 export interface InquiryRunSummaryRecord {
   id: string;
+  ownerId: string | null;
   question: string;
   day: string;
   window: string;

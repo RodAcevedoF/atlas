@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryRun } from "./inquiry-run.ts";
 import { makeInquiryRunId, toPublicInquiryRun } from "./inquiry-run.ts";
+import { makeUserId } from "./user.ts";
 
 function succeededRun(overrides: Partial<InquiryRun> = {}): InquiryRun {
   return {
     id: makeInquiryRunId("run-1"),
+    ownerId: makeUserId("user-1"),
     question: "where is lithium mining expanding",
     questionKey: "where-is-lithium-mining-expanding",
     day: "2026-08-23",

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryRun } from "@atlas/domain";
-import { makeInquiryRunId } from "@atlas/domain";
+import { makeInquiryRunId, makeUserId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import type { OrchestrationPort } from "../../world/outbound/orchestration.ts";
 import { GraphUnavailableError } from "../../world/outbound/orchestration.ts";
@@ -15,6 +15,7 @@ const LONG_AGO = new Date(CREATED_AT.getTime() - 48 * 60 * 60 * 1000);
 function run(overrides: Partial<InquiryRun> = {}): InquiryRun {
   return {
     id: makeInquiryRunId("run-1"),
+    ownerId: makeUserId("user-1"),
     question: "who is covering the Sudan famine",
     questionKey: "who-is-covering-the-sudan-famine",
     day: "2026-08-16",

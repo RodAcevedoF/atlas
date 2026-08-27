@@ -12,6 +12,7 @@ import { makeEmailPort } from "../modules/auth/email.ts";
 import { makeOAuthStrategies, readOAuthConfigs } from "../modules/auth/oauth.ts";
 import { type InquiryDeps, makeInquiryDependencies } from "../modules/inquiry/dependencies.ts";
 import { type ProfileDeps, makeProfileDependencies } from "../modules/profile/dependencies.ts";
+import { type UsersDeps, makeUsersDependencies } from "../modules/users/dependencies.ts";
 
 const DEFAULT_INQUIRY_RETRY_AFTER_MS = 11 * 60 * 1000;
 const DEFAULT_INQUIRY_POLL_INTERVAL_MS = 5_000;
@@ -21,6 +22,7 @@ const DEFAULT_INQUIRY_DAILY_CAP = 25;
 export interface AppDeps {
   auth: AuthDeps;
   profile: ProfileDeps;
+  users: UsersDeps;
   inquiry: InquiryDeps;
   redis: ReturnType<typeof createRedisClient>;
 }
@@ -83,6 +85,7 @@ export async function bootstrap(): Promise<AppDeps> {
     verificationConfig,
   });
   const profile = makeProfileDependencies({ userStore });
+  const users = makeUsersDependencies({ userStore });
   const inquiry = makeInquiryDependencies({
     store: new MongoInquiryRunStore(db),
     orchestration,
@@ -96,5 +99,5 @@ export async function bootstrap(): Promise<AppDeps> {
     pinnedRunId: readInquiryRunId("INQUIRY_PINNED_RUN_ID"),
   });
 
-  return { auth, profile, inquiry, redis };
+  return { auth, profile, users, inquiry, redis };
 }

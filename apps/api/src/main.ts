@@ -9,6 +9,7 @@ import { registerInquiryWorker } from "./modules/inquiry/worker.ts";
 import { registerAuthRoutes } from "./routes/auth.ts";
 import { registerInquiryRoutes } from "./routes/inquiry.ts";
 import { registerProfileRoutes } from "./routes/profile.ts";
+import { registerUserRoutes } from "./routes/users.ts";
 
 const app = Fastify({ logger: { redact: loggerRedactPaths } });
 await app.register(cookie);
@@ -26,6 +27,7 @@ registerAuthGate(app, deps.auth.authenticate, oauthPublicRoutes(oauthConfigs));
 await registerAuthRoutes(app, deps.auth);
 await registerOAuthRoutes(app, deps.auth, oauthConfigs);
 await registerProfileRoutes(app, deps.profile);
+await registerUserRoutes(app, deps.users);
 await registerInquiryRoutes(app, deps.inquiry);
 
 registerInquiryWorker(app, deps.inquiry);

@@ -46,6 +46,7 @@ export { GetInquiryRunUseCase } from "./inquiry/inbound/get-inquiry-run.ts";
 export type {
   DeleteInquiryRun,
   DeleteInquiryRunOutcome,
+  InquiryActor,
 } from "./inquiry/inbound/delete-inquiry-run.ts";
 export { DeleteInquiryRunUseCase } from "./inquiry/inbound/delete-inquiry-run.ts";
 export type {
@@ -77,12 +78,16 @@ export type {
   Authenticate,
   VerifyEmail,
   ResendVerification,
+  ChangeUserRole,
+  ChangeUserRoleInput,
 } from "./auth/inbound/auth.ts";
 export {
   EmailInUseError,
   InvalidCredentialsError,
   UnknownProviderError,
   InvalidVerificationTokenError,
+  RoleChangeForbiddenError,
+  UserNotFoundError,
   normalizeEmail,
 } from "./auth/inbound/auth.ts";
 export { SESSION_TTL_MS, issueSession } from "./auth/inbound/issue-session.ts";
@@ -94,8 +99,8 @@ export { LogoutUserUseCase } from "./auth/inbound/logout-user-usecase.ts";
 export { AuthenticateUseCase } from "./auth/inbound/authenticate-usecase.ts";
 export { VerifyEmailUseCase } from "./auth/inbound/verify-email-usecase.ts";
 export { ResendVerificationUseCase } from "./auth/inbound/resend-verification-usecase.ts";
+export { ChangeUserRoleUseCase } from "./auth/inbound/change-user-role-usecase.ts";
 
 // profile
 export type { ProfileUpdateInput, UpdateProfile } from "./profile/inbound/profile.ts";
-export { UserNotFoundError } from "./profile/inbound/profile.ts";
 export { UpdateProfileUseCase } from "./profile/inbound/update-profile-usecase.ts";

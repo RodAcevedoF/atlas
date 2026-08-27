@@ -31,6 +31,7 @@ export function buildInquiryPlace(overrides: Partial<InquiryPlaceRecord> = {}): 
 export function buildInquiryRun(overrides: Partial<InquiryRunRecord> = {}): InquiryRunRecord {
   return {
     id: "run-latest",
+    ownerId: "user-owner",
     question: "What is happening in Sudan?",
     day: "2026-08-18",
     window: "last 7 days",
@@ -52,10 +53,11 @@ export function buildInquiryRun(overrides: Partial<InquiryRunRecord> = {}): Inqu
 export function buildInquiryRunSummary(
   overrides: Partial<InquiryRunSummaryRecord> = {},
 ): InquiryRunSummaryRecord {
-  const { id, question, day, window, places, status, createdAt, startedAt, completedAt } =
+  const { id, ownerId, question, day, window, places, status, createdAt, startedAt, completedAt } =
     buildInquiryRun();
   return {
     id,
+    ownerId,
     question,
     day,
     window,

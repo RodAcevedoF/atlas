@@ -1,4 +1,4 @@
-import type { InquiryRun, InquiryRunId, InquiryRunStatus } from "@atlas/domain";
+import type { InquiryRun, InquiryRunId, InquiryRunStatus, UserId } from "@atlas/domain";
 import { makeInquiryRunId } from "@atlas/domain";
 import type { InquiryRunStorePort } from "../outbound/inquiry-run-store.ts";
 
@@ -20,6 +20,7 @@ export class InquiryDailyCapReachedError extends Error {
 }
 
 export interface RequestInquiryRunInput {
+  ownerId: UserId;
   question: string;
   refresh: boolean;
 }
@@ -53,6 +54,7 @@ function isInFlight(run: InquiryRun): boolean {
 }
 
 function queuedRun(input: {
+  ownerId: UserId;
   question: string;
   questionKey: string;
   day: string;
@@ -60,6 +62,7 @@ function queuedRun(input: {
 }): InquiryRun {
   return {
     id: makeInquiryRunId(crypto.randomUUID()),
+    ownerId: input.ownerId,
     question: input.question,
     questionKey: input.questionKey,
     day: input.day,
@@ -97,7 +100,7 @@ export class RequestInquiryRunUseCase implements RequestInquiryRun {
     const day = toDay(now);
     const questionKey = toQuestionKey(question);
 
-    const reusable = await this.reusableRun(input.refresh, questionKey, day);
+    const reusable = await this.reusableRun(input.ownerId, input.refresh, questionKey, day);
     if (reusable) {
       return { runId: reusable.id, status: reusable.status, deduped: true };
     }
@@ -105,17 +108,18 @@ export class RequestInquiryRunUseCase implements RequestInquiryRun {
     const used = await this.store.countInquiryRunsForDay(day);
     if (used >= this.dailyCap) throw new InquiryDailyCapReachedError(this.dailyCap);
 
-    const run = queuedRun({ question, questionKey, day, now });
+    const run = queuedRun({ ownerId: input.ownerId, question, questionKey, day, now });
     await this.store.saveInquiryRun(run);
     return { runId: run.id, status: run.status, deduped: false };
   }
 
   private async reusableRun(
+    ownerId: UserId,
     refresh: boolean,
     questionKey: string,
     day: string,
   ): Promise<InquiryRun | null> {
-    const stored = await this.store.findInquiryRunByQuestionDay(questionKey, day);
+    const stored = await this.store.findInquiryRunByQuestionDay(ownerId, questionKey, day);
     if (!stored) return null;
     if (refresh) return isInFlight(stored) ? stored : null;
     return isReusable(stored) ? stored : null;

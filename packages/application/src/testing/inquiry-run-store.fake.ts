@@ -23,6 +23,7 @@ function isClaimable(run: InquiryRun, input: ClaimInquiryRunInput): boolean {
 function toListRow(run: InquiryRun): InquiryRunListRow {
   return {
     id: run.id,
+    ownerId: run.ownerId,
     question: run.question,
     day: run.day,
     window: run.window,
@@ -54,9 +55,11 @@ export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquir
       const run = held.get(id);
       return Promise.resolve(run ? toListRow(run) : null);
     },
-    findInquiryRunByQuestionDay(questionKey, day) {
+    findInquiryRunByQuestionDay(ownerId, questionKey, day) {
       const [newest] = [...held.values()]
-        .filter((run) => run.questionKey === questionKey && run.day === day)
+        .filter(
+          (run) => run.ownerId === ownerId && run.questionKey === questionKey && run.day === day,
+        )
         .sort(newestFirst);
       return Promise.resolve(newest ?? null);
     },

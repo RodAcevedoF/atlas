@@ -26,7 +26,12 @@ async function seedAdmin(): Promise<void> {
     const normalized = normalizeEmail(email);
     const existing = await users.findUserByEmail(normalized);
     if (existing) {
-      console.log(`Admin ${normalized} already exists (${existing.id}); nothing to do.`);
+      if (existing.role === "super_admin") {
+        console.log(`Admin ${normalized} already exists (${existing.id}); nothing to do.`);
+        return;
+      }
+      await users.installSuperAdmin(existing.id);
+      console.log(`Admin ${normalized} (${existing.id}) promoted to super_admin.`);
       return;
     }
 
@@ -35,6 +40,7 @@ async function seedAdmin(): Promise<void> {
       id,
       email: normalized,
       emailVerified: true,
+      role: "super_admin",
       identities: [
         {
           provider: "password",

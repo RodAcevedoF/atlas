@@ -4,11 +4,12 @@ import {
   InvalidCredentialsError,
   InvalidInquiryQuestionError,
   InvalidVerificationTokenError,
+  RoleChangeForbiddenError,
   UnknownProviderError,
   UserNotFoundError,
 } from "@atlas/application";
 import type { FastifyError, FastifyInstance } from "fastify";
-import { InvalidInputError } from "./errors.ts";
+import { ForbiddenError, InvalidInputError } from "./errors.ts";
 
 export function registerErrorHandler(app: FastifyInstance): void {
   app.setErrorHandler((error: FastifyError, req, reply) => {
@@ -27,6 +28,9 @@ export function registerErrorHandler(app: FastifyInstance): void {
       return reply.code(429).send({ error: error.message });
     if (error instanceof EmailInUseError) return reply.code(409).send({ error: error.message });
     if (error instanceof UserNotFoundError) return reply.code(404).send({ error: error.message });
+    if (error instanceof ForbiddenError) return reply.code(403).send({ error: error.message });
+    if (error instanceof RoleChangeForbiddenError)
+      return reply.code(403).send({ error: error.message });
 
     if (typeof error.statusCode === "number" && error.statusCode < 500) {
       return reply.code(error.statusCode).send({ error: error.message });

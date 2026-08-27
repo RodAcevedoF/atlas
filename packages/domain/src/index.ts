@@ -8,9 +8,11 @@ export type {
   InquiryRunList,
   InquiryRunListRow,
   InquiryRunSummary,
+  InquiryRunActor,
 } from "./entities/inquiry-run.ts";
 export {
   makeInquiryRunId,
+  mayActOnInquiryRun,
   toPublicInquiryRun,
   toInquiryRunSummary,
 } from "./entities/inquiry-run.ts";
@@ -22,12 +24,22 @@ export { GEO_REGIONS, TOPICS } from "./entities/taxonomy.ts";
 export type {
   UserId,
   UserProfile,
+  UserRole,
+  GrantableRole,
   IdentityProvider,
   UserIdentity,
   User,
   PublicUser,
 } from "./entities/user.ts";
-export { makeUserId, emptyProfile, toPublicUser, findIdentity } from "./entities/user.ts";
+export {
+  USER_ROLES,
+  GRANTABLE_ROLES,
+  makeUserId,
+  emptyProfile,
+  toPublicUser,
+  findIdentity,
+  isGrantableRole,
+} from "./entities/user.ts";
 
 export type { SessionToken, Session } from "./entities/session.ts";
 export { makeSessionToken } from "./entities/session.ts";

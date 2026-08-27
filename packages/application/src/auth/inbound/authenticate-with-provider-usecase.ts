@@ -53,6 +53,7 @@ export class AuthenticateWithProviderUseCase implements AuthenticateWithProvider
       id: makeUserId(crypto.randomUUID()),
       email: identity.email,
       emailVerified: true,
+      role: "user",
       identities: [toUserIdentity(identity)],
       profile: emptyProfile(),
       createdAt: new Date(),

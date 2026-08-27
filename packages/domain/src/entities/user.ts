@@ -10,6 +10,19 @@ export interface UserProfile {
   preferredTopics: Topic[];
 }
 
+export const USER_ROLES = ["user", "admin", "super_admin"] as const;
+export type UserRole = (typeof USER_ROLES)[number];
+
+export type GrantableRole = Exclude<UserRole, "super_admin">;
+
+export const GRANTABLE_ROLES = USER_ROLES.filter(
+  (role): role is GrantableRole => role !== "super_admin",
+);
+
+export function isGrantableRole(value: string): value is GrantableRole {
+  return GRANTABLE_ROLES.some((role) => role === value);
+}
+
 export type IdentityProvider = "password" | "github" | "google";
 
 export interface UserIdentity {
@@ -23,6 +36,7 @@ export interface User {
   id: UserId;
   email: string;
   emailVerified: boolean;
+  role: UserRole;
   identities: UserIdentity[];
   profile: UserProfile;
   createdAt: Date;
@@ -32,6 +46,7 @@ export interface PublicUser {
   id: UserId;
   email: string;
   emailVerified: boolean;
+  role: UserRole;
   profile: UserProfile;
 }
 
@@ -48,6 +63,7 @@ export function toPublicUser(user: User): PublicUser {
     id: user.id,
     email: user.email,
     emailVerified: user.emailVerified,
+    role: user.role,
     profile: user.profile,
   };
 }

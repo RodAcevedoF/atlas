@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryPlace, InquiryRun, InquiryRunId } from "@atlas/domain";
-import { makeInquiryRunId } from "@atlas/domain";
+import { makeInquiryRunId, makeUserId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import { ListInquiryRunsUseCase } from "./list-inquiry-runs.ts";
 
@@ -9,6 +9,7 @@ const SEEDED = 130;
 function run(index: number): InquiryRun {
   return {
     id: makeInquiryRunId(`run-${index}`),
+    ownerId: makeUserId("user-1"),
     question: `question ${index}`,
     questionKey: `question ${index}`,
     day: "2026-08-17",
@@ -85,6 +86,7 @@ describe("ListInquiryRunsUseCase", () => {
 
     expect(listed).toEqual({
       id: makeInquiryRunId("run-0"),
+      ownerId: makeUserId("user-1"),
       question: "question 0",
       day: "2026-08-17",
       window: "1w",
