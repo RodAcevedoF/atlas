@@ -7,6 +7,7 @@ import { RedisSessionStore, createRedisClient } from "@atlas/infra/session-redis
 import { MongoInquiryRunStore, createMongoClient, ensureIndexes } from "@atlas/infra/store-mongodb";
 import { MongoUserStore, ensureUserIndexes } from "@atlas/infra/user-store-mongodb";
 import { RedisVerificationTokenStore } from "@atlas/infra/verification-redis";
+import { type AdminDeps, makeAdminDependencies } from "../modules/admin/dependencies.ts";
 import { type AuthDeps, makeAuthDependencies } from "../modules/auth/dependencies.ts";
 import { makeEmailPort } from "../modules/auth/email.ts";
 import { makeOAuthStrategies, readOAuthConfigs } from "../modules/auth/oauth.ts";
@@ -24,6 +25,7 @@ export interface AppDeps {
   profile: ProfileDeps;
   users: UsersDeps;
   inquiry: InquiryDeps;
+  admin: AdminDeps;
   redis: ReturnType<typeof createRedisClient>;
 }
 
@@ -86,8 +88,9 @@ export async function bootstrap(): Promise<AppDeps> {
   });
   const profile = makeProfileDependencies({ userStore });
   const users = makeUsersDependencies({ userStore });
+  const inquiryStore = new MongoInquiryRunStore(db);
   const inquiry = makeInquiryDependencies({
-    store: new MongoInquiryRunStore(db),
+    store: inquiryStore,
     orchestration,
     retryAfterMs: readPositiveNumber("INQUIRY_RETRY_AFTER_MS", DEFAULT_INQUIRY_RETRY_AFTER_MS),
     runTimeoutMs: readPositiveNumber("INQUIRY_RUN_TIMEOUT_MS", DEFAULT_INQUIRY_RUN_TIMEOUT_MS),
@@ -98,6 +101,7 @@ export async function bootstrap(): Promise<AppDeps> {
     dailyCap: readPositiveInt("INQUIRY_DAILY_CAP", DEFAULT_INQUIRY_DAILY_CAP),
     pinnedRunId: readInquiryRunId("INQUIRY_PINNED_RUN_ID"),
   });
+  const admin = makeAdminDependencies({ userStore, inquiryStore });
 
-  return { auth, profile, users, inquiry, redis };
+  return { auth, profile, users, inquiry, admin, redis };
 }

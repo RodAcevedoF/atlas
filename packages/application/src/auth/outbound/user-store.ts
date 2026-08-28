@@ -1,4 +1,11 @@
-import type { GrantableRole, User, UserId, UserIdentity, UserProfile } from "@atlas/domain";
+import type {
+  GrantableRole,
+  User,
+  UserId,
+  UserIdentity,
+  UserProfile,
+  UserRole,
+} from "@atlas/domain";
 
 export interface UserStorePort {
   createUser(user: User): Promise<void>;
@@ -9,4 +16,5 @@ export interface UserStorePort {
   installSuperAdmin(id: UserId): Promise<void>;
   linkIdentity(id: UserId, identity: UserIdentity): Promise<void>;
   markEmailVerified(id: UserId): Promise<void>;
+  countUsersByRole(): Promise<Partial<Record<UserRole, number>>>;
 }

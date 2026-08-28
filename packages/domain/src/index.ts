@@ -39,6 +39,7 @@ export {
   toPublicUser,
   findIdentity,
   isGrantableRole,
+  hasAtLeastRole,
 } from "./entities/user.ts";
 
 export type { SessionToken, Session } from "./entities/session.ts";

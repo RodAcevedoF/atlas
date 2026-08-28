@@ -1,5 +1,6 @@
 import type { Authenticate } from "@atlas/application";
 import type { PublicUser, UserRole } from "@atlas/domain";
+import { hasAtLeastRole } from "@atlas/domain";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ForbiddenError } from "./errors.ts";
 
@@ -49,5 +50,11 @@ export function requireUser(req: FastifyRequest): PublicUser {
 export function requireRole(req: FastifyRequest, role: UserRole): PublicUser {
   const user = requireUser(req);
   if (user.role !== role) throw new ForbiddenError();
+  return user;
+}
+
+export function requireAtLeastRole(req: FastifyRequest, minimum: UserRole): PublicUser {
+  const user = requireUser(req);
+  if (!hasAtLeastRole(user.role, minimum)) throw new ForbiddenError();
   return user;
 }

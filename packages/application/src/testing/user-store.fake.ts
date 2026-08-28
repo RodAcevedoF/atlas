@@ -1,4 +1,4 @@
-import type { User, UserId } from "@atlas/domain";
+import type { User, UserId, UserRole } from "@atlas/domain";
 import type { UserStorePort } from "../auth/outbound/user-store.ts";
 
 export interface InMemoryUserStore {
@@ -27,6 +27,13 @@ export function inMemoryUserStore(seed: User[] = []): InMemoryUserStore {
     updateProfile: () => unreachable("updateProfile"),
     linkIdentity: () => unreachable("linkIdentity"),
     markEmailVerified: () => unreachable("markEmailVerified"),
+    countUsersByRole() {
+      const counts: Partial<Record<UserRole, number>> = {};
+      for (const user of held.values()) {
+        counts[user.role] = (counts[user.role] ?? 0) + 1;
+      }
+      return Promise.resolve(counts);
+    },
   };
 
   return { store, users: () => [...held.values()] };

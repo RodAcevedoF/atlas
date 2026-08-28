@@ -3,9 +3,16 @@ import type {
   CompleteInquiryRunInput,
   InquiryRunPage,
   InquiryRunStorePort,
+  InquiryRunSummaryCounts,
 } from "@atlas/application";
 import { INQUIRY_MAX_ATTEMPTS } from "@atlas/application";
-import type { InquiryRun, InquiryRunId, InquiryRunListRow, UserId } from "@atlas/domain";
+import type {
+  InquiryRun,
+  InquiryRunId,
+  InquiryRunListRow,
+  InquiryRunStatus,
+  UserId,
+} from "@atlas/domain";
 import { makeInquiryRunId, makeUserId } from "@atlas/domain";
 import type { Db } from "mongodb";
 import type { InquiryRunDoc } from "./collections.ts";
@@ -191,5 +198,44 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
       .limit(page.limit)
       .toArray();
     return docs.map(docToListRow);
+  }
+
+  async summarizeInquiryRuns(day: string): Promise<InquiryRunSummaryCounts> {
+    const [summary] = await this.db
+      .collection<InquiryRunDoc>(COLLECTION)
+      .aggregate<{
+        total: Array<{ count: number }>;
+        today: Array<{ count: number }>;
+        byStatus: Array<{ _id: InquiryRunStatus; count: number }>;
+        cost: Array<{ retrievalCostUsd: number }>;
+      }>([
+        {
+          $facet: {
+            total: [{ $count: "count" }],
+            today: [{ $match: { day } }, { $count: "count" }],
+            byStatus: [{ $group: { _id: "$status", count: { $sum: 1 } } }],
+            cost: [
+              {
+                $group: {
+                  _id: null,
+                  retrievalCostUsd: { $sum: { $ifNull: ["$costUsd", 0] } },
+                },
+              },
+            ],
+          },
+        },
+      ])
+      .toArray();
+
+    const byStatus: Partial<Record<InquiryRunStatus, number>> = {};
+    for (const row of summary?.byStatus ?? []) {
+      byStatus[row._id] = row.count;
+    }
+    return {
+      total: summary?.total[0]?.count ?? 0,
+      today: summary?.today[0]?.count ?? 0,
+      byStatus,
+      retrievalCostUsd: summary?.cost[0]?.retrievalCostUsd ?? 0,
+    };
   }
 }

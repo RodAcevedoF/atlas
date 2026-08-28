@@ -95,6 +95,20 @@ export class MongoUserStore implements UserStorePort {
       .collection<UserDoc>("users")
       .updateOne({ _id: id }, { $set: { emailVerified: true } });
   }
+
+  async countUsersByRole(): Promise<Partial<Record<UserRole, number>>> {
+    const rows = await this.db
+      .collection<UserDoc>("users")
+      .aggregate<{ _id: UserRole; count: number }>([
+        { $group: { _id: { $ifNull: ["$role", "user"] }, count: { $sum: 1 } } },
+      ])
+      .toArray();
+    const counts: Partial<Record<UserRole, number>> = {};
+    for (const row of rows) {
+      counts[row._id] = row.count;
+    }
+    return counts;
+  }
 }
 
 export async function ensureUserIndexes(db: Db): Promise<void> {

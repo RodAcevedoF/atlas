@@ -23,6 +23,16 @@ export function isGrantableRole(value: string): value is GrantableRole {
   return GRANTABLE_ROLES.some((role) => role === value);
 }
 
+const ROLE_RANK: Record<UserRole, number> = {
+  user: 0,
+  admin: 1,
+  super_admin: 2,
+};
+
+export function hasAtLeastRole(role: UserRole, minimum: UserRole): boolean {
+  return ROLE_RANK[role] >= ROLE_RANK[minimum];
+}
+
 export type IdentityProvider = "password" | "github" | "google";
 
 export interface UserIdentity {

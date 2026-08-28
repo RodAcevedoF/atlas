@@ -1,4 +1,4 @@
-import type { InquiryRun, InquiryRunId, InquiryRunListRow } from "@atlas/domain";
+import type { InquiryRun, InquiryRunId, InquiryRunListRow, InquiryRunStatus } from "@atlas/domain";
 import type {
   ClaimInquiryRunInput,
   InquiryRunStorePort,
@@ -92,6 +92,23 @@ export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquir
       return Promise.resolve(
         [...held.values()].sort(newestFirst).slice(0, page.limit).map(toListRow),
       );
+    },
+    summarizeInquiryRuns(day) {
+      const runs = [...held.values()];
+      const byStatus: Partial<Record<InquiryRunStatus, number>> = {};
+      let retrievalCostUsd = 0;
+      let today = 0;
+      for (const run of runs) {
+        byStatus[run.status] = (byStatus[run.status] ?? 0) + 1;
+        retrievalCostUsd += run.costUsd;
+        if (run.day === day) today += 1;
+      }
+      return Promise.resolve({
+        total: runs.length,
+        today,
+        byStatus,
+        retrievalCostUsd,
+      });
     },
   };
 

@@ -1,4 +1,10 @@
-import type { InquiryRun, InquiryRunId, InquiryRunListRow, UserId } from "@atlas/domain";
+import type {
+  InquiryRun,
+  InquiryRunId,
+  InquiryRunListRow,
+  InquiryRunStatus,
+  UserId,
+} from "@atlas/domain";
 
 export const INQUIRY_MAX_ATTEMPTS = 2;
 
@@ -17,6 +23,13 @@ export interface InquiryRunPage {
   limit: number;
 }
 
+export interface InquiryRunSummaryCounts {
+  total: number;
+  today: number;
+  byStatus: Partial<Record<InquiryRunStatus, number>>;
+  retrievalCostUsd: number;
+}
+
 export interface InquiryRunStorePort {
   saveInquiryRun(run: InquiryRun): Promise<void>;
   findInquiryRunById(id: InquiryRunId): Promise<InquiryRun | null>;
@@ -31,4 +44,5 @@ export interface InquiryRunStorePort {
   deleteInquiryRunById(id: InquiryRunId): Promise<boolean>;
   completeInquiryRun(input: CompleteInquiryRunInput): Promise<void>;
   listInquiryRuns(page: InquiryRunPage): Promise<InquiryRunListRow[]>;
+  summarizeInquiryRuns(day: string): Promise<InquiryRunSummaryCounts>;
 }

@@ -4,6 +4,7 @@ export type {
   ClaimInquiryRunInput,
   CompleteInquiryRunInput,
   InquiryRunPage,
+  InquiryRunSummaryCounts,
   InquiryRunStorePort,
 } from "./inquiry/outbound/inquiry-run-store.ts";
 export { INQUIRY_MAX_ATTEMPTS } from "./inquiry/outbound/inquiry-run-store.ts";
@@ -100,6 +101,14 @@ export { AuthenticateUseCase } from "./auth/inbound/authenticate-usecase.ts";
 export { VerifyEmailUseCase } from "./auth/inbound/verify-email-usecase.ts";
 export { ResendVerificationUseCase } from "./auth/inbound/resend-verification-usecase.ts";
 export { ChangeUserRoleUseCase } from "./auth/inbound/change-user-role-usecase.ts";
+
+export type {
+  AdminAnalytics,
+  AdminInquiryAnalytics,
+  AdminUserAnalytics,
+  GetAdminAnalytics,
+} from "./admin/inbound/get-admin-analytics.ts";
+export { GetAdminAnalyticsUseCase } from "./admin/inbound/get-admin-analytics.ts";
 
 // profile
 export type { ProfileUpdateInput, UpdateProfile } from "./profile/inbound/profile.ts";

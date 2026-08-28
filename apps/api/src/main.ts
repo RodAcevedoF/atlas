@@ -6,6 +6,7 @@ import { registerErrorHandler } from "./core/error-handler.ts";
 import { loggerRedactPaths, registerSecurity } from "./core/security.ts";
 import { oauthPublicRoutes, readOAuthConfigs, registerOAuthRoutes } from "./modules/auth/oauth.ts";
 import { registerInquiryWorker } from "./modules/inquiry/worker.ts";
+import { registerAdminRoutes } from "./routes/admin.ts";
 import { registerAuthRoutes } from "./routes/auth.ts";
 import { registerInquiryRoutes } from "./routes/inquiry.ts";
 import { registerProfileRoutes } from "./routes/profile.ts";
@@ -29,6 +30,7 @@ await registerOAuthRoutes(app, deps.auth, oauthConfigs);
 await registerProfileRoutes(app, deps.profile);
 await registerUserRoutes(app, deps.users);
 await registerInquiryRoutes(app, deps.inquiry);
+await registerAdminRoutes(app, deps.admin);
 
 registerInquiryWorker(app, deps.inquiry);
 

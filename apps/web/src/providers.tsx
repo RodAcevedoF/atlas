@@ -1,3 +1,6 @@
+import { AdminProvider } from "@/features/admin/admin-provider.tsx";
+import type { AdminRepository } from "@/features/admin/repositories/admin-repository.ts";
+import { HttpAdminRepository } from "@/features/admin/repositories/http-admin-repository.ts";
 import { AuthProvider } from "@/features/auth/auth-provider.tsx";
 import { AppErrorBoundary } from "@/features/errors";
 import { HttpInquiryRepository } from "@/features/inquiry/repositories/http-inquiry-repository.ts";
@@ -9,13 +12,16 @@ import { Provider as ReduxProvider } from "react-redux";
 
 export function AppProviders({ children }: PropsWithChildren) {
   const [inquiryRepository] = useState<InquiryRepository>(() => new HttpInquiryRepository());
+  const [adminRepository] = useState<AdminRepository>(() => new HttpAdminRepository());
   const [store] = useState(() => makeStore({ inquiryRepository }));
 
   return (
     <ReduxProvider store={store}>
       <ToastProvider>
         <AuthProvider>
-          <AppErrorBoundary>{children}</AppErrorBoundary>
+          <AdminProvider repository={adminRepository}>
+            <AppErrorBoundary>{children}</AppErrorBoundary>
+          </AdminProvider>
         </AuthProvider>
       </ToastProvider>
     </ReduxProvider>

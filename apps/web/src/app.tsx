@@ -1,3 +1,5 @@
+import { AdminGate } from "@/features/admin/admin-gate.tsx";
+import { AdminPage } from "@/features/admin/admin-page.tsx";
 import { useAuth } from "@/features/auth/auth-provider.tsx";
 import { AuthPage } from "@/features/auth/components/auth-page.tsx";
 import { GuestRoute } from "@/features/auth/components/guest-route.tsx";
@@ -60,6 +62,14 @@ export function App() {
       <Route element={<ProtectedShell />}>
         <Route path="/world" element={<WorldAwarenessPage />} />
         <Route path="/intelligence" element={<IntelligencePage />} />
+        <Route
+          path="/admin"
+          element={
+            <AdminGate>
+              <AdminPage />
+            </AdminGate>
+          }
+        />
       </Route>
       <Route path="*" element={<NotFoundView />} />
     </Routes>
