@@ -3,6 +3,7 @@ import type { InquiryRunStatus } from "@atlas/domain";
 import { Button, cn } from "@atlas/ui";
 import { type FormEvent, useState } from "react";
 import { useInquiryAsk } from "../hooks/use-inquiry-ask.ts";
+import { useInquiryBudget } from "../hooks/use-inquiry-budget.ts";
 import type { InquiryAskState } from "../infra/store/inquiry.slice.ts";
 import { INQUIRY_QUESTION_MAX_CHARS } from "../use-cases/request-inquiry-run.ts";
 
@@ -65,12 +66,15 @@ function askMessage(state: InquiryAskState): AskMessage | null {
 
 export function InquiryAskBox() {
   const { ask, ...state } = useInquiryAsk();
+  const budget = useInquiryBudget();
   const [question, setQuestion] = useState("");
   const message = askMessage(state);
+  const remaining = budget?.remaining ?? null;
+  const atCap = remaining === 0;
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (state.isAsking || !question.trim()) return;
+    if (state.isAsking || atCap || !question.trim()) return;
     ask(question);
     setQuestion("");
   };
@@ -95,12 +99,18 @@ export function InquiryAskBox() {
           type="submit"
           variant={null}
           size="pillSm"
-          disabled={state.isAsking || question.trim().length === 0}
+          disabled={state.isAsking || atCap || question.trim().length === 0}
           className={cn(CTA_PRIMARY, "shrink-0 font-semibold")}
         >
           Ask
         </Button>
       </form>
+
+      {remaining !== null ? (
+        <p className="px-3 pb-1 pt-2 text-[11.5px] text-muted-foreground">
+          {atCap ? "No searches left today" : `${remaining} left today`}
+        </p>
+      ) : null}
 
       {message ? (
         <p

@@ -18,8 +18,14 @@ export async function registerInquiryRoutes(
     const result = await deps.requestInquiryRun.execute({
       ...parseInquiryRunBody(body),
       ownerId: user.id,
+      role: user.role,
     });
     return reply.code(202).send(result);
+  });
+
+  app.get("/inquiry/budget", async (req, reply) => {
+    const user = requireUser(req);
+    return reply.send(await deps.getInquiryBudget.execute({ ownerId: user.id, role: user.role }));
   });
 
   app.get("/inquiry/runs/:id", async (req, reply) => {

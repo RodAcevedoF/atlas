@@ -42,6 +42,12 @@ export {
   RequestInquiryRunUseCase,
   InquiryDailyCapReachedError,
 } from "./inquiry/inbound/request-inquiry-run.ts";
+export type {
+  GetInquiryBudget,
+  GetInquiryBudgetInput,
+  InquiryBudget,
+} from "./inquiry/inbound/get-inquiry-budget.ts";
+export { GetInquiryBudgetUseCase } from "./inquiry/inbound/get-inquiry-budget.ts";
 export type { GetInquiryRun } from "./inquiry/inbound/get-inquiry-run.ts";
 export { GetInquiryRunUseCase } from "./inquiry/inbound/get-inquiry-run.ts";
 export type {

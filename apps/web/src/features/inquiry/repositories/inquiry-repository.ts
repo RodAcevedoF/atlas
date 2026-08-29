@@ -65,9 +65,16 @@ export interface InquiryRunRequestRecord {
   deduped: boolean;
 }
 
+export interface InquiryBudgetRecord {
+  used: number;
+  cap: number | null;
+  remaining: number | null;
+}
+
 export interface InquiryRepository {
   recentRuns(limit: number): Promise<InquiryRunListRecord>;
   runById(runId: string): Promise<InquiryRunRecord>;
   requestRun(request: InquiryRunRequestInput): Promise<InquiryRunRequestRecord>;
   deleteRun(runId: string): Promise<void>;
+  budget(): Promise<InquiryBudgetRecord>;
 }

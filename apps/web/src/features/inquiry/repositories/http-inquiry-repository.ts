@@ -1,5 +1,6 @@
 import { fetchJson, fetchNoContent } from "@/shared/http.ts";
 import type {
+  InquiryBudgetRecord,
   InquiryRepository,
   InquiryRunListRecord,
   InquiryRunRecord,
@@ -26,5 +27,9 @@ export class HttpInquiryRepository implements InquiryRepository {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(request),
     });
+  }
+
+  budget(): Promise<InquiryBudgetRecord> {
+    return fetchJson<InquiryBudgetRecord>("/api/inquiry/budget");
   }
 }

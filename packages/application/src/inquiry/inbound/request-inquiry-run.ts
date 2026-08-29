@@ -1,5 +1,5 @@
-import type { InquiryRun, InquiryRunId, InquiryRunStatus, UserId } from "@atlas/domain";
-import { makeInquiryRunId } from "@atlas/domain";
+import type { InquiryRun, InquiryRunId, InquiryRunStatus, UserId, UserRole } from "@atlas/domain";
+import { hasAtLeastRole, makeInquiryRunId } from "@atlas/domain";
 import type { InquiryRunStorePort } from "../outbound/inquiry-run-store.ts";
 
 const INQUIRY_WINDOW = "1w";
@@ -21,6 +21,7 @@ export class InquiryDailyCapReachedError extends Error {
 
 export interface RequestInquiryRunInput {
   ownerId: UserId;
+  role: UserRole;
   question: string;
   refresh: boolean;
 }
@@ -100,28 +101,31 @@ export class RequestInquiryRunUseCase implements RequestInquiryRun {
     const day = toDay(now);
     const questionKey = toQuestionKey(question);
 
-    const reusable = await this.reusableRun(input.ownerId, input.refresh, questionKey, day);
+    const stored = await this.store.findInquiryRunByQuestionDay(input.ownerId, questionKey, day);
+    const reusable = pickReusable(stored, input.refresh);
     if (reusable) {
       return { runId: reusable.id, status: reusable.status, deduped: true };
     }
 
-    const used = await this.store.countInquiryRunsForDay(day);
-    if (used >= this.dailyCap) throw new InquiryDailyCapReachedError(this.dailyCap);
+    if (countsAgainstBudget(input, stored)) {
+      const used = await this.store.countSucceededQuestionsForOwnerDay(input.ownerId, day);
+      if (used >= this.dailyCap) throw new InquiryDailyCapReachedError(this.dailyCap);
+    }
 
     const run = queuedRun({ ownerId: input.ownerId, question, questionKey, day, now });
     await this.store.saveInquiryRun(run);
     return { runId: run.id, status: run.status, deduped: false };
   }
+}
 
-  private async reusableRun(
-    ownerId: UserId,
-    refresh: boolean,
-    questionKey: string,
-    day: string,
-  ): Promise<InquiryRun | null> {
-    const stored = await this.store.findInquiryRunByQuestionDay(ownerId, questionKey, day);
-    if (!stored) return null;
-    if (refresh) return isInFlight(stored) ? stored : null;
-    return isReusable(stored) ? stored : null;
-  }
+function pickReusable(stored: InquiryRun | null, refresh: boolean): InquiryRun | null {
+  if (!stored) return null;
+  if (refresh) return isInFlight(stored) ? stored : null;
+  return isReusable(stored) ? stored : null;
+}
+
+function countsAgainstBudget(input: RequestInquiryRunInput, stored: InquiryRun | null): boolean {
+  if (hasAtLeastRole(input.role, "admin")) return false;
+  if (input.refresh && stored !== null) return false;
+  return true;
 }

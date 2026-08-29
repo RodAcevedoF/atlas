@@ -141,8 +141,11 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
     return doc ? docToInquiryRun(doc) : null;
   }
 
-  async countInquiryRunsForDay(day: string): Promise<number> {
-    return this.db.collection<InquiryRunDoc>(COLLECTION).countDocuments({ day });
+  async countSucceededQuestionsForOwnerDay(ownerId: UserId, day: string): Promise<number> {
+    const keys = await this.db
+      .collection<InquiryRunDoc>(COLLECTION)
+      .distinct("questionKey", { ownerId, day, status: "succeeded" });
+    return keys.length;
   }
 
   async claimNextInquiryRun(input: ClaimInquiryRunInput): Promise<InquiryRun | null> {

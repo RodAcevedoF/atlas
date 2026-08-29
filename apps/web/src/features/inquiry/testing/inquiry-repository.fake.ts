@@ -26,6 +26,7 @@ export function inMemoryInquiryRepository({ statuses }: InquiryRepositorySeed): 
     recentRuns: () => outsideWatchPath("recentRuns"),
     requestRun: () => outsideWatchPath("requestRun"),
     deleteRun: () => outsideWatchPath("deleteRun"),
+    budget: () => outsideWatchPath("budget"),
   };
 }
 
@@ -58,6 +59,7 @@ export function inMemoryAskInquiryRepository({
       return Promise.resolve({ runId: requested.id, status: requested.status, deduped: false });
     },
     deleteRun: () => outsideAskPath("deleteRun"),
+    budget: () => Promise.resolve({ used: 0, cap: 5, remaining: 5 }),
   };
 }
 
@@ -82,5 +84,6 @@ export function inMemoryDeleteInquiryRepository({
       listed = listed.filter((run) => run.id !== runId);
       return Promise.resolve();
     },
+    budget: () => outsideDeletePath("budget"),
   };
 }

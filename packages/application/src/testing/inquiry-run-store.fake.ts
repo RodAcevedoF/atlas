@@ -63,8 +63,13 @@ export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquir
         .sort(newestFirst);
       return Promise.resolve(newest ?? null);
     },
-    countInquiryRunsForDay(day) {
-      return Promise.resolve([...held.values()].filter((run) => run.day === day).length);
+    countSucceededQuestionsForOwnerDay(ownerId, day) {
+      const keys = new Set(
+        [...held.values()]
+          .filter((run) => run.ownerId === ownerId && run.day === day && run.status === "succeeded")
+          .map((run) => run.questionKey),
+      );
+      return Promise.resolve(keys.size);
     },
     claimNextInquiryRun(input) {
       const [next] = [...held.values()].filter((run) => isClaimable(run, input)).sort(newestFirst);

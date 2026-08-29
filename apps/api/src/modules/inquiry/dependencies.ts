@@ -1,6 +1,7 @@
 import type {
   DeleteInquiryRun,
   ExecuteInquiryRun,
+  GetInquiryBudget,
   GetInquiryRun,
   InquiryRunStorePort,
   ListInquiryRuns,
@@ -10,6 +11,7 @@ import type {
 import {
   DeleteInquiryRunUseCase,
   ExecuteInquiryRunUseCase,
+  GetInquiryBudgetUseCase,
   GetInquiryRunUseCase,
   ListInquiryRunsUseCase,
   RequestInquiryRunUseCase,
@@ -19,6 +21,7 @@ import type { InquiryRunId } from "@atlas/domain";
 export interface InquiryDeps {
   executeInquiryRun: ExecuteInquiryRun;
   requestInquiryRun: RequestInquiryRun;
+  getInquiryBudget: GetInquiryBudget;
   getInquiryRun: GetInquiryRun;
   listInquiryRuns: ListInquiryRuns;
   deleteInquiryRun: DeleteInquiryRun;
@@ -42,6 +45,7 @@ export function makeInquiryDependencies(deps: {
       deps.runTimeoutMs,
     ),
     requestInquiryRun: new RequestInquiryRunUseCase(deps.store, deps.dailyCap),
+    getInquiryBudget: new GetInquiryBudgetUseCase(deps.store, deps.dailyCap),
     getInquiryRun: new GetInquiryRunUseCase(deps.store),
     listInquiryRuns: new ListInquiryRunsUseCase(deps.store, deps.pinnedRunId),
     deleteInquiryRun: new DeleteInquiryRunUseCase(deps.store, deps.pinnedRunId),

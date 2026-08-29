@@ -2,6 +2,7 @@ import type { RootState } from "@/store/index.ts";
 import type { InquiryRunStatus } from "@atlas/domain";
 import { createSlice } from "@reduxjs/toolkit";
 import type {
+  InquiryBudgetRecord,
   InquiryRunRecord,
   InquiryRunSummaryRecord,
 } from "../../repositories/inquiry-repository.ts";
@@ -10,6 +11,7 @@ import {
   deleteInquiryRun,
   inquiryRunProgressed,
   inquiryRunRequested,
+  loadInquiryBudget,
   loadInquiryRun,
   loadRecentInquiryRuns,
 } from "./inquiry.commands.ts";
@@ -42,6 +44,7 @@ export interface InquiryState {
   error: string | null;
   detail: InquiryDetailState;
   ask: InquiryAskState;
+  budget: InquiryBudgetRecord | null;
 }
 
 const idleAsk: InquiryAskState = {
@@ -61,6 +64,7 @@ const initialState: InquiryState = {
   error: null,
   detail: { byId: {}, loadingId: null, failure: null },
   ask: idleAsk,
+  budget: null,
 };
 
 function keepFreshDetails(
@@ -112,6 +116,9 @@ const inquirySlice = createSlice({
           message: action.error.message ?? "Failed to load that inquiry run",
         };
       })
+      .addCase(loadInquiryBudget.fulfilled, (state, action) => {
+        state.budget = action.payload;
+      })
       .addCase(deleteInquiryRun.rejected, (state, action) => {
         state.error = action.error.message ?? "Failed to delete that inquiry run";
       })
@@ -149,3 +156,5 @@ export const { askErrorDismissed } = inquirySlice.actions;
 export const selectInquiry = (state: RootState): InquiryState => state.inquiry;
 export const selectInquiryDetail = (state: RootState): InquiryDetailState => state.inquiry.detail;
 export const selectInquiryAsk = (state: RootState): InquiryAskState => state.inquiry.ask;
+export const selectInquiryBudget = (state: RootState): InquiryBudgetRecord | null =>
+  state.inquiry.budget;

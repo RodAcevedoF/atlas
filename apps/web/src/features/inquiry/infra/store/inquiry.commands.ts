@@ -2,11 +2,13 @@ import type { AppThunkExtra, RootState } from "@/store/index.ts";
 import type { InquiryRunStatus } from "@atlas/domain";
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import type {
+  InquiryBudgetRecord,
   InquiryRunListRecord,
   InquiryRunRecord,
   InquiryRunRequestInput,
 } from "../../repositories/inquiry-repository.ts";
 import { makeDeleteInquiryRun } from "../../use-cases/delete-inquiry-run.ts";
+import { makeLoadInquiryBudget } from "../../use-cases/load-inquiry-budget.ts";
 import { makeLoadInquiryRun } from "../../use-cases/load-inquiry-run.ts";
 import { makeLoadRecentInquiryRuns } from "../../use-cases/load-recent-inquiry-runs.ts";
 import { INQUIRY_POLL_SCHEDULE, makePollInquiryRun } from "../../use-cases/poll-inquiry-run.ts";
@@ -33,6 +35,11 @@ function reasonFor(cause: unknown): string {
 export const loadRecentInquiryRuns = createAsyncThunk<InquiryRunListRecord, void, CommandConfig>(
   "inquiry/loadRecent",
   (_input, { extra }) => makeLoadRecentInquiryRuns(extra)(),
+);
+
+export const loadInquiryBudget = createAsyncThunk<InquiryBudgetRecord, void, CommandConfig>(
+  "inquiry/loadBudget",
+  (_input, { extra }) => makeLoadInquiryBudget(extra)(),
 );
 
 export const loadInquiryRun = createAsyncThunk<InquiryRunRecord, string, CommandConfig>(
@@ -72,5 +79,6 @@ export const askInquiryQuestion = createAsyncThunk<
     };
   } finally {
     await dispatch(loadRecentInquiryRuns());
+    await dispatch(loadInquiryBudget());
   }
 });

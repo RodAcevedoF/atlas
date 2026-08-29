@@ -18,7 +18,7 @@ import { type UsersDeps, makeUsersDependencies } from "../modules/users/dependen
 const DEFAULT_INQUIRY_RETRY_AFTER_MS = 11 * 60 * 1000;
 const DEFAULT_INQUIRY_POLL_INTERVAL_MS = 5_000;
 const DEFAULT_INQUIRY_RUN_TIMEOUT_MS = 120_000;
-const DEFAULT_INQUIRY_DAILY_CAP = 25;
+const DEFAULT_INQUIRY_DAILY_CAP = 5;
 
 export interface AppDeps {
   auth: AuthDeps;
