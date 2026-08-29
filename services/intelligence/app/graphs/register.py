@@ -1,7 +1,12 @@
 from app.adapters.exa_claims import ExaClaimSource, ExaPricing
 from app.adapters.langchain_analyst import LangChainAnalyst
+from app.adapters.langchain_attachment_interpreter import LangChainAttachmentInterpreter
 from app.adapters.langchain_normaliser import LangChainPlaceNormaliser
+from app.adapters.langchain_vision_attachment_interpreter import (
+    LangChainVisionAttachmentInterpreter,
+)
 from app.core.config import settings
+from app.graphs.attachment_interpretation import AttachmentInterpretationGraph
 from app.graphs.claims_lens import ClaimsLensGraph
 from app.graphs.registry import registry
 
@@ -34,5 +39,12 @@ def register_graphs() -> None:
             normaliser=LangChainPlaceNormaliser(settings),
             analyst=LangChainAnalyst(settings),
             limit=settings.exa_results,
+        ),
+    )
+    registry.register(
+        "attachment-interpretation",
+        AttachmentInterpretationGraph(
+            LangChainAttachmentInterpreter(settings),
+            LangChainVisionAttachmentInterpreter(settings),
         ),
     )

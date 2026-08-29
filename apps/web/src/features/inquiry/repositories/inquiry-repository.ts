@@ -57,6 +57,7 @@ export interface InquiryRunListRecord {
 export interface InquiryRunRequestInput {
   question: string;
   refresh: boolean;
+  attachmentId?: string;
 }
 
 export interface InquiryRunRequestRecord {
@@ -71,10 +72,27 @@ export interface InquiryBudgetRecord {
   remaining: number | null;
 }
 
+export interface InquiryAttachmentRecord {
+  id: string;
+  filename: string;
+}
+
+export interface AttachmentInterpretationRecord {
+  summary: string;
+  facts: string[];
+  entities: string[];
+  proposedQuestion: string;
+  needsClarification: boolean;
+  clarificationQuestion: string | null;
+}
+
 export interface InquiryRepository {
   recentRuns(limit: number): Promise<InquiryRunListRecord>;
   runById(runId: string): Promise<InquiryRunRecord>;
   requestRun(request: InquiryRunRequestInput): Promise<InquiryRunRequestRecord>;
   deleteRun(runId: string): Promise<void>;
   budget(): Promise<InquiryBudgetRecord>;
+  uploadAttachment(file: File): Promise<InquiryAttachmentRecord>;
+  interpretAttachment(id: string, question: string): Promise<AttachmentInterpretationRecord>;
+  deleteAttachment(id: string): Promise<void>;
 }

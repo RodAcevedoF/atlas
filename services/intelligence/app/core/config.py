@@ -16,6 +16,7 @@ class Settings(BaseSettings):
 
     llm_provider: str = "openai"
     llm_model: str = "gpt-4o-mini"
+    vision_model: str = "gpt-4o-mini"
     openai_api_key: str | None = None
     cerebras_api_key: str | None = None
 

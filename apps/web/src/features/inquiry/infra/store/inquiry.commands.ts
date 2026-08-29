@@ -2,12 +2,19 @@ import type { AppThunkExtra, RootState } from "@/store/index.ts";
 import type { InquiryRunStatus } from "@atlas/domain";
 import { createAction, createAsyncThunk } from "@reduxjs/toolkit";
 import type {
+  AttachmentInterpretationRecord,
+  InquiryAttachmentRecord,
   InquiryBudgetRecord,
   InquiryRunListRecord,
   InquiryRunRecord,
   InquiryRunRequestInput,
 } from "../../repositories/inquiry-repository.ts";
 import { makeDeleteInquiryRun } from "../../use-cases/delete-inquiry-run.ts";
+import {
+  makeDeleteInquiryAttachment,
+  makeInterpretInquiryAttachment,
+  makeUploadInquiryAttachment,
+} from "../../use-cases/inquiry-attachment.ts";
 import { makeLoadInquiryBudget } from "../../use-cases/load-inquiry-budget.ts";
 import { makeLoadInquiryRun } from "../../use-cases/load-inquiry-run.ts";
 import { makeLoadRecentInquiryRuns } from "../../use-cases/load-recent-inquiry-runs.ts";
@@ -17,6 +24,7 @@ import type { WatchInquiryRunOutcome } from "../../use-cases/watch-inquiry-run.t
 
 export const inquiryRunProgressed = createAction<InquiryRunStatus>("inquiry/progressed");
 export const inquiryRunRequested = createAction<string>("inquiry/requested");
+export const inquiryAttachmentSubmitted = createAction("inquiry/attachmentSubmitted");
 
 export interface AskInquiryQuestionOutcome extends WatchInquiryRunOutcome {
   deduped: boolean;
@@ -55,12 +63,32 @@ export const deleteInquiryRun = createAsyncThunk<void, string, CommandConfig>(
   },
 );
 
+export const uploadInquiryAttachment = createAsyncThunk<
+  InquiryAttachmentRecord,
+  File,
+  CommandConfig
+>("inquiry/uploadAttachment", (file, { extra }) => makeUploadInquiryAttachment(extra)(file));
+
+export const interpretInquiryAttachment = createAsyncThunk<
+  AttachmentInterpretationRecord,
+  { id: string; question: string },
+  CommandConfig
+>("inquiry/interpretAttachment", (input, { extra }) =>
+  makeInterpretInquiryAttachment(extra)(input.id, input.question),
+);
+
+export const deleteInquiryAttachment = createAsyncThunk<void, string, CommandConfig>(
+  "inquiry/deleteAttachment",
+  (id, { extra }) => makeDeleteInquiryAttachment(extra)(id),
+);
+
 export const askInquiryQuestion = createAsyncThunk<
   AskInquiryQuestionOutcome,
   InquiryRunRequestInput,
   CommandConfig
 >("inquiry/ask", async (request, { extra, dispatch }) => {
   const requested = await makeRequestInquiryRun(extra)(request);
+  if (request.attachmentId) dispatch(inquiryAttachmentSubmitted());
   await dispatch(loadRecentInquiryRuns());
   dispatch(inquiryRunRequested(requested.runId));
   const watchInquiryRun = makePollInquiryRun(extra, INQUIRY_POLL_SCHEDULE);

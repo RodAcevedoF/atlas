@@ -2,7 +2,7 @@ import { Avatar, Eyebrow, PANEL } from "@/shared/ui";
 import type { GeoRegion, Topic } from "@atlas/domain";
 import { GEO_REGIONS, TOPICS } from "@atlas/domain";
 import { Button, Card, cn, useToast } from "@atlas/ui";
-import { ImagePlus, Trash2 } from "lucide-react";
+import { ImagePlus, LoaderCircle, Trash2 } from "lucide-react";
 import { type ChangeEvent, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth-provider.tsx";
@@ -13,11 +13,6 @@ function formatLabel(value: string): string {
 
 function toggleValue<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
-}
-
-function profileImageActionLabel(isChanging: boolean, hasImage: boolean): string {
-  if (isChanging) return "Updating…";
-  return hasImage ? "Replace image" : "Upload image";
 }
 
 function ChipToggle({
@@ -140,57 +135,78 @@ export function AccountMenu() {
               "absolute right-0 top-12 z-50 flex max-h-[calc(100vh-6rem)] w-80 flex-col gap-4 overflow-y-auto p-5",
             )}
           >
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              aria-label="Choose profile image"
+              className="sr-only"
+              onChange={(event) => void uploadImage(event)}
+            />
+
             <div className="flex items-center gap-3">
-              <Avatar
-                name={user.email}
-                isActive={false}
-                imageUrl={profileImageUrl}
-                onImageLoad={() => setHasProfileImage(true)}
-                onImageError={() => setHasProfileImage(false)}
-                className="h-12 w-12"
-              />
+              <button
+                type="button"
+                aria-label="Upload profile image"
+                disabled={hasProfileImage || isChangingImage}
+                onClick={() => imageInputRef.current?.click()}
+                className="group relative shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default"
+              >
+                <Avatar
+                  name={user.email}
+                  isActive={false}
+                  imageUrl={profileImageUrl}
+                  onImageLoad={() => setHasProfileImage(true)}
+                  onImageError={() => setHasProfileImage(false)}
+                  className="h-12 w-12"
+                />
+                {!hasProfileImage ? (
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "absolute inset-0 flex items-center justify-center rounded-full bg-primary/85 text-primary-foreground",
+                      "scale-90 opacity-0 transition-[opacity,transform] group-hover:scale-100 group-hover:opacity-100 group-focus-visible:scale-100 group-focus-visible:opacity-100",
+                      isChangingImage && "scale-100 opacity-100",
+                    )}
+                  >
+                    {isChangingImage ? (
+                      <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" />
+                    ) : (
+                      <ImagePlus className="h-4 w-4" />
+                    )}
+                  </span>
+                ) : null}
+              </button>
               <div className="min-w-0 flex-1">
                 <Eyebrow>Signed in</Eyebrow>
                 <span className="mt-1.5 block truncate text-sm font-medium" title={user.email}>
                   {user.email}
                 </span>
               </div>
+              {hasProfileImage ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  aria-label="Remove profile image"
+                  disabled={isChangingImage}
+                  onClick={() => void removeImage()}
+                  className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  {isChangingImage ? (
+                    <LoaderCircle className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
+                  ) : (
+                    <Trash2 className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              ) : null}
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2">
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="sr-only"
-                  onChange={(event) => void uploadImage(event)}
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={isChangingImage}
-                  onClick={() => imageInputRef.current?.click()}
-                >
-                  <ImagePlus className="h-3.5 w-3.5" />
-                  {profileImageActionLabel(isChangingImage, hasProfileImage)}
-                </Button>
-                {hasProfileImage ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={isChangingImage}
-                    onClick={() => void removeImage()}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Remove
-                  </Button>
-                ) : null}
-              </div>
+            {!hasProfileImage ? (
               <span className="text-[11px] text-muted-foreground">
-                JPEG, PNG or WebP · 5 MB max
+                Click the avatar to upload · JPEG, PNG or WebP · 5 MB max
               </span>
-            </div>
+            ) : null}
 
             <div className="flex flex-col gap-2.25">
               <Eyebrow>Preferred topics</Eyebrow>

@@ -1,3 +1,9 @@
+import {
+  INQUIRY_ATTACHMENT_MAX_BYTES,
+  PROFILE_IMAGE_MAX_BYTES,
+  PROFILE_IMAGE_MEDIA_TYPES,
+} from "@atlas/application";
+import { INQUIRY_ATTACHMENT_MEDIA_TYPES } from "@atlas/domain";
 import cookie from "@fastify/cookie";
 import Fastify from "fastify";
 import { registerAuthGate } from "./core/auth-hook.ts";
@@ -14,6 +20,11 @@ import { registerUserRoutes } from "./routes/users.ts";
 
 const app = Fastify({ logger: { redact: loggerRedactPaths } });
 await app.register(cookie);
+app.addContentTypeParser(
+  [...new Set([...PROFILE_IMAGE_MEDIA_TYPES, ...INQUIRY_ATTACHMENT_MEDIA_TYPES])],
+  { parseAs: "buffer", bodyLimit: Math.max(PROFILE_IMAGE_MAX_BYTES, INQUIRY_ATTACHMENT_MAX_BYTES) },
+  (_req, body, done) => done(null, body),
+);
 
 app.get("/health", async () => {
   return { status: "ok", service: "atlas-api", timestamp: new Date().toISOString() };

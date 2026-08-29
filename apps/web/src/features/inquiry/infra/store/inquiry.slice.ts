@@ -2,18 +2,23 @@ import type { RootState } from "@/store/index.ts";
 import type { InquiryRunStatus } from "@atlas/domain";
 import { createSlice } from "@reduxjs/toolkit";
 import type {
+  AttachmentInterpretationRecord,
   InquiryBudgetRecord,
   InquiryRunRecord,
   InquiryRunSummaryRecord,
 } from "../../repositories/inquiry-repository.ts";
 import {
   askInquiryQuestion,
+  deleteInquiryAttachment,
   deleteInquiryRun,
+  inquiryAttachmentSubmitted,
   inquiryRunProgressed,
   inquiryRunRequested,
+  interpretInquiryAttachment,
   loadInquiryBudget,
   loadInquiryRun,
   loadRecentInquiryRuns,
+  uploadInquiryAttachment,
 } from "./inquiry.commands.ts";
 
 export interface InquiryAskState {
@@ -45,7 +50,28 @@ export interface InquiryState {
   detail: InquiryDetailState;
   ask: InquiryAskState;
   budget: InquiryBudgetRecord | null;
+  attachment: InquiryAttachmentState;
 }
+
+export type InquiryAttachmentStatus = "idle" | "uploading" | "ready" | "interpreting";
+
+export interface InquiryAttachmentState {
+  id: string | null;
+  filename: string | null;
+  status: InquiryAttachmentStatus;
+  interpretation: AttachmentInterpretationRecord | null;
+  interpretationCount: number;
+  error: string | null;
+}
+
+const idleAttachment: InquiryAttachmentState = {
+  id: null,
+  filename: null,
+  status: "idle",
+  interpretation: null,
+  interpretationCount: 0,
+  error: null,
+};
 
 const idleAsk: InquiryAskState = {
   startedRunId: null,
@@ -65,6 +91,7 @@ const initialState: InquiryState = {
   detail: { byId: {}, loadingId: null, failure: null },
   ask: idleAsk,
   budget: null,
+  attachment: idleAttachment,
 };
 
 function keepFreshDetails(
@@ -122,6 +149,46 @@ const inquirySlice = createSlice({
       .addCase(deleteInquiryRun.rejected, (state, action) => {
         state.error = action.error.message ?? "Failed to delete that inquiry run";
       })
+      .addCase(uploadInquiryAttachment.pending, (state, action) => {
+        state.attachment = {
+          ...idleAttachment,
+          filename: action.meta.arg.name,
+          status: "uploading",
+        };
+      })
+      .addCase(uploadInquiryAttachment.fulfilled, (state, action) => {
+        state.attachment.id = action.payload.id;
+        state.attachment.filename = action.payload.filename;
+        state.attachment.status = "ready";
+      })
+      .addCase(uploadInquiryAttachment.rejected, (state, action) => {
+        state.attachment = {
+          ...idleAttachment,
+          error: action.error.message ?? "Could not attach that file",
+        };
+      })
+      .addCase(interpretInquiryAttachment.pending, (state) => {
+        state.attachment.status = "interpreting";
+        state.attachment.error = null;
+      })
+      .addCase(interpretInquiryAttachment.fulfilled, (state, action) => {
+        state.attachment.status = "ready";
+        state.attachment.interpretation = action.payload;
+        state.attachment.interpretationCount += 1;
+      })
+      .addCase(interpretInquiryAttachment.rejected, (state, action) => {
+        state.attachment.status = "ready";
+        state.attachment.error = action.error.message ?? "Could not interpret that file";
+      })
+      .addCase(deleteInquiryAttachment.fulfilled, (state) => {
+        state.attachment = idleAttachment;
+      })
+      .addCase(deleteInquiryAttachment.rejected, (state, action) => {
+        state.attachment.error = action.error.message ?? "Could not remove that file";
+      })
+      .addCase(inquiryAttachmentSubmitted, (state) => {
+        state.attachment = idleAttachment;
+      })
       .addCase(askInquiryQuestion.pending, (state, action) => {
         state.ask = { ...idleAsk, isAsking: true, isRefresh: action.meta.arg.refresh };
       })
@@ -158,3 +225,5 @@ export const selectInquiryDetail = (state: RootState): InquiryDetailState => sta
 export const selectInquiryAsk = (state: RootState): InquiryAskState => state.inquiry.ask;
 export const selectInquiryBudget = (state: RootState): InquiryBudgetRecord | null =>
   state.inquiry.budget;
+export const selectInquiryAttachment = (state: RootState): InquiryAttachmentState =>
+  state.inquiry.attachment;

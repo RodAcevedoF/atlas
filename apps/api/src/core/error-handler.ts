@@ -1,9 +1,15 @@
 import {
   EmailInUseError,
+  InquiryAttachmentInterpretationCapError,
+  InquiryAttachmentNotFoundError,
+  InquiryAttachmentTooLargeError,
+  InquiryAttachmentUploadCapError,
   InquiryDailyCapReachedError,
   InvalidCredentialsError,
+  InvalidInquiryAttachmentError,
   InvalidInquiryQuestionError,
   InvalidProfileImageError,
+  InvalidTableError,
   InvalidVerificationTokenError,
   ProfileImageTooLargeError,
   RoleChangeForbiddenError,
@@ -26,6 +32,16 @@ export function registerErrorHandler(app: FastifyInstance): void {
     }
     if (error instanceof InvalidInquiryQuestionError)
       return reply.code(400).send({ error: error.message });
+    if (error instanceof InvalidInquiryAttachmentError || error instanceof InvalidTableError)
+      return reply.code(400).send({ error: error.message });
+    if (error instanceof InquiryAttachmentNotFoundError)
+      return reply.code(404).send({ error: error.message });
+    if (error instanceof InquiryAttachmentTooLargeError)
+      return reply.code(413).send({ error: error.message });
+    if (error instanceof InquiryAttachmentInterpretationCapError)
+      return reply.code(429).send({ error: error.message });
+    if (error instanceof InquiryAttachmentUploadCapError)
+      return reply.code(429).send({ error: error.message });
     if (error instanceof InvalidProfileImageError)
       return reply.code(400).send({ error: error.message });
     if (error instanceof ProfileImageTooLargeError)

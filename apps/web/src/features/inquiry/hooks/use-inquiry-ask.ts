@@ -8,7 +8,7 @@ import {
 } from "../infra/store/inquiry.slice.ts";
 
 export interface UseInquiryAskResult extends InquiryAskState {
-  ask: (question: string) => void;
+  ask: (question: string, attachmentId?: string) => void;
   refresh: (question: string) => void;
   dismissError: () => void;
 }
@@ -18,8 +18,8 @@ export function useInquiryAsk(): UseInquiryAskResult {
   const state = useAppSelector(selectInquiryAsk);
 
   const ask = useCallback(
-    (question: string) => {
-      void dispatch(askInquiryQuestion({ question, refresh: false }));
+    (question: string, attachmentId?: string) => {
+      void dispatch(askInquiryQuestion({ question, refresh: false, attachmentId }));
     },
     [dispatch],
   );

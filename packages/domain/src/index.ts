@@ -18,6 +18,26 @@ export {
 } from "./entities/inquiry-run.ts";
 export { INQUIRY_RUN_STATUSES } from "./entities/inquiry-run.ts";
 
+export type {
+  AttachmentInterpretation,
+  InquiryAttachment,
+  InquiryAttachmentId,
+  InquiryAttachmentMediaType,
+  InquiryImageAttachmentMediaType,
+  InquiryTabularAttachmentMediaType,
+  TableCell,
+  TableColumnProfile,
+  TableColumnType,
+  TableProfile,
+  TableSheetProfile,
+} from "./entities/inquiry-attachment.ts";
+export {
+  INQUIRY_ATTACHMENT_MEDIA_TYPES,
+  INQUIRY_IMAGE_ATTACHMENT_MEDIA_TYPES,
+  INQUIRY_TABULAR_ATTACHMENT_MEDIA_TYPES,
+  makeInquiryAttachmentId,
+} from "./entities/inquiry-attachment.ts";
+
 export type { GeoRegion, Topic } from "./entities/taxonomy.ts";
 export { GEO_REGIONS, TOPICS } from "./entities/taxonomy.ts";
 

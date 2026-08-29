@@ -1,5 +1,13 @@
-import type { InquiryRun, InquiryRunId, InquiryRunStatus, UserId, UserRole } from "@atlas/domain";
+import type {
+  InquiryAttachmentId,
+  InquiryRun,
+  InquiryRunId,
+  InquiryRunStatus,
+  UserId,
+  UserRole,
+} from "@atlas/domain";
 import { hasAtLeastRole, makeInquiryRunId } from "@atlas/domain";
+import type { InquiryAttachmentStorePort } from "../outbound/inquiry-attachment-store.ts";
 import type { InquiryRunStorePort } from "../outbound/inquiry-run-store.ts";
 
 const INQUIRY_WINDOW = "1w";
@@ -24,6 +32,7 @@ export interface RequestInquiryRunInput {
   role: UserRole;
   question: string;
   refresh: boolean;
+  attachmentId?: InquiryAttachmentId;
 }
 
 export interface RequestInquiryRunOutput {
@@ -86,6 +95,7 @@ export class RequestInquiryRunUseCase implements RequestInquiryRun {
   constructor(
     private readonly store: InquiryRunStorePort,
     private readonly dailyCap: number,
+    private readonly attachments?: InquiryAttachmentStorePort,
   ) {}
 
   async execute(input: RequestInquiryRunInput): Promise<RequestInquiryRunOutput> {
@@ -100,10 +110,28 @@ export class RequestInquiryRunUseCase implements RequestInquiryRun {
     const now = new Date();
     const day = toDay(now);
     const questionKey = toQuestionKey(question);
+    const attachment =
+      input.attachmentId && this.attachments
+        ? await this.attachments.findInquiryAttachmentById(input.attachmentId)
+        : null;
+    if (
+      input.attachmentId &&
+      (!attachment ||
+        attachment.ownerId !== input.ownerId ||
+        attachment.runId !== null ||
+        attachment.expiresAt === null ||
+        attachment.expiresAt <= now ||
+        attachment.interpretation === null)
+    ) {
+      throw new InvalidInquiryQuestionError(
+        "Attachment is unavailable or has not been interpreted",
+      );
+    }
 
     const stored = await this.store.findInquiryRunByQuestionDay(input.ownerId, questionKey, day);
     const reusable = pickReusable(stored, input.refresh);
     if (reusable) {
+      if (input.attachmentId) await this.attachments?.deleteInquiryAttachment(input.attachmentId);
       return { runId: reusable.id, status: reusable.status, deduped: true };
     }
 
@@ -114,6 +142,9 @@ export class RequestInquiryRunUseCase implements RequestInquiryRun {
 
     const run = queuedRun({ ownerId: input.ownerId, question, questionKey, day, now });
     await this.store.saveInquiryRun(run);
+    if (input.attachmentId) {
+      await this.attachments?.attachInquiryAttachment(input.attachmentId, run.id);
+    }
     return { runId: run.id, status: run.status, deduped: false };
   }
 }

@@ -1,11 +1,16 @@
 import type { InquiryRunId } from "@atlas/domain";
 import { makeInquiryRunId } from "@atlas/domain";
 import { PasswordIdentityProvider } from "@atlas/infra/identity-password";
+import {
+  MongoInquiryAttachmentStore,
+  ensureInquiryAttachmentIndexes,
+} from "@atlas/infra/inquiry-attachment-mongodb";
 import { HttpOrchestration } from "@atlas/infra/orchestration-http";
 import { BunPasswordHasher } from "@atlas/infra/password-bun";
 import { MongoProfileImageStore } from "@atlas/infra/profile-image-mongodb";
 import { RedisSessionStore, createRedisClient } from "@atlas/infra/session-redis";
 import { MongoInquiryRunStore, createMongoClient, ensureIndexes } from "@atlas/infra/store-mongodb";
+import { ExcelJsTabularParser } from "@atlas/infra/tabular-parser";
 import { MongoUserStore, ensureUserIndexes } from "@atlas/infra/user-store-mongodb";
 import { RedisVerificationTokenStore } from "@atlas/infra/verification-redis";
 import { type AdminDeps, makeAdminDependencies } from "../modules/admin/dependencies.ts";
@@ -59,6 +64,7 @@ export async function bootstrap(): Promise<AppDeps> {
   const db = client.db(dbName);
   await ensureIndexes(db);
   await ensureUserIndexes(db);
+  await ensureInquiryAttachmentIndexes(db);
 
   const redis = createRedisClient(process.env.REDIS_URL ?? "redis://127.0.0.1:6379");
 
@@ -67,7 +73,7 @@ export async function bootstrap(): Promise<AppDeps> {
   const sessionStore = new RedisSessionStore(redis);
   const hasher = new BunPasswordHasher();
   const orchestration = new HttpOrchestration(
-    process.env.INTELLIGENCE_URL ?? "http://127.0.0.1:8000",
+    process.env.INTELLIGENCE_URL ?? "http://127.0.0.1:8888",
   );
 
   const identityProviders = {
@@ -91,8 +97,12 @@ export async function bootstrap(): Promise<AppDeps> {
   const profile = makeProfileDependencies({ userStore, profileImageStore });
   const users = makeUsersDependencies({ userStore });
   const inquiryStore = new MongoInquiryRunStore(db);
+  const inquiryAttachmentStore = new MongoInquiryAttachmentStore(db);
+  const tabularParser = new ExcelJsTabularParser();
   const inquiry = makeInquiryDependencies({
     store: inquiryStore,
+    attachmentStore: inquiryAttachmentStore,
+    tabularParser,
     orchestration,
     retryAfterMs: readPositiveNumber("INQUIRY_RETRY_AFTER_MS", DEFAULT_INQUIRY_RETRY_AFTER_MS),
     runTimeoutMs: readPositiveNumber("INQUIRY_RUN_TIMEOUT_MS", DEFAULT_INQUIRY_RUN_TIMEOUT_MS),

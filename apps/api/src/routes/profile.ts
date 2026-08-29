@@ -1,4 +1,3 @@
-import { PROFILE_IMAGE_MAX_BYTES, PROFILE_IMAGE_MEDIA_TYPES } from "@atlas/application";
 import type { FastifyInstance } from "fastify";
 import { requireUser } from "../core/auth-hook.ts";
 import type { ProfileDeps } from "../modules/profile/dependencies.ts";
@@ -19,12 +18,6 @@ export async function registerProfileRoutes(
   app: FastifyInstance,
   deps: ProfileDeps,
 ): Promise<void> {
-  app.addContentTypeParser(
-    [...PROFILE_IMAGE_MEDIA_TYPES],
-    { parseAs: "buffer", bodyLimit: PROFILE_IMAGE_MAX_BYTES },
-    (_req, body, done) => done(null, body),
-  );
-
   app.put("/profile", { schema: profileUpdateSchema }, async (req, reply) => {
     const user = requireUser(req);
     const body = req.body as Record<string, unknown> | undefined;

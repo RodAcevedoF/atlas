@@ -3,6 +3,9 @@ import { requireUser } from "../core/auth-hook.ts";
 import type { RawQuery } from "../core/parsing.ts";
 import type { InquiryDeps } from "../modules/inquiry/dependencies.ts";
 import {
+  parseAttachmentFilename,
+  parseAttachmentInterpretationBody,
+  parseInquiryAttachmentId,
   parseInquiryRunBody,
   parseInquiryRunId,
   parseInquiryRunsQuery,
@@ -12,6 +15,39 @@ export async function registerInquiryRoutes(
   app: FastifyInstance,
   deps: InquiryDeps,
 ): Promise<void> {
+  app.post("/inquiry/attachments", async (req, reply) => {
+    const user = requireUser(req);
+    const mediaType = req.headers["content-type"]?.split(";", 1)[0] ?? "";
+    const filename = parseAttachmentFilename(req.headers["x-atlas-filename"]);
+    const bytes = req.body instanceof Uint8Array ? req.body : new Uint8Array();
+    const attachment = await deps.uploadInquiryAttachment.execute({
+      ownerId: user.id,
+      filename,
+      mediaType,
+      bytes,
+    });
+    return reply.code(201).send(attachment);
+  });
+
+  app.post("/inquiry/attachments/:id/interpret", async (req, reply) => {
+    const user = requireUser(req);
+    const params = req.params as { id?: string };
+    const body = req.body as Record<string, unknown> | undefined;
+    const interpretation = await deps.interpretInquiryAttachment.execute({
+      id: parseInquiryAttachmentId(params.id),
+      ownerId: user.id,
+      question: parseAttachmentInterpretationBody(body),
+    });
+    return reply.send(interpretation);
+  });
+
+  app.delete("/inquiry/attachments/:id", async (req, reply) => {
+    const user = requireUser(req);
+    const params = req.params as { id?: string };
+    await deps.deleteInquiryAttachment.execute(parseInquiryAttachmentId(params.id), user.id);
+    return reply.code(204).send();
+  });
+
   app.post("/inquiry/runs", async (req, reply) => {
     const user = requireUser(req);
     const body = req.body as Record<string, unknown> | undefined;

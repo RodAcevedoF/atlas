@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import type { InquiryRun, UserId } from "@atlas/domain";
-import { makeInquiryRunId, makeUserId } from "@atlas/domain";
+import type { InquiryAttachment, InquiryRun, UserId } from "@atlas/domain";
+import { makeInquiryAttachmentId, makeInquiryRunId, makeUserId } from "@atlas/domain";
+import { InMemoryInquiryAttachmentStore } from "../../testing/inquiry-attachment-store.fake.ts";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import type { DeleteInquiryRunOutcome, InquiryActor } from "./delete-inquiry-run.ts";
 import { DeleteInquiryRunUseCase } from "./delete-inquiry-run.ts";
@@ -97,6 +98,29 @@ describe("a run with no owner predates ownership", () => {
 });
 
 describe("DeleteInquiryRunUseCase", () => {
+  test("deleting a run deletes the attachment artifacts linked to it", async () => {
+    const { store } = inMemoryInquiryRunStore([heldRun(HELD_ID)]);
+    const linked: InquiryAttachment = {
+      id: makeInquiryAttachmentId("attachment-1"),
+      ownerId: OWNER_ID,
+      filename: "companies.csv",
+      mediaType: "text/csv",
+      profile: { sheetCount: 1, sheets: [], sheetsTruncated: false },
+      interpretation: null,
+      interpretationCount: 1,
+      runId: HELD_ID,
+      createdAt: new Date(),
+      expiresAt: null,
+    };
+    const attachments = new InMemoryInquiryAttachmentStore([linked]);
+    const useCase = new DeleteInquiryRunUseCase(store, null, attachments);
+
+    const outcome = await useCase.execute(HELD_ID, owner);
+
+    expect(outcome).toBe("deleted");
+    expect(await attachments.findInquiryAttachmentById(linked.id)).toBeNull();
+  });
+
   test("an unknown run is not found", async () => {
     const { store } = inMemoryInquiryRunStore([]);
     const useCase = new DeleteInquiryRunUseCase(store, null);

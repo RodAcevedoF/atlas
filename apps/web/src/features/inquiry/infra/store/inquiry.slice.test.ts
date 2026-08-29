@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import type { UnknownAction } from "@reduxjs/toolkit";
-import { askInquiryQuestion } from "./inquiry.commands.ts";
+import {
+  askInquiryQuestion,
+  inquiryAttachmentSubmitted,
+  interpretInquiryAttachment,
+  uploadInquiryAttachment,
+} from "./inquiry.commands.ts";
 import { type InquiryState, askErrorDismissed, inquiryReducer } from "./inquiry.slice.ts";
 
 const REQUEST_ID = "req-1";
@@ -62,4 +67,33 @@ test("dismissing clears the error, so a failed refresh does not pin its pill in 
   const ask = inquiryReducer(settled, askErrorDismissed()).ask;
 
   expect(ask.error).toBeNull();
+});
+
+test("an interpreted draft stays beside the Ask box until its normal run accepts it", () => {
+  const uploaded = inquiryReducer(
+    undefined,
+    uploadInquiryAttachment.fulfilled(
+      { id: "attachment-1", filename: "companies.csv" },
+      REQUEST_ID,
+      new File(["company\nAtlas"], "companies.csv", { type: "text/csv" }),
+    ),
+  );
+  const interpreted = inquiryReducer(
+    uploaded,
+    interpretInquiryAttachment.fulfilled(
+      {
+        summary: "A company list",
+        facts: [],
+        entities: ["Atlas"],
+        proposedQuestion: "What is Atlas announcing?",
+        needsClarification: false,
+        clarificationQuestion: null,
+      },
+      REQUEST_ID,
+      { id: "attachment-1", question: "" },
+    ),
+  );
+
+  expect(interpreted.attachment.interpretation?.proposedQuestion).toBe("What is Atlas announcing?");
+  expect(inquiryReducer(interpreted, inquiryAttachmentSubmitted()).attachment.id).toBeNull();
 });

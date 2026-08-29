@@ -9,6 +9,12 @@ export type {
 } from "./inquiry/outbound/inquiry-run-store.ts";
 export { INQUIRY_MAX_ATTEMPTS } from "./inquiry/outbound/inquiry-run-store.ts";
 export type {
+  InquiryAttachmentStorePort,
+  SaveInquiryAttachmentInput,
+} from "./inquiry/outbound/inquiry-attachment-store.ts";
+export type { ParseTableInput, TabularParserPort } from "./inquiry/outbound/tabular-parser.ts";
+export { InvalidTableError } from "./inquiry/outbound/tabular-parser.ts";
+export type {
   GraphRunInput,
   GraphEventType,
   GraphEvent,
@@ -61,6 +67,28 @@ export type {
   InquiryRunFilter,
 } from "./inquiry/inbound/list-inquiry-runs.ts";
 export { ListInquiryRunsUseCase } from "./inquiry/inbound/list-inquiry-runs.ts";
+export type {
+  DeleteInquiryAttachment,
+  InterpretInquiryAttachment,
+  InterpretInquiryAttachmentInput,
+  UploadInquiryAttachment,
+  UploadInquiryAttachmentInput,
+  UploadInquiryAttachmentOutput,
+} from "./inquiry/inbound/inquiry-attachment.ts";
+export {
+  DeleteInquiryAttachmentUseCase,
+  INQUIRY_ATTACHMENT_DAILY_INTERPRETATION_CAP,
+  INQUIRY_ATTACHMENT_DAILY_UPLOAD_CAP,
+  INQUIRY_ATTACHMENT_DRAFT_TTL_MS,
+  INQUIRY_ATTACHMENT_MAX_BYTES,
+  InquiryAttachmentInterpretationCapError,
+  InquiryAttachmentNotFoundError,
+  InquiryAttachmentTooLargeError,
+  InquiryAttachmentUploadCapError,
+  InterpretInquiryAttachmentUseCase,
+  InvalidInquiryAttachmentError,
+  UploadInquiryAttachmentUseCase,
+} from "./inquiry/inbound/inquiry-attachment.ts";
 
 // migrations
 export type {

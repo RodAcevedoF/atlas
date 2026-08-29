@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import type { InquiryRun, InquiryRunStatus } from "@atlas/domain";
-import { makeInquiryRunId, makeUserId } from "@atlas/domain";
+import type { InquiryAttachment, InquiryRun, InquiryRunStatus } from "@atlas/domain";
+import { makeInquiryAttachmentId, makeInquiryRunId, makeUserId } from "@atlas/domain";
+import { InMemoryInquiryAttachmentStore } from "../../testing/inquiry-attachment-store.fake.ts";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import {
   InquiryDailyCapReachedError,
@@ -12,6 +13,28 @@ const DAILY_CAP = 3;
 const QUESTION = "who is covering the Sudan famine";
 const QUESTION_KEY = "who is covering the sudan famine";
 const OWNER = makeUserId("user-1");
+
+function interpretedAttachment(): InquiryAttachment {
+  return {
+    id: makeInquiryAttachmentId("attachment-1"),
+    ownerId: OWNER,
+    filename: "companies.csv",
+    mediaType: "text/csv",
+    profile: { sheetCount: 1, sheets: [], sheetsTruncated: false },
+    interpretation: {
+      summary: "Companies",
+      facts: [],
+      entities: [],
+      proposedQuestion: QUESTION,
+      needsClarification: false,
+      clarificationQuestion: null,
+    },
+    interpretationCount: 1,
+    runId: null,
+    createdAt: new Date(),
+    expiresAt: new Date(Date.now() + 60_000),
+  };
+}
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -62,6 +85,43 @@ describe("RequestInquiryRunUseCase", () => {
     expect(stored?.day).toBe(today());
     expect(stored?.attempts).toBe(0);
     expect(stored?.window).toBe("1w");
+  });
+
+  test("an interpreted attachment is linked to the normal run that spends the search", async () => {
+    const { store } = inMemoryInquiryRunStore();
+    const draft = interpretedAttachment();
+    const attachments = new InMemoryInquiryAttachmentStore([draft]);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, attachments);
+
+    const result = await useCase.execute({
+      ownerId: OWNER,
+      role: "user",
+      question: QUESTION,
+      refresh: false,
+      attachmentId: draft.id,
+    });
+    const submitted = await attachments.findInquiryAttachmentById(draft.id);
+
+    expect(submitted?.runId).toBe(result.runId);
+    expect(submitted?.expiresAt).toBeNull();
+  });
+
+  test("an expired draft cannot be revived by attaching it to a new run", async () => {
+    const { store, runs } = inMemoryInquiryRunStore();
+    const draft = { ...interpretedAttachment(), expiresAt: new Date(0) };
+    const attachments = new InMemoryInquiryAttachmentStore([draft]);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, attachments);
+
+    const request = useCase.execute({
+      ownerId: OWNER,
+      role: "user",
+      question: QUESTION,
+      refresh: false,
+      attachmentId: draft.id,
+    });
+
+    await expect(request).rejects.toBeInstanceOf(InvalidInquiryQuestionError);
+    expect(runs()).toHaveLength(0);
   });
 
   const reused: { name: string; status: InquiryRunStatus }[] = [

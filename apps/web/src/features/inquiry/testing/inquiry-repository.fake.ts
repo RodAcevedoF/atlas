@@ -27,6 +27,9 @@ export function inMemoryInquiryRepository({ statuses }: InquiryRepositorySeed): 
     requestRun: () => outsideWatchPath("requestRun"),
     deleteRun: () => outsideWatchPath("deleteRun"),
     budget: () => outsideWatchPath("budget"),
+    uploadAttachment: () => outsideWatchPath("uploadAttachment"),
+    interpretAttachment: () => outsideWatchPath("interpretAttachment"),
+    deleteAttachment: () => outsideWatchPath("deleteAttachment"),
   };
 }
 
@@ -60,6 +63,9 @@ export function inMemoryAskInquiryRepository({
     },
     deleteRun: () => outsideAskPath("deleteRun"),
     budget: () => Promise.resolve({ used: 0, cap: 5, remaining: 5 }),
+    uploadAttachment: () => outsideAskPath("uploadAttachment"),
+    interpretAttachment: () => outsideAskPath("interpretAttachment"),
+    deleteAttachment: () => outsideAskPath("deleteAttachment"),
   };
 }
 
@@ -85,5 +91,8 @@ export function inMemoryDeleteInquiryRepository({
       return Promise.resolve();
     },
     budget: () => outsideDeletePath("budget"),
+    uploadAttachment: () => outsideDeletePath("uploadAttachment"),
+    interpretAttachment: () => outsideDeletePath("interpretAttachment"),
+    deleteAttachment: () => outsideDeletePath("deleteAttachment"),
   };
 }

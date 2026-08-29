@@ -1,8 +1,10 @@
 import { CTA_PRIMARY, PANEL_GLASS } from "@/shared/ui";
 import type { InquiryRunStatus } from "@atlas/domain";
 import { Button, cn } from "@atlas/ui";
-import { type FormEvent, useState } from "react";
+import { LoaderCircle, Paperclip, Plus, X } from "lucide-react";
+import { type ChangeEvent, type FormEvent, useRef, useState } from "react";
 import { useInquiryAsk } from "../hooks/use-inquiry-ask.ts";
+import { useInquiryAttachment } from "../hooks/use-inquiry-attachment.ts";
 import { useInquiryBudget } from "../hooks/use-inquiry-budget.ts";
 import type { InquiryAskState } from "../infra/store/inquiry.slice.ts";
 import { INQUIRY_QUESTION_MAX_CHARS } from "../use-cases/request-inquiry-run.ts";
@@ -66,17 +68,52 @@ function askMessage(state: InquiryAskState): AskMessage | null {
 
 export function InquiryAskBox() {
   const { ask, ...state } = useInquiryAsk();
+  const attachment = useInquiryAttachment();
   const budget = useInquiryBudget();
   const [question, setQuestion] = useState("");
+  const [initialAttachmentText, setInitialAttachmentText] = useState("");
+  const fileInput = useRef<HTMLInputElement>(null);
   const message = askMessage(state);
   const remaining = budget?.remaining ?? null;
   const atCap = remaining === 0;
+  const needsInterpretation =
+    attachment.id !== null &&
+    (attachment.interpretation === null || attachment.interpretation.needsClarification);
+  const clarificationEnded =
+    attachment.interpretation?.needsClarification === true && attachment.interpretationCount >= 2;
+  const attachmentBusy = attachment.status === "uploading" || attachment.status === "interpreting";
+  const needsClarificationAnswer = attachment.interpretation?.needsClarification === true;
+  const cannotSubmit =
+    state.isAsking ||
+    attachmentBusy ||
+    clarificationEnded ||
+    (needsClarificationAnswer && !question.trim()) ||
+    (!needsInterpretation && (atCap || !question.trim())) ||
+    (attachment.status === "uploading" && attachment.id === null);
 
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (state.isAsking || atCap || !question.trim()) return;
-    ask(question);
+    if (cannotSubmit) return;
+    if (needsInterpretation) {
+      const firstPass = attachment.interpretationCount === 0;
+      const userText = firstPass
+        ? question
+        : `Initial request: ${initialAttachmentText}\nAtlas asked: ${attachment.interpretation?.clarificationQuestion}\nAnswer: ${question}`;
+      if (firstPass) setInitialAttachmentText(question);
+      const interpreted = await attachment.interpret(userText);
+      if (!interpreted) return;
+      setQuestion(interpreted.needsClarification ? "" : interpreted.proposedQuestion);
+      return;
+    }
+    ask(question, attachment.id ?? undefined);
     setQuestion("");
+    setInitialAttachmentText("");
+  };
+
+  const selectFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) attachment.upload(file);
   };
 
   return (
@@ -86,7 +123,26 @@ export function InquiryAskBox() {
         "border border-transparent p-2 transition-colors focus-within:border-ring/50",
       )}
     >
-      <form onSubmit={submit} className="flex items-center gap-2">
+      <form onSubmit={(event) => void submit(event)} className="flex items-center gap-2">
+        <input
+          ref={fileInput}
+          type="file"
+          accept=".csv,.xlsx,.jpg,.jpeg,.png,.webp,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/jpeg,image/png,image/webp"
+          onChange={selectFile}
+          className="sr-only"
+          aria-label="Choose a CSV, Excel, or image attachment"
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Attach a file"
+          disabled={attachmentBusy || attachment.id !== null}
+          onClick={() => fileInput.current?.click()}
+          className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-card-foreground"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
         <input
           aria-label="Ask a question"
           placeholder="Where are wildfires burning right now?"
@@ -99,12 +155,54 @@ export function InquiryAskBox() {
           type="submit"
           variant={null}
           size="pillSm"
-          disabled={state.isAsking || atCap || question.trim().length === 0}
+          disabled={cannotSubmit}
           className={cn(CTA_PRIMARY, "shrink-0 font-semibold")}
         >
-          Ask
+          {attachment.status === "interpreting"
+            ? "Reading"
+            : needsInterpretation
+              ? "Read file"
+              : "Ask"}
         </Button>
       </form>
+
+      {attachment.filename ? (
+        <div className="mx-3 mt-2 flex w-fit max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-lg border border-border/70 bg-background/50 px-2.5 py-1.5 text-xs text-card-foreground">
+          {attachmentBusy ? (
+            <LoaderCircle className="h-3.5 w-3.5 shrink-0 animate-spin motion-reduce:animate-none" />
+          ) : (
+            <Paperclip className="h-3.5 w-3.5 shrink-0 text-primary" />
+          )}
+          <span className="truncate">{attachment.filename}</span>
+          <button
+            type="button"
+            aria-label={`Remove ${attachment.filename}`}
+            disabled={attachmentBusy}
+            onClick={attachment.remove}
+            className="rounded-sm text-muted-foreground transition-colors hover:text-card-foreground disabled:opacity-50"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : null}
+
+      {attachment.interpretation && !attachment.interpretation.needsClarification ? (
+        <p className="px-3 pb-1 pt-2 text-[11.5px] text-muted-foreground">
+          Review the suggested research question, then Ask.
+        </p>
+      ) : null}
+
+      {attachment.interpretation?.needsClarification ? (
+        <p className="px-3 pb-1 pt-2 text-[11.5px] text-muted-foreground">
+          {clarificationEnded
+            ? "Atlas still cannot identify one research question. Remove the file and try again with a clearer request."
+            : attachment.interpretation.clarificationQuestion}
+        </p>
+      ) : null}
+
+      {attachment.error ? (
+        <p className="px-3 pb-1 pt-2 text-[11.5px] text-destructive">{attachment.error}</p>
+      ) : null}
 
       {remaining !== null ? (
         <p className="px-3 pb-1 pt-2 text-[11.5px] text-muted-foreground">
