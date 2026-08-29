@@ -3,6 +3,7 @@ import { makeInquiryRunId } from "@atlas/domain";
 import { PasswordIdentityProvider } from "@atlas/infra/identity-password";
 import { HttpOrchestration } from "@atlas/infra/orchestration-http";
 import { BunPasswordHasher } from "@atlas/infra/password-bun";
+import { MongoProfileImageStore } from "@atlas/infra/profile-image-mongodb";
 import { RedisSessionStore, createRedisClient } from "@atlas/infra/session-redis";
 import { MongoInquiryRunStore, createMongoClient, ensureIndexes } from "@atlas/infra/store-mongodb";
 import { MongoUserStore, ensureUserIndexes } from "@atlas/infra/user-store-mongodb";
@@ -62,6 +63,7 @@ export async function bootstrap(): Promise<AppDeps> {
   const redis = createRedisClient(process.env.REDIS_URL ?? "redis://127.0.0.1:6379");
 
   const userStore = new MongoUserStore(db);
+  const profileImageStore = new MongoProfileImageStore(db);
   const sessionStore = new RedisSessionStore(redis);
   const hasher = new BunPasswordHasher();
   const orchestration = new HttpOrchestration(
@@ -86,7 +88,7 @@ export async function bootstrap(): Promise<AppDeps> {
     verificationTokens,
     verificationConfig,
   });
-  const profile = makeProfileDependencies({ userStore });
+  const profile = makeProfileDependencies({ userStore, profileImageStore });
   const users = makeUsersDependencies({ userStore });
   const inquiryStore = new MongoInquiryRunStore(db);
   const inquiry = makeInquiryDependencies({

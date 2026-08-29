@@ -7,4 +7,6 @@ export interface PreferencesInput {
 
 export interface ProfileRepository {
   updatePreferences(input: PreferencesInput): Promise<UserProfile>;
+  uploadProfileImage(image: File): Promise<void>;
+  deleteProfileImage(): Promise<void>;
 }

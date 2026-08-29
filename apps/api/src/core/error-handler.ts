@@ -3,7 +3,9 @@ import {
   InquiryDailyCapReachedError,
   InvalidCredentialsError,
   InvalidInquiryQuestionError,
+  InvalidProfileImageError,
   InvalidVerificationTokenError,
+  ProfileImageTooLargeError,
   RoleChangeForbiddenError,
   UnknownProviderError,
   UserNotFoundError,
@@ -24,6 +26,10 @@ export function registerErrorHandler(app: FastifyInstance): void {
     }
     if (error instanceof InvalidInquiryQuestionError)
       return reply.code(400).send({ error: error.message });
+    if (error instanceof InvalidProfileImageError)
+      return reply.code(400).send({ error: error.message });
+    if (error instanceof ProfileImageTooLargeError)
+      return reply.code(413).send({ error: error.message });
     if (error instanceof InquiryDailyCapReachedError)
       return reply.code(429).send({ error: error.message });
     if (error instanceof EmailInUseError) return reply.code(409).send({ error: error.message });

@@ -119,3 +119,23 @@ export { GetAdminAnalyticsUseCase } from "./admin/inbound/get-admin-analytics.ts
 // profile
 export type { ProfileUpdateInput, UpdateProfile } from "./profile/inbound/profile.ts";
 export { UpdateProfileUseCase } from "./profile/inbound/update-profile-usecase.ts";
+export type {
+  DeleteProfileImage,
+  GetProfileImage,
+  UploadProfileImage,
+  UploadProfileImageInput,
+} from "./profile/inbound/profile-image.ts";
+export {
+  DeleteProfileImageUseCase,
+  GetProfileImageUseCase,
+  InvalidProfileImageError,
+  PROFILE_IMAGE_MAX_BYTES,
+  ProfileImageTooLargeError,
+  UploadProfileImageUseCase,
+} from "./profile/inbound/profile-image.ts";
+export type {
+  ProfileImage,
+  ProfileImageMediaType,
+  ProfileImageStorePort,
+} from "./profile/outbound/profile-image-store.ts";
+export { PROFILE_IMAGE_MEDIA_TYPES } from "./profile/outbound/profile-image-store.ts";
