@@ -11,6 +11,7 @@ import { MongoProfileImageStore } from "@atlas/infra/profile-image-mongodb";
 import { RedisSessionStore, createRedisClient } from "@atlas/infra/session-redis";
 import { MongoInquiryRunStore, createMongoClient, ensureIndexes } from "@atlas/infra/store-mongodb";
 import { ExcelJsTabularParser } from "@atlas/infra/tabular-parser";
+import { MongoUserOwnedDataStore } from "@atlas/infra/user-owned-data-mongodb";
 import { MongoUserStore, ensureUserIndexes } from "@atlas/infra/user-store-mongodb";
 import { RedisVerificationTokenStore } from "@atlas/infra/verification-redis";
 import { type AdminDeps, makeAdminDependencies } from "../modules/admin/dependencies.ts";
@@ -72,6 +73,7 @@ export async function bootstrap(): Promise<AppDeps> {
   const profileImageStore = new MongoProfileImageStore(db);
   const sessionStore = new RedisSessionStore(redis);
   const hasher = new BunPasswordHasher();
+  const userOwnedDataStore = new MongoUserOwnedDataStore(db);
   const orchestration = new HttpOrchestration(
     process.env.INTELLIGENCE_URL ?? "http://127.0.0.1:8888",
   );
@@ -95,7 +97,7 @@ export async function bootstrap(): Promise<AppDeps> {
     verificationConfig,
   });
   const profile = makeProfileDependencies({ userStore, profileImageStore });
-  const users = makeUsersDependencies({ userStore });
+  const users = makeUsersDependencies({ userStore, hasher, ownedData: userOwnedDataStore });
   const inquiryStore = new MongoInquiryRunStore(db);
   const inquiryAttachmentStore = new MongoInquiryAttachmentStore(db);
   const tabularParser = new ExcelJsTabularParser();

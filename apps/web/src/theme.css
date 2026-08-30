@@ -341,6 +341,15 @@ body {
   }
 }
 
+@keyframes atlas4-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
 .atlas4-marquee {
   animation: atlas4-marquee var(--marquee-dur, 68s) linear infinite;
   will-change: transform;
@@ -475,6 +484,10 @@ body {
   transform-origin: var(--grow-origin, left);
   animation: atlas4-grow-x 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) var(--grow-delay, 0s) both;
 }
+.atlas4-progress {
+  animation: atlas4-progress 1.6s ease-in-out infinite;
+  will-change: transform;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .atlas-breathe,
@@ -493,7 +506,8 @@ body {
   .atlas4-ping,
   .atlas4-sweep,
   .atlas4-caret,
-  .atlas4-grow-x {
+  .atlas4-grow-x,
+  .atlas4-progress {
     animation: none;
   }
   .atlas4-wave {
@@ -501,5 +515,8 @@ body {
   }
   .atlas4-grow-x {
     transform: none;
+  }
+  .atlas4-progress {
+    transform: translateX(100%);
   }
 }

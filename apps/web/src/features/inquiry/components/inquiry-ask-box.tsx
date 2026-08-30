@@ -1,13 +1,14 @@
 import { CTA_PRIMARY, PANEL_GLASS } from "@/shared/ui";
 import type { InquiryRunStatus } from "@atlas/domain";
 import { Button, cn } from "@atlas/ui";
-import { LoaderCircle, Paperclip, Plus, X } from "lucide-react";
-import { type ChangeEvent, type FormEvent, useRef, useState } from "react";
+import { LoaderCircle, Paperclip, Plus, RefreshCw, Sparkles, X } from "lucide-react";
+import { type ChangeEvent, type FormEvent, useRef } from "react";
 import { useInquiryAsk } from "../hooks/use-inquiry-ask.ts";
-import { useInquiryAttachment } from "../hooks/use-inquiry-attachment.ts";
+import { useInquiryAttachmentIntent } from "../hooks/use-inquiry-attachment-intent.ts";
 import { useInquiryBudget } from "../hooks/use-inquiry-budget.ts";
 import type { InquiryAskState } from "../infra/store/inquiry.slice.ts";
 import { INQUIRY_QUESTION_MAX_CHARS } from "../use-cases/request-inquiry-run.ts";
+import { AttachmentThinkingState } from "./attachment-thinking-state.tsx";
 
 type MessageTone = "working" | "error" | "info";
 
@@ -53,6 +54,28 @@ const TONE_TEXT: Record<MessageTone, string> = {
   info: "text-muted-foreground",
 };
 
+const PRIMARY_LABEL = {
+  idle: "Ask",
+  uploading: "Preparing",
+  ready: "Read file",
+  interpreting: "Thinking",
+  clarifying: "Answer",
+  reviewing: "Ask this",
+  refining: "Reformulate",
+  ended: "Needs context",
+} as const;
+
+const PLACEHOLDER = {
+  idle: "Where are wildfires burning right now?",
+  uploading: "Preparing your attachment…",
+  ready: "Add a research angle, or let Atlas decide",
+  interpreting: "Atlas is drafting a research question…",
+  clarifying: "Type your answer…",
+  reviewing: "Review or edit the suggested question",
+  refining: "How should Atlas change the question?",
+  ended: "Remove the file and try again with a clearer request",
+} as const;
+
 function askMessage(state: InquiryAskState): AskMessage | null {
   if (state.isRefresh) return null;
   if (state.isStillRunning && state.error) {
@@ -68,52 +91,35 @@ function askMessage(state: InquiryAskState): AskMessage | null {
 
 export function InquiryAskBox() {
   const { ask, ...state } = useInquiryAsk();
-  const attachment = useInquiryAttachment();
+  const intent = useInquiryAttachmentIntent();
   const budget = useInquiryBudget();
-  const [question, setQuestion] = useState("");
-  const [initialAttachmentText, setInitialAttachmentText] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
   const message = askMessage(state);
   const remaining = budget?.remaining ?? null;
   const atCap = remaining === 0;
-  const needsInterpretation =
-    attachment.id !== null &&
-    (attachment.interpretation === null || attachment.interpretation.needsClarification);
-  const clarificationEnded =
-    attachment.interpretation?.needsClarification === true && attachment.interpretationCount >= 2;
-  const attachmentBusy = attachment.status === "uploading" || attachment.status === "interpreting";
-  const needsClarificationAnswer = attachment.interpretation?.needsClarification === true;
+  const attachmentBusy = intent.stage === "uploading" || intent.stage === "interpreting";
+  const finalSubmission = intent.stage === "idle" || intent.stage === "reviewing";
+  const needsResponse = intent.stage === "clarifying" || intent.stage === "refining";
   const cannotSubmit =
     state.isAsking ||
     attachmentBusy ||
-    clarificationEnded ||
-    (needsClarificationAnswer && !question.trim()) ||
-    (!needsInterpretation && (atCap || !question.trim())) ||
-    (attachment.status === "uploading" && attachment.id === null);
+    intent.stage === "ended" ||
+    (needsResponse && !intent.question.trim()) ||
+    (finalSubmission && (atCap || !intent.question.trim()));
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (cannotSubmit) return;
-    if (needsInterpretation) {
-      const firstPass = attachment.interpretationCount === 0;
-      const userText = firstPass
-        ? question
-        : `Initial request: ${initialAttachmentText}\nAtlas asked: ${attachment.interpretation?.clarificationQuestion}\nAnswer: ${question}`;
-      if (firstPass) setInitialAttachmentText(question);
-      const interpreted = await attachment.interpret(userText);
-      if (!interpreted) return;
-      setQuestion(interpreted.needsClarification ? "" : interpreted.proposedQuestion);
-      return;
-    }
-    ask(question, attachment.id ?? undefined);
-    setQuestion("");
-    setInitialAttachmentText("");
+    const submission = await intent.advance();
+    if (!submission) return;
+    ask(submission.question, submission.attachmentId);
+    intent.submitted();
   };
 
   const selectFile = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (file) attachment.upload(file);
+    if (file) intent.upload(file);
   };
 
   return (
@@ -137,7 +143,7 @@ export function InquiryAskBox() {
           variant="ghost"
           size="icon"
           aria-label="Attach a file"
-          disabled={attachmentBusy || attachment.id !== null}
+          disabled={attachmentBusy || intent.id !== null}
           onClick={() => fileInput.current?.click()}
           className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-card-foreground"
         >
@@ -145,10 +151,11 @@ export function InquiryAskBox() {
         </Button>
         <input
           aria-label="Ask a question"
-          placeholder="Where are wildfires burning right now?"
-          value={question}
+          placeholder={PLACEHOLDER[intent.stage]}
+          value={intent.question}
+          disabled={intent.stage === "interpreting" || intent.stage === "ended"}
           maxLength={INQUIRY_QUESTION_MAX_CHARS}
-          onChange={(event) => setQuestion(event.target.value)}
+          onChange={(event) => intent.setQuestion(event.target.value)}
           className="min-w-0 flex-1 bg-transparent px-3.5 py-2.5 text-[15.5px] leading-tight tracking-[-0.01em] text-card-foreground outline-none placeholder:text-muted-foreground/80"
         />
         <Button
@@ -158,27 +165,26 @@ export function InquiryAskBox() {
           disabled={cannotSubmit}
           className={cn(CTA_PRIMARY, "shrink-0 font-semibold")}
         >
-          {attachment.status === "interpreting"
-            ? "Reading"
-            : needsInterpretation
-              ? "Read file"
-              : "Ask"}
+          {intent.stage === "ready" || intent.stage === "interpreting" ? (
+            <Sparkles className="h-3.5 w-3.5" />
+          ) : null}
+          {PRIMARY_LABEL[intent.stage]}
         </Button>
       </form>
 
-      {attachment.filename ? (
+      {intent.filename ? (
         <div className="mx-3 mt-2 flex w-fit max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-lg border border-border/70 bg-background/50 px-2.5 py-1.5 text-xs text-card-foreground">
           {attachmentBusy ? (
             <LoaderCircle className="h-3.5 w-3.5 shrink-0 animate-spin motion-reduce:animate-none" />
           ) : (
             <Paperclip className="h-3.5 w-3.5 shrink-0 text-primary" />
           )}
-          <span className="truncate">{attachment.filename}</span>
+          <span className="truncate">{intent.filename}</span>
           <button
             type="button"
-            aria-label={`Remove ${attachment.filename}`}
+            aria-label={`Remove ${intent.filename}`}
             disabled={attachmentBusy}
-            onClick={attachment.remove}
+            onClick={intent.remove}
             className="rounded-sm text-muted-foreground transition-colors hover:text-card-foreground disabled:opacity-50"
           >
             <X className="h-3.5 w-3.5" />
@@ -186,22 +192,49 @@ export function InquiryAskBox() {
         </div>
       ) : null}
 
-      {attachment.interpretation && !attachment.interpretation.needsClarification ? (
+      <AttachmentThinkingState stage={intent.stage} />
+
+      {intent.stage === "reviewing" && intent.interpretation ? (
+        <div className="mx-3 mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-background/35 px-3 py-2">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">
+              Suggested research question
+            </p>
+            <p className="mt-0.5 truncate text-[11.5px] text-muted-foreground">
+              {intent.interpretation.summary}
+            </p>
+          </div>
+          {intent.interpretationCount < 3 ? (
+            <Button type="button" variant="ghost" size="sm" onClick={intent.refine}>
+              <RefreshCw className="h-3.5 w-3.5" />
+              Reformulate
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {intent.stage === "clarifying" && intent.interpretation ? (
         <p className="px-3 pb-1 pt-2 text-[11.5px] text-muted-foreground">
-          Review the suggested research question, then Ask.
+          <span className="font-medium text-card-foreground">Atlas needs one detail: </span>
+          {intent.interpretation.clarificationQuestion}
         </p>
       ) : null}
 
-      {attachment.interpretation?.needsClarification ? (
+      {intent.stage === "refining" ? (
         <p className="px-3 pb-1 pt-2 text-[11.5px] text-muted-foreground">
-          {clarificationEnded
-            ? "Atlas still cannot identify one research question. Remove the file and try again with a clearer request."
-            : attachment.interpretation.clarificationQuestion}
+          Tell Atlas what to emphasize, narrow, or rewrite. This makes one more interpretation pass.
         </p>
       ) : null}
 
-      {attachment.error ? (
-        <p className="px-3 pb-1 pt-2 text-[11.5px] text-destructive">{attachment.error}</p>
+      {intent.stage === "ended" ? (
+        <p className="px-3 pb-1 pt-2 text-[11.5px] text-destructive">
+          Atlas still cannot identify one research question after three passes. Remove the file and
+          try again with clearer context.
+        </p>
+      ) : null}
+
+      {intent.error ? (
+        <p className="px-3 pb-1 pt-2 text-[11.5px] text-destructive">{intent.error}</p>
       ) : null}
 
       {remaining !== null ? (

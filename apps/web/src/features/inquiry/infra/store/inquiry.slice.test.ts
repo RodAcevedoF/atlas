@@ -3,6 +3,7 @@ import type { UnknownAction } from "@reduxjs/toolkit";
 import {
   askInquiryQuestion,
   inquiryAttachmentSubmitted,
+  inquiryRunRequested,
   interpretInquiryAttachment,
   uploadInquiryAttachment,
 } from "./inquiry.commands.ts";
@@ -67,6 +68,19 @@ test("dismissing clears the error, so a failed refresh does not pin its pill in 
   const ask = inquiryReducer(settled, askErrorDismissed()).ask;
 
   expect(ask.error).toBeNull();
+});
+
+test("a completed ask keeps the run identity and status for app-level completion feedback", () => {
+  const pending = inquiryReducer(undefined, askInquiryQuestion.pending(REQUEST_ID, ASK));
+  const requested = inquiryReducer(pending, inquiryRunRequested("run-1"));
+
+  const completed = inquiryReducer(
+    requested,
+    askInquiryQuestion.fulfilled(OUTCOME, REQUEST_ID, ASK),
+  );
+
+  expect(completed.ask.startedRunId).toBeNull();
+  expect(completed.ask.completion).toEqual({ runId: "run-1", status: "succeeded" });
 });
 
 test("an interpreted draft stays beside the Ask box until its normal run accepts it", () => {

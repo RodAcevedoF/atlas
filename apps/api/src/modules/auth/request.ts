@@ -1,8 +1,6 @@
 import type { LoginInput, RegisterInput } from "@atlas/application";
 import { InvalidInputError } from "../../core/errors.ts";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD_LENGTH = 8;
+import { parseEmail, parsePassword } from "../../core/parsing.ts";
 
 function extractCredentials(body: Record<string, unknown> | undefined): RegisterInput {
   const source = body ?? {};
@@ -12,12 +10,7 @@ function extractCredentials(body: Record<string, unknown> | undefined): Register
 }
 
 export function parseCredentials(body: Record<string, unknown> | undefined): RegisterInput {
-  const { email, password } = extractCredentials(body);
-  if (!EMAIL_PATTERN.test(email)) throw new InvalidInputError("A valid email is required");
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    throw new InvalidInputError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
-  }
-  return { email, password };
+  return { email: parseEmail(body?.email), password: parsePassword(body?.password) };
 }
 
 export function parseLoginCredentials(body: Record<string, unknown> | undefined): LoginInput {
@@ -33,7 +26,5 @@ export function parseVerificationToken(body: Record<string, unknown> | undefined
 }
 
 export function parseResendEmail(body: Record<string, unknown> | undefined): string {
-  const email = typeof body?.email === "string" ? body.email.trim() : "";
-  if (!EMAIL_PATTERN.test(email)) throw new InvalidInputError("A valid email is required");
-  return email;
+  return parseEmail(body?.email);
 }

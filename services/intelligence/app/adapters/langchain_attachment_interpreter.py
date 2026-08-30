@@ -17,7 +17,9 @@ Use only the supplied profile. Summarize what the table visibly contains, extrac
 and named entities, and propose one concrete question suitable for current web research. Do not \
 invent facts hidden by sampling or truncation. If the user's research intent is genuinely unclear, \
 set needsClarification and ask one short clarification question. Otherwise clarificationQuestion \
-is null. The proposed question must be at most 500 characters."""
+is null. User text may contain a prior proposal plus a clarification answer or refinement request; \
+honor the latest user direction while staying grounded in the same table profile. The proposed \
+question must be at most 500 characters."""
 
 
 class StructuredAttachmentInterpretation(BaseModel):

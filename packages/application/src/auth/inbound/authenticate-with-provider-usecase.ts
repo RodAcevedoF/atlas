@@ -38,6 +38,8 @@ export class AuthenticateWithProviderUseCase implements AuthenticateWithProvider
   }
 
   private async resolveUser(identity: ProviderIdentity): Promise<User> {
+    const identityOwner = await this.users.findUserByIdentity(identity);
+    if (identityOwner) return identityOwner;
     const existing = await this.users.findUserByEmail(identity.email);
     if (!existing) return this.createUser(identity);
     if (findIdentity(existing, identity.provider)) return existing;

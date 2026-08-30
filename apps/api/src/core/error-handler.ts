@@ -5,6 +5,7 @@ import {
   InquiryAttachmentTooLargeError,
   InquiryAttachmentUploadCapError,
   InquiryDailyCapReachedError,
+  InvalidAdminUserCursorError,
   InvalidCredentialsError,
   InvalidInquiryAttachmentError,
   InvalidInquiryQuestionError,
@@ -23,6 +24,8 @@ export function registerErrorHandler(app: FastifyInstance): void {
   app.setErrorHandler((error: FastifyError, req, reply) => {
     if (error.validation) return reply.code(400).send({ error: error.message });
     if (error instanceof InvalidInputError) return reply.code(400).send({ error: error.message });
+    if (error instanceof InvalidAdminUserCursorError)
+      return reply.code(400).send({ error: error.message });
     if (error instanceof UnknownProviderError)
       return reply.code(400).send({ error: error.message });
     if (error instanceof InvalidVerificationTokenError)

@@ -21,9 +21,10 @@ export type {
   OrchestrationPort,
 } from "./world/outbound/orchestration.ts";
 export { GraphUnavailableError } from "./world/outbound/orchestration.ts";
-export type { UserStorePort } from "./auth/outbound/user-store.ts";
+export type { UserPage, UserPageInput, UserStorePort } from "./auth/outbound/user-store.ts";
 export type { SessionPort } from "./auth/outbound/session-store.ts";
 export type { PasswordHasherPort } from "./auth/outbound/password-hasher.ts";
+export type { UserOwnedDataPort } from "./admin/outbound/user-owned-data.ts";
 export type {
   ProviderIdentity,
   IdentityProviderPort,
@@ -143,6 +144,34 @@ export type {
   GetAdminAnalytics,
 } from "./admin/inbound/get-admin-analytics.ts";
 export { GetAdminAnalyticsUseCase } from "./admin/inbound/get-admin-analytics.ts";
+export type {
+  AdminUserPage,
+  AdminUserRecord,
+  ListAdminUsers,
+  ListAdminUsersInput,
+} from "./admin/inbound/list-admin-users.ts";
+export type {
+  CreateAdminUser,
+  CreateAdminUserInput,
+  DeleteAdminUser,
+  DeleteAdminUserInput,
+  ResetAdminUserPassword,
+  ResetAdminUserPasswordInput,
+  UpdateAdminUserEmail,
+  UpdateAdminUserEmailInput,
+} from "./admin/inbound/manage-admin-users.ts";
+export {
+  CreateAdminUserUseCase,
+  DeleteAdminUserUseCase,
+  ResetAdminUserPasswordUseCase,
+  UpdateAdminUserEmailUseCase,
+} from "./admin/inbound/manage-admin-users.ts";
+export {
+  ADMIN_USER_PAGE_DEFAULT,
+  ADMIN_USER_PAGE_MAX,
+  InvalidAdminUserCursorError,
+  ListAdminUsersUseCase,
+} from "./admin/inbound/list-admin-users.ts";
 
 // profile
 export type { ProfileUpdateInput, UpdateProfile } from "./profile/inbound/profile.ts";

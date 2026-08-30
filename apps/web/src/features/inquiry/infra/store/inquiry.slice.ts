@@ -23,12 +23,18 @@ import {
 
 export interface InquiryAskState {
   startedRunId: string | null;
+  completion: InquiryRunCompletion | null;
   isAsking: boolean;
   isRefresh: boolean;
   watchedStatus: InquiryRunStatus | null;
   isStillRunning: boolean;
   wasDeduped: boolean;
   error: string | null;
+}
+
+export interface InquiryRunCompletion {
+  runId: string;
+  status: InquiryRunStatus;
 }
 
 export interface InquiryDetailFailure {
@@ -75,6 +81,7 @@ const idleAttachment: InquiryAttachmentState = {
 
 const idleAsk: InquiryAskState = {
   startedRunId: null,
+  completion: null,
   isAsking: false,
   isRefresh: false,
   watchedStatus: null,
@@ -201,6 +208,9 @@ const inquirySlice = createSlice({
       .addCase(askInquiryQuestion.fulfilled, (state, action) => {
         state.ask = {
           ...idleAsk,
+          completion: state.ask.startedRunId
+            ? { runId: state.ask.startedRunId, status: action.payload.status }
+            : null,
           isRefresh: state.ask.isRefresh,
           isStillRunning: action.payload.isStillRunning,
           wasDeduped: action.payload.deduped,

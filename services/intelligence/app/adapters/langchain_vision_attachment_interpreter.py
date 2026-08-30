@@ -20,7 +20,9 @@ question; pixels and visible places never become map data.
 
 Use the optional user text as intent. Propose one concrete question suitable for current web \
 research. If that intent is genuinely unclear, set needsClarification and ask one short question. \
-Otherwise clarificationQuestion is null. The proposed question must be at most 500 characters."""
+Otherwise clarificationQuestion is null. User text may contain a prior proposal plus a \
+clarification answer or refinement request; honor the latest user direction while staying grounded \
+in the same visible image. The proposed question must be at most 500 characters."""
 
 
 class LangChainVisionAttachmentInterpreter:

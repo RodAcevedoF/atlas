@@ -1,12 +1,13 @@
 import { useAdminRepository } from "@/features/admin/admin-provider.tsx";
 import type { AdminAnalyticsRecord } from "@/features/admin/repositories/admin-repository.ts";
 import { makeLoadAdminAnalytics } from "@/features/admin/use-cases/load-admin-analytics.ts";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface UseAdminAnalyticsResult {
   analytics: AdminAnalyticsRecord | null;
   isLoading: boolean;
   error: string | null;
+  refresh: () => Promise<void>;
 }
 
 export function useAdminAnalytics(): UseAdminAnalyticsResult {
@@ -15,27 +16,31 @@ export function useAdminAnalytics(): UseAdminAnalyticsResult {
   const [analytics, setAnalytics] = useState<AdminAnalyticsRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const requestId = useRef(0);
 
-  useEffect(() => {
-    let cancelled = false;
+  const refresh = useCallback(async () => {
+    const currentRequest = requestId.current + 1;
+    requestId.current = currentRequest;
     setIsLoading(true);
-    void load()
-      .then((result) => {
-        if (cancelled) return;
-        setAnalytics(result);
-        setError(null);
-      })
-      .catch((caught: unknown) => {
-        if (cancelled) return;
-        setError(caught instanceof Error ? caught.message : "Could not load analytics");
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    try {
+      const result = await load();
+      if (currentRequest !== requestId.current) return;
+      setAnalytics(result);
+      setError(null);
+    } catch (caught) {
+      if (currentRequest !== requestId.current) return;
+      setError(caught instanceof Error ? caught.message : "Could not load analytics");
+    } finally {
+      if (currentRequest === requestId.current) setIsLoading(false);
+    }
   }, [load]);
 
-  return { analytics, isLoading, error };
+  useEffect(() => {
+    void refresh();
+    return () => {
+      requestId.current += 1;
+    };
+  }, [refresh]);
+
+  return { analytics, isLoading, error, refresh };
 }
