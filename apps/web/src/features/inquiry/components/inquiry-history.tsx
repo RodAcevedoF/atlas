@@ -1,4 +1,5 @@
 import { useAuth } from "@/features/auth/auth-provider.tsx";
+import { EvidenceFlow } from "@/shared/brand";
 import { PANEL, PANEL_HEAD, eyebrowVariants } from "@/shared/ui";
 import { Card, cn } from "@atlas/ui";
 import type { ReactNode } from "react";
@@ -26,10 +27,20 @@ interface InquiryHistoryProps {
   detail: UseInquiryRunResult;
 }
 
-function Notice({ children }: { children: ReactNode }) {
+function Notice({ children, activity }: { children: ReactNode; activity?: "active" | "idle" }) {
   return (
     <div className="px-8.5 py-7">
-      <Card className={cn(PANEL, "p-6 text-[14px] text-muted-foreground")}>{children}</Card>
+      <Card
+        className={cn(
+          PANEL,
+          "atlas4-reveal flex items-center gap-5 p-6 text-[14px] text-muted-foreground",
+        )}
+      >
+        {activity ? (
+          <EvidenceFlow active={activity === "active"} className="w-32 shrink-0" />
+        ) : null}
+        <p>{children}</p>
+      </Card>
     </div>
   );
 }
@@ -41,9 +52,14 @@ function DetailPane({
   detail: UseInquiryRunResult;
   onDelete: (() => void) | null;
 }) {
-  if (detail.run) return <RunDetail run={detail.run} onDelete={onDelete} />;
+  if (detail.run) return <RunDetail key={detail.run.id} run={detail.run} onDelete={onDelete} />;
   if (detail.error) return <p className="text-[14px] text-destructive">{detail.error}</p>;
-  return <p className="text-[14px] text-muted-foreground">{LOADING_RUN}</p>;
+  return (
+    <div className="atlas4-reveal flex max-w-sm flex-col gap-4 text-[14px] text-muted-foreground">
+      <EvidenceFlow active />
+      <p>{LOADING_RUN}</p>
+    </div>
+  );
 }
 
 export function InquiryHistory({
@@ -72,11 +88,11 @@ export function InquiryHistory({
     );
   }
 
-  if (runs.length === 0 && isLoading) return <Notice>{LOADING}</Notice>;
+  if (runs.length === 0 && isLoading) return <Notice activity="active">{LOADING}</Notice>;
 
   if (runs.length === 0) {
     return (
-      <Notice>
+      <Notice activity="idle">
         {EMPTY}{" "}
         <Link to="/world" className="text-primary underline-offset-2 hover:underline">
           Ask the map a question

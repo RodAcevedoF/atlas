@@ -21,13 +21,14 @@ export interface WorldRefresh {
 export interface UseWorldAwarenessResult {
   awareness: AwarenessLayer;
   runs: InquiryRunSummaryRecord[];
+  isLoading: boolean;
   error: string | null;
   selectRun: (runId: string) => void;
   refresh: WorldRefresh;
 }
 
 export function useWorldAwareness(): UseWorldAwarenessResult {
-  const { runs, pinnedRunId, error } = useRecentInquiryRuns();
+  const { runs, pinnedRunId, isLoading, error } = useRecentInquiryRuns();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedRunId = searchParams.get("run");
   const awareness = useAwarenessLayer(runs, requestedRunId, pinnedRunId);
@@ -77,6 +78,7 @@ export function useWorldAwareness(): UseWorldAwarenessResult {
   return {
     awareness,
     runs,
+    isLoading,
     error: error ?? awareness.error,
     selectRun: setRequestedRun,
     refresh: {

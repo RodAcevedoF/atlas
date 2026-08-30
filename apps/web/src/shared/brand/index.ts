@@ -2,6 +2,7 @@ export { AtlasHeader, HeaderCta } from "./atlas-header.tsx";
 export { ATLAS_STATS, WIRE_SOURCES } from "./atlas-facts.ts";
 export { BrandMark } from "./brand-mark.tsx";
 export { CarouselDots } from "./carousel-dots.tsx";
+export { EvidenceFlow } from "./evidence-flow.tsx";
 export { MarqueeBackdrop } from "./marquee-backdrop.tsx";
 export { PublicPage } from "./public-page.tsx";
 export { SourceStrip } from "./source-strip.tsx";

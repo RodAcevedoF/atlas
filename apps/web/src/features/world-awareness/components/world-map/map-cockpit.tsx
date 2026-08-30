@@ -3,15 +3,17 @@ import type { AwarenessLayer } from "../../hooks/use-awareness-layer.ts";
 import { usePlaceSelection } from "../../hooks/use-place-selection.ts";
 import { AwarenessLegend, AwarenessRunNotice } from "./overlays/awareness-legend.tsx";
 import { MapError } from "./overlays/map-error.tsx";
+import { MapFieldState } from "./overlays/map-field-state.tsx";
 import { PlaceClaimsPanel } from "./overlays/place-claims-panel.tsx";
 import { WorldMap } from "./world-map.tsx";
 
 interface MapCockpitProps {
   awareness: AwarenessLayer;
+  isLoading: boolean;
   error: string | null;
 }
 
-export function MapCockpit({ awareness, error }: MapCockpitProps) {
+export function MapCockpit({ awareness, isLoading, error }: MapCockpitProps) {
   const { selected, select, clear } = usePlaceSelection(awareness.detail);
 
   return (
@@ -23,6 +25,14 @@ export function MapCockpit({ awareness, error }: MapCockpitProps) {
           onSelectPlace={select}
         />
       </div>
+
+      <MapFieldState
+        isPainting={awareness.isPainting}
+        isResolving={awareness.isResolving}
+        hasLatestRun={awareness.latest !== null}
+        isLoading={isLoading}
+        hasError={error !== null}
+      />
 
       <div className="pointer-events-none absolute left-1/2 top-4 z-10 flex w-full max-w-[22rem] -translate-x-1/2 flex-col items-center gap-2 px-4 lg:max-w-[min(32rem,calc(100vw-36rem))]">
         <div className="pointer-events-auto w-full">
@@ -41,7 +51,13 @@ export function MapCockpit({ awareness, error }: MapCockpitProps) {
         ) : null}
       </div>
 
-      {selected ? <PlaceClaimsPanel place={selected} onClose={clear} /> : null}
+      {selected ? (
+        <PlaceClaimsPanel
+          key={`${selected.place}:${selected.country ?? ""}`}
+          place={selected}
+          onClose={clear}
+        />
+      ) : null}
 
       {awareness.isPainting && awareness.detail ? (
         <AwarenessLegend run={awareness.detail} plotted={awareness.plotted} />

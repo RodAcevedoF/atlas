@@ -54,7 +54,7 @@ export function AwarenessRunNotice({
     <div
       className={cn(
         PANEL_GLASS,
-        "pointer-events-auto relative max-w-md py-2.5 pl-4.5 pr-10 text-center text-[12.5px] leading-relaxed text-muted-foreground",
+        "atlas4-reveal pointer-events-auto relative max-w-md py-2.5 pl-4.5 pr-10 text-center text-[12.5px] leading-relaxed text-muted-foreground",
       )}
     >
       {requestMiss ? REQUEST_MISS[requestMiss] : LATEST_RUN_OUTCOME[latest.status]}{" "}
@@ -78,7 +78,12 @@ interface AwarenessLegendProps {
 
 export function AwarenessLegend({ run, plotted }: AwarenessLegendProps) {
   return (
-    <div className={cn(PANEL_GLASS, "absolute right-6 top-6 z-5 flex w-68 flex-col gap-3 p-4")}>
+    <div
+      className={cn(
+        PANEL_GLASS,
+        "atlas4-reveal absolute right-6 top-6 z-5 flex w-68 flex-col gap-3 p-4",
+      )}
+    >
       <div className="flex flex-col gap-1.5">
         <Eyebrow variant="meta">claims · {run.window}</Eyebrow>
         <p className="line-clamp-2 text-[14px] font-medium leading-snug tracking-[-0.015em] text-card-foreground">

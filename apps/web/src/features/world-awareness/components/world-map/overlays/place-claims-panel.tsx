@@ -34,7 +34,7 @@ export function PlaceClaimsPanel({ place, onClose }: PlaceClaimsPanelProps) {
     <div
       className={cn(
         PANEL_GLASS,
-        "pointer-events-auto absolute left-6 top-6 z-10 flex max-h-[calc(100%-6rem)] w-76 flex-col overflow-hidden",
+        "atlas4-reveal pointer-events-auto absolute left-6 top-6 z-10 flex max-h-[calc(100%-6rem)] w-76 flex-col overflow-hidden",
       )}
     >
       <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border-strong px-4 py-3.5">

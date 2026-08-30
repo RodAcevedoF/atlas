@@ -21,6 +21,7 @@ export interface AwarenessLayer {
   points: ClaimFeatureCollection | null;
   plotted: number;
   isPainting: boolean;
+  isResolving: boolean;
   isPinned: boolean;
   isFallback: boolean;
   requestMiss: AwarenessRequestMiss | null;
@@ -68,6 +69,7 @@ export function useAwarenessLayer(
   const isPinned = isPainting && selection.isPinned;
   const isFallback = isPainting && selection.isFallback;
   const isResolvingRun = selection.run !== null && detail.run === null;
+  const isResolving = isResolvingRun && detail.error === null;
 
   const [dismissedNotice, setDismissedNotice] = useState<string | null>(null);
   const noticeKey = noticeIdentity({ selection, isPainting, isPinned, isFallback });
@@ -86,6 +88,7 @@ export function useAwarenessLayer(
     points,
     plotted,
     isPainting,
+    isResolving,
     isPinned,
     isFallback,
     requestMiss: selection.requestMiss,
