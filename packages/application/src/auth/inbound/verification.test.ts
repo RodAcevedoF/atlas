@@ -35,6 +35,14 @@ test("a verification email links back to the browser verification route", async 
 
   const token = saved[0]?.token;
   expect(token).toBeString();
-  expect(delivered[0]?.text).toContain(`https://atlas.test/verify-email?token=${token}`);
-  expect(delivered[0]?.text).toContain("before starting an inquiry");
+  const link = `https://atlas.test/verify-email?token=${token}`;
+  const message = delivered[0];
+  expect(message?.subject).toBe("Verify your email to start exploring Atlas");
+  expect(message?.text).toContain(link);
+  expect(message?.text).toContain("start a new inquiry");
+  expect(message?.text).toContain("one-time link expires in 24 hours");
+  expect(message?.html).toContain(`href="${link}"`);
+  expect(message?.html).toContain("Your map is waiting.");
+  expect(message?.html).toContain("If the button does not work");
+  expect(message?.html).not.toContain("<img");
 });

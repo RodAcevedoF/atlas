@@ -6,6 +6,7 @@ import { CheckCircle2, KeyRound, Shield, Trash2 } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import type { AdminUserRecord } from "../repositories/admin-repository.ts";
 import { ADMIN_FIELD } from "../utils/admin-form.ts";
+import { AdminSelect } from "./admin-select.tsx";
 const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",
   timeStyle: "short",
@@ -164,18 +165,17 @@ export function UserDetailPanel({
               {protectedAccount ? (
                 <div className={cn(ADMIN_FIELD, "flex items-center opacity-60")}>Super admin</div>
               ) : (
-                <select
+                <AdminSelect
                   id="admin-user-role"
                   value={role}
                   onChange={(event) => setRole(event.target.value as GrantableRole)}
-                  className={ADMIN_FIELD}
                 >
                   {GRANTABLE_ROLES.map((candidate) => (
                     <option key={candidate} value={candidate}>
                       {candidate === "admin" ? "Admin" : "User"}
                     </option>
                   ))}
-                </select>
+                </AdminSelect>
               )}
               <Button
                 type="button"

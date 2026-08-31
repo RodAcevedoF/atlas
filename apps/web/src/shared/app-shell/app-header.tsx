@@ -1,3 +1,4 @@
+import { BrandSymbol } from "@/shared/brand";
 import { Eyebrow, eyebrowVariants } from "@/shared/ui";
 import { cn } from "@atlas/ui";
 import type { ReactNode } from "react";
@@ -33,7 +34,7 @@ export function AppHeader({ subtitle, actions, account }: AppHeaderProps) {
   return (
     <header className="relative z-40 flex h-17 flex-none items-center gap-6 border-b border-border px-8.5">
       <div className="flex w-40 shrink-0 items-center gap-3">
-        <img src="/atlas_emblem.svg" alt="Atlas" className="h-7 w-7" />
+        <BrandSymbol className="h-7 w-7 text-primary" />
         <div className="flex flex-col leading-none">
           <span className="text-[17px] font-semibold tracking-[-0.02em]">Atlas</span>
           <Eyebrow variant="header" className="mt-1 text-[9.5px] text-context/85">

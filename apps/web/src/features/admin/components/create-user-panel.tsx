@@ -5,6 +5,7 @@ import { Button, cn } from "@atlas/ui";
 import { type FormEvent, useState } from "react";
 import type { CreateAdminUserInput } from "../repositories/admin-repository.ts";
 import { ADMIN_FIELD } from "../utils/admin-form.ts";
+import { AdminSelect } from "./admin-select.tsx";
 
 interface CreateUserPanelProps {
   isSaving: boolean;
@@ -63,19 +64,22 @@ export function CreateUserPanel({ isSaving, onCancel, onCreate }: CreateUserPane
         />
       </label>
 
-      <label className="grid gap-2 text-xs font-medium text-muted-foreground">
+      <label
+        htmlFor="admin-create-user-role"
+        className="grid gap-2 text-xs font-medium text-muted-foreground"
+      >
         Role
-        <select
+        <AdminSelect
+          id="admin-create-user-role"
           value={role}
           onChange={(event) => setRole(event.target.value as GrantableRole)}
-          className={ADMIN_FIELD}
         >
           {GRANTABLE_ROLES.map((candidate) => (
             <option key={candidate} value={candidate}>
               {candidate === "admin" ? "Admin" : "User"}
             </option>
           ))}
-        </select>
+        </AdminSelect>
       </label>
 
       <div className="mt-auto flex gap-2 border-t border-border pt-4">

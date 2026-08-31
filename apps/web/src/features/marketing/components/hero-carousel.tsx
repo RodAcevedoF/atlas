@@ -14,16 +14,9 @@ const SLIDE_LABEL_CLASS = cn(
   "absolute bottom-7 left-7 flex items-center gap-3 text-faint md:left-14",
 );
 
-interface Cta {
-  label: string;
-  href: string;
-}
-
 interface HeroCarouselProps {
   carousel: Carousel;
   pulse: LivePulse;
-  primary: Cta;
-  secondary?: Cta;
 }
 
 const SLIDE_IDS = SLIDES.map((slide) => slide.kind);
@@ -42,7 +35,7 @@ function SlideVisual({ kind, pulse }: { kind: SlideKind; pulse: LivePulse }) {
   }
 }
 
-export function HeroCarousel({ carousel, pulse, primary, secondary }: HeroCarouselProps) {
+export function HeroCarousel({ carousel, pulse }: HeroCarouselProps) {
   const { index, tick, go, hoverProps } = carousel;
   const slide = SLIDES[index];
   const slideNo = `${pad2(index + 1)} / ${pad2(SLIDES.length)}`;
@@ -51,7 +44,7 @@ export function HeroCarousel({ carousel, pulse, primary, secondary }: HeroCarous
     <div
       onMouseEnter={hoverProps.onMouseEnter}
       onMouseLeave={hoverProps.onMouseLeave}
-      className="group atlas4-panel relative h-[74vh] min-h-140 w-full max-w-280 overflow-hidden rounded-[22px]"
+      className="atlas4-panel relative h-[74vh] min-h-140 w-full max-w-280 overflow-hidden rounded-[22px]"
     >
       <div
         className="absolute inset-0 transition-[background] duration-1100 ease-out"
@@ -68,8 +61,6 @@ export function HeroCarousel({ carousel, pulse, primary, secondary }: HeroCarous
             titleLead={slide.titleLead}
             titleAccent={slide.titleAccent}
             body={slide.body}
-            primary={primary}
-            secondary={secondary}
           />
         </div>
         <div key={`visual-${tick}`} className="atlas4-reveal hidden h-full items-center md:flex">

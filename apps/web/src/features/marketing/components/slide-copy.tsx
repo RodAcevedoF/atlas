@@ -1,34 +1,19 @@
-import { CTA_OUTLINE, CTA_SOLID, eyebrowVariants } from "@/shared/ui/index.ts";
-import { Button, cn } from "@atlas/ui";
-import { Link } from "react-router-dom";
+import { eyebrowVariants } from "@/shared/ui/index.ts";
+import { cn } from "@atlas/ui";
 
 const KICKER_CLASS = cn(
   eyebrowVariants({ variant: "header" }),
   "inline-flex items-center gap-2.25 rounded-full border border-border bg-coverage/[0.04] px-3.5 py-1.75 text-foreground/80",
 );
 
-interface Cta {
-  label: string;
-  href: string;
-}
-
 interface SlideCopyProps {
   kicker: string;
   titleLead: string;
   titleAccent: string;
   body: string;
-  primary: Cta;
-  secondary?: Cta;
 }
 
-export function SlideCopy({
-  kicker,
-  titleLead,
-  titleAccent,
-  body,
-  primary,
-  secondary,
-}: SlideCopyProps) {
+export function SlideCopy({ kicker, titleLead, titleAccent, body }: SlideCopyProps) {
   return (
     <div>
       <div className={KICKER_CLASS}>
@@ -43,17 +28,6 @@ export function SlideCopy({
       <p className="mt-5 max-w-[44ch] text-pretty text-[15.5px] leading-[1.62] text-foreground/60">
         {body}
       </p>
-
-      <div className="mt-7.5 flex translate-y-2.5 gap-2.5 opacity-0 transition-all duration-[450ms] ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
-        <Button asChild variant={null} size="pill" className={CTA_SOLID}>
-          <Link to={primary.href}>{primary.label}</Link>
-        </Button>
-        {secondary ? (
-          <Button asChild variant={null} size="pill" className={CTA_OUTLINE}>
-            <Link to={secondary.href}>{secondary.label}</Link>
-          </Button>
-        ) : null}
-      </div>
     </div>
   );
 }
