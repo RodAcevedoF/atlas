@@ -89,6 +89,28 @@ function askMessage(state: InquiryAskState): AskMessage | null {
   return null;
 }
 
+function DailySearchAllowance({ remaining }: { remaining: number }) {
+  const exhausted = remaining === 0;
+  const label = exhausted
+    ? "No searches left today"
+    : `${remaining} ${remaining === 1 ? "search" : "searches"} left today`;
+
+  return (
+    <output
+      aria-live="polite"
+      className={cn(
+        "mx-3 mt-2 inline-flex items-center gap-1.75 rounded-full border px-2.5 py-1 font-mono text-[10.5px] font-medium tabular-nums",
+        exhausted
+          ? "border-destructive/30 bg-destructive/10 text-destructive"
+          : "border-context/30 bg-context/[0.08] text-context",
+      )}
+    >
+      <Sparkles aria-hidden="true" className="h-3 w-3" />
+      {label}
+    </output>
+  );
+}
+
 export function InquiryAskBox() {
   const { ask, ...state } = useInquiryAsk();
   const intent = useInquiryAttachmentIntent();
@@ -237,11 +259,7 @@ export function InquiryAskBox() {
         <p className="px-3 pb-1 pt-2 text-[11.5px] text-destructive">{intent.error}</p>
       ) : null}
 
-      {remaining !== null ? (
-        <p className="px-3 pb-1 pt-2 text-[11.5px] text-muted-foreground">
-          {atCap ? "No searches left today" : `${remaining} left today`}
-        </p>
-      ) : null}
+      {remaining !== null ? <DailySearchAllowance remaining={remaining} /> : null}
 
       {message ? (
         <p

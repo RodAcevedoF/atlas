@@ -95,7 +95,11 @@ export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquir
     },
     listInquiryRuns(page) {
       return Promise.resolve(
-        [...held.values()].sort(newestFirst).slice(0, page.limit).map(toListRow),
+        [...held.values()]
+          .filter((run) => page.ownerId === null || run.ownerId === page.ownerId)
+          .sort(newestFirst)
+          .slice(0, page.limit)
+          .map(toListRow),
       );
     },
     summarizeInquiryRuns(day) {

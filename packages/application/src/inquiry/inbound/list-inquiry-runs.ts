@@ -1,5 +1,11 @@
-import type { InquiryRunId, InquiryRunList, InquiryRunListRow } from "@atlas/domain";
-import { toInquiryRunSummary } from "@atlas/domain";
+import type {
+  InquiryRunActor,
+  InquiryRunId,
+  InquiryRunList,
+  InquiryRunListRow,
+  UserId,
+} from "@atlas/domain";
+import { makeUserId, mayActOnInquiryRun, toInquiryRunSummary } from "@atlas/domain";
 import type { InquiryRunStorePort } from "../outbound/inquiry-run-store.ts";
 
 const DEFAULT_LIMIT = 20;
@@ -10,7 +16,7 @@ export interface InquiryRunFilter {
 }
 
 export interface ListInquiryRuns {
-  execute(filter?: InquiryRunFilter): Promise<InquiryRunList>;
+  execute(actor: InquiryRunActor, filter?: InquiryRunFilter): Promise<InquiryRunList>;
 }
 
 export class ListInquiryRunsUseCase implements ListInquiryRuns {
@@ -19,23 +25,31 @@ export class ListInquiryRunsUseCase implements ListInquiryRuns {
     private readonly pinnedRunId: InquiryRunId | null,
   ) {}
 
-  async execute(filter: InquiryRunFilter = {}): Promise<InquiryRunList> {
+  async execute(actor: InquiryRunActor, filter: InquiryRunFilter = {}): Promise<InquiryRunList> {
     const page = await this.store.listInquiryRuns({
       limit: Math.min(filter.limit || DEFAULT_LIMIT, MAX_LIMIT),
+      ownerId: ownerScope(actor),
     });
-    const rows = await this.withPinnedRun(page);
+    const rows = await this.withPinnedRun(page, actor);
     return {
       runs: rows.map(toInquiryRunSummary),
       pinnedRunId: rows.some((row) => row.id === this.pinnedRunId) ? this.pinnedRunId : null,
     };
   }
 
-  private async withPinnedRun(page: InquiryRunListRow[]): Promise<InquiryRunListRow[]> {
+  private async withPinnedRun(
+    page: InquiryRunListRow[],
+    actor: InquiryRunActor,
+  ): Promise<InquiryRunListRow[]> {
     const pinnedRunId = this.pinnedRunId;
     if (!pinnedRunId) return page;
     if (page.some((row) => row.id === pinnedRunId)) return page;
 
     const pinned = await this.store.findInquiryRunListRowById(pinnedRunId);
-    return pinned ? [...page, pinned] : page;
+    return pinned && mayActOnInquiryRun(pinned, actor) ? [...page, pinned] : page;
   }
+}
+
+function ownerScope(actor: InquiryRunActor): UserId | null {
+  return actor.role === "super_admin" ? null : makeUserId(actor.id);
 }

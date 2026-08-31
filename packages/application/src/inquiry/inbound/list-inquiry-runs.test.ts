@@ -1,15 +1,26 @@
 import { describe, expect, test } from "bun:test";
-import type { InquiryPlace, InquiryRun, InquiryRunId } from "@atlas/domain";
+import type {
+  InquiryPlace,
+  InquiryRun,
+  InquiryRunActor,
+  InquiryRunId,
+  UserId,
+} from "@atlas/domain";
 import { makeInquiryRunId, makeUserId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import { ListInquiryRunsUseCase } from "./list-inquiry-runs.ts";
 
 const SEEDED = 130;
+const OWNER_ID = makeUserId("user-1");
+const OTHER_OWNER_ID = makeUserId("user-2");
+const owner: InquiryRunActor = { id: OWNER_ID, role: "user" };
+const adminOwner: InquiryRunActor = { id: OWNER_ID, role: "admin" };
+const superAdmin: InquiryRunActor = { id: makeUserId("user-super"), role: "super_admin" };
 
-function run(index: number): InquiryRun {
+function run(index: number, ownerId: UserId | null = OWNER_ID): InquiryRun {
   return {
     id: makeInquiryRunId(`run-${index}`),
-    ownerId: makeUserId("user-1"),
+    ownerId,
     question: `question ${index}`,
     questionKey: `question ${index}`,
     day: "2026-08-17",
@@ -68,7 +79,7 @@ describe("ListInquiryRunsUseCase", () => {
     test(name, async () => {
       const useCase = useCaseOverSeeded();
 
-      const { runs } = await useCase.execute({ limit: asked });
+      const { runs } = await useCase.execute(superAdmin, { limit: asked });
 
       expect(runs).toHaveLength(expected);
     });
@@ -83,7 +94,7 @@ describe("ListInquiryRunsUseCase", () => {
 
     const {
       runs: [listed],
-    } = await useCase.execute();
+    } = await useCase.execute(owner);
 
     expect(listed).toEqual({
       id: makeInquiryRunId("run-0"),
@@ -102,7 +113,7 @@ describe("ListInquiryRunsUseCase", () => {
   test("the newest run is served first", async () => {
     const useCase = useCaseOverSeeded();
 
-    const { runs } = await useCase.execute({ limit: 3 });
+    const { runs } = await useCase.execute(superAdmin, { limit: 3 });
 
     expect(runs.map((entry) => entry.id)).toEqual([
       makeInquiryRunId("run-129"),
@@ -112,11 +123,61 @@ describe("ListInquiryRunsUseCase", () => {
   });
 });
 
+describe("run visibility", () => {
+  const roleCases: Array<{
+    name: string;
+    actor: InquiryRunActor;
+    expectedIds: InquiryRunId[];
+  }> = [
+    {
+      name: "a user sees only their own runs",
+      actor: owner,
+      expectedIds: [makeInquiryRunId("run-0")],
+    },
+    {
+      name: "an admin still sees only their own runs",
+      actor: adminOwner,
+      expectedIds: [makeInquiryRunId("run-0")],
+    },
+    {
+      name: "only a super admin sees every user's and ownerless runs",
+      actor: superAdmin,
+      expectedIds: [
+        makeInquiryRunId("run-2"),
+        makeInquiryRunId("run-1"),
+        makeInquiryRunId("run-0"),
+      ],
+    },
+  ];
+
+  for (const { name, actor, expectedIds } of roleCases) {
+    test(name, async () => {
+      const { store } = inMemoryInquiryRunStore([run(0), run(1, OTHER_OWNER_ID), run(2, null)]);
+      const useCase = new ListInquiryRunsUseCase(store, null);
+
+      const { runs } = await useCase.execute(actor);
+
+      expect(runs.map((listed) => listed.id)).toEqual(expectedIds);
+    });
+  }
+
+  test("an inaccessible pinned run does not escape the same ownership rule", async () => {
+    const pinned = run(1, OTHER_OWNER_ID);
+    const { store } = inMemoryInquiryRunStore([run(0), pinned]);
+    const useCase = new ListInquiryRunsUseCase(store, pinned.id);
+
+    const { runs, pinnedRunId } = await useCase.execute(owner, { limit: 1 });
+
+    expect(runs.map((listed) => listed.id)).toEqual([makeInquiryRunId("run-0")]);
+    expect(pinnedRunId).toBeNull();
+  });
+});
+
 describe("the pinned run the map opens on", () => {
   test("is named on the list so the map can prefer it over the newest run", async () => {
     const useCase = useCaseOverSeeded(makeInquiryRunId("run-129"));
 
-    const { pinnedRunId } = await useCase.execute({ limit: 3 });
+    const { pinnedRunId } = await useCase.execute(superAdmin, { limit: 3 });
 
     expect(pinnedRunId).toBe(makeInquiryRunId("run-129"));
   });
@@ -124,7 +185,7 @@ describe("the pinned run the map opens on", () => {
   test("rides along when it aged out of the page, or the map could never select it", async () => {
     const useCase = useCaseOverSeeded(makeInquiryRunId("run-0"));
 
-    const { runs, pinnedRunId } = await useCase.execute({ limit: 3 });
+    const { runs, pinnedRunId } = await useCase.execute(superAdmin, { limit: 3 });
 
     expect(runs.map((entry) => entry.id)).toEqual([
       makeInquiryRunId("run-129"),
@@ -138,7 +199,7 @@ describe("the pinned run the map opens on", () => {
   test("is reported as unpinned when the configured run does not exist", async () => {
     const useCase = useCaseOverSeeded(makeInquiryRunId("run-gone"));
 
-    const { runs, pinnedRunId } = await useCase.execute({ limit: 3 });
+    const { runs, pinnedRunId } = await useCase.execute(superAdmin, { limit: 3 });
 
     expect(runs).toHaveLength(3);
     expect(pinnedRunId).toBeNull();
@@ -147,7 +208,7 @@ describe("the pinned run the map opens on", () => {
   test("is absent when nothing is pinned", async () => {
     const useCase = useCaseOverSeeded();
 
-    const { pinnedRunId } = await useCase.execute({ limit: 3 });
+    const { pinnedRunId } = await useCase.execute(superAdmin, { limit: 3 });
 
     expect(pinnedRunId).toBeNull();
   });

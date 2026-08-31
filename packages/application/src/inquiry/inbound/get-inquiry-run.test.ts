@@ -1,15 +1,20 @@
 import { describe, expect, test } from "bun:test";
-import type { InquiryRun, InquiryRunStatus } from "@atlas/domain";
+import type { InquiryRun, InquiryRunActor, InquiryRunStatus } from "@atlas/domain";
 import { makeInquiryRunId, makeUserId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import { GetInquiryRunUseCase } from "./get-inquiry-run.ts";
 
 const FAILED_ID = makeInquiryRunId("run-failed");
+const OWNER_ID = makeUserId("user-1");
+const owner: InquiryRunActor = { id: OWNER_ID, role: "user" };
+const stranger: InquiryRunActor = { id: makeUserId("user-2"), role: "user" };
+const admin: InquiryRunActor = { id: makeUserId("user-admin"), role: "admin" };
+const superAdmin: InquiryRunActor = { id: makeUserId("user-super"), role: "super_admin" };
 
 function failedRun(status: InquiryRunStatus, error: string | null, attempts: number): InquiryRun {
   return {
     id: FAILED_ID,
-    ownerId: makeUserId("user-1"),
+    ownerId: OWNER_ID,
     question: "where are wildfires burning right now",
     questionKey: "where are wildfires burning right now",
     day: "2026-08-23",
@@ -59,7 +64,7 @@ describe("GetInquiryRunUseCase", () => {
     test(testCase.name, async () => {
       const useCase = useCaseOver([failedRun(testCase.status, testCase.error, testCase.attempts)]);
 
-      const served = await useCase.execute(FAILED_ID);
+      const served = await useCase.execute(FAILED_ID, owner);
 
       expect(served?.error).toBe(testCase.error);
       expect(served?.attempts).toBe(testCase.attempts);
@@ -69,8 +74,31 @@ describe("GetInquiryRunUseCase", () => {
   test("an unknown run is not found", async () => {
     const useCase = useCaseOver([]);
 
-    const served = await useCase.execute(FAILED_ID);
+    const served = await useCase.execute(FAILED_ID, owner);
 
     expect(served).toBeNull();
+  });
+
+  const hiddenCases = [
+    { name: "another user cannot read the run", actor: stranger },
+    { name: "an admin cannot read another user's run", actor: admin },
+  ];
+
+  for (const { name, actor } of hiddenCases) {
+    test(name, async () => {
+      const useCase = useCaseOver([failedRun("succeeded", null, 1)]);
+
+      const served = await useCase.execute(FAILED_ID, actor);
+
+      expect(served).toBeNull();
+    });
+  }
+
+  test("a super admin can read another user's run", async () => {
+    const useCase = useCaseOver([failedRun("succeeded", null, 1)]);
+
+    const served = await useCase.execute(FAILED_ID, superAdmin);
+
+    expect(served?.id).toBe(FAILED_ID);
   });
 });

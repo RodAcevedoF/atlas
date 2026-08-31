@@ -21,6 +21,7 @@ export type CompleteInquiryRunInput = Pick<
 
 export interface InquiryRunPage {
   limit: number;
+  ownerId: UserId | null;
 }
 
 export interface InquiryRunSummaryCounts {

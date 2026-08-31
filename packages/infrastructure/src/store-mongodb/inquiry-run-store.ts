@@ -213,9 +213,10 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
   }
 
   async listInquiryRuns(page: InquiryRunPage): Promise<InquiryRunListRow[]> {
+    const ownerFilter = page.ownerId === null ? {} : { ownerId: page.ownerId };
     const docs = await this.db
       .collection<InquiryRunDoc>(COLLECTION)
-      .find<InquiryRunListDoc>({}, { projection: LIST_PROJECTION })
+      .find<InquiryRunListDoc>(ownerFilter, { projection: LIST_PROJECTION })
       .sort({ createdAt: -1 })
       .limit(page.limit)
       .toArray();

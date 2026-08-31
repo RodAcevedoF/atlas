@@ -65,8 +65,9 @@ export async function registerInquiryRoutes(
   });
 
   app.get("/inquiry/runs/:id", async (req, reply) => {
+    const user = requireUser(req);
     const params = req.params as { id?: string };
-    const run = await deps.getInquiryRun.execute(parseInquiryRunId(params.id));
+    const run = await deps.getInquiryRun.execute(parseInquiryRunId(params.id), user);
     if (!run) return reply.code(404).send({ error: "Inquiry run not found" });
     return reply.send(run);
   });
@@ -86,8 +87,9 @@ export async function registerInquiryRoutes(
   });
 
   app.get("/inquiry/runs", async (req, reply) => {
+    const user = requireUser(req);
     const query = (req.query as RawQuery | undefined) ?? {};
-    const runs = await deps.listInquiryRuns.execute(parseInquiryRunsQuery(query));
+    const runs = await deps.listInquiryRuns.execute(user, parseInquiryRunsQuery(query));
     return reply.send(runs);
   });
 }
