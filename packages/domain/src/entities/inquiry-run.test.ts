@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryRun } from "./inquiry-run.ts";
-import { makeInquiryRunId, toPublicInquiryRun } from "./inquiry-run.ts";
+import { isLowConfidenceClaim, makeInquiryRunId, toPublicInquiryRun } from "./inquiry-run.ts";
 import { makeUserId } from "./user.ts";
 
 function succeededRun(overrides: Partial<InquiryRun> = {}): InquiryRun {
@@ -95,4 +95,30 @@ describe("the public run carries what a reader is charged for", () => {
     expect(publicRun.places[0]?.read?.sourceUrls).toEqual([sourceUrl]);
     expect(publicRun).not.toHaveProperty("documents");
   });
+});
+
+describe("one threshold decides what every surface calls a weak claim", () => {
+  const cases = [
+    {
+      name: "a claim just under the ceiling is weak, so the reader is warned rather than misled",
+      confidence: 0.49,
+      isLow: true,
+    },
+    {
+      name: "a claim exactly at the ceiling is trusted, so the boundary cannot drift between surfaces",
+      confidence: 0.5,
+      isLow: false,
+    },
+    {
+      name: "a confident claim carries no warning, so the warning keeps its meaning",
+      confidence: 0.8,
+      isLow: false,
+    },
+  ];
+
+  for (const testCase of cases) {
+    test(testCase.name, () => {
+      expect(isLowConfidenceClaim({ confidence: testCase.confidence })).toBe(testCase.isLow);
+    });
+  }
 });

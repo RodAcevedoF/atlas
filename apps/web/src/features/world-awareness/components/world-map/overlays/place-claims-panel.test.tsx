@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
+import type { InquiryClaimRecord } from "@/features/inquiry";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import {
   buildInquiryClaim,
@@ -8,14 +9,17 @@ import { PlaceClaimsPanel } from "./place-claims-panel.tsx";
 
 afterEach(cleanup);
 
-function renderClaim(sourceImageUrl: string | null) {
-  const claim = buildInquiryClaim({ sourceImageUrl });
+function renderPanel(claim: InquiryClaimRecord, onClose: () => void = () => undefined) {
   return render(
     <PlaceClaimsPanel
       place={buildInquiryPlace({ claims: [claim], claimCount: 1 })}
-      onClose={() => undefined}
+      onClose={onClose}
     />,
   );
+}
+
+function renderClaim(sourceImageUrl: string | null) {
+  return renderPanel(buildInquiryClaim({ sourceImageUrl }));
 }
 
 test("an available source image is bounded and loaded without sending an Atlas referrer", () => {
@@ -50,4 +54,59 @@ test("a broken source image falls back to the unchanged text row", () => {
   expect(container.querySelector("img")).toBeNull();
   expect(screen.getByText("clashes in and near Geissan displaced 7,800 people")).toBeDefined();
   expect(screen.getByText("a headline")).toBeDefined();
+});
+
+const confidenceCases = [
+  {
+    name: "a weak claim is marked low here as it is on the run page, so the map cannot flatter it",
+    confidence: 0.31,
+    expected: "low extraction confidence · 31%",
+  },
+  {
+    name: "a confident claim still states its confidence, so silence never has to be interpreted",
+    confidence: 0.86,
+    expected: "extraction confidence · 86%",
+  },
+];
+
+for (const confidenceCase of confidenceCases) {
+  test(confidenceCase.name, () => {
+    renderPanel(buildInquiryClaim({ confidence: confidenceCase.confidence }));
+
+    expect(screen.getByText(confidenceCase.expected)).toBeDefined();
+  });
+}
+
+test("escape closes the panel, so a reader can dismiss it without hunting for the button", () => {
+  let closes = 0;
+  renderPanel(buildInquiryClaim(), () => {
+    closes += 1;
+  });
+
+  fireEvent.keyDown(document, { key: "Escape" });
+
+  expect(closes).toBe(1);
+});
+
+test("an unrelated key leaves the panel open, so typing elsewhere never dismisses it", () => {
+  let closes = 0;
+  renderPanel(buildInquiryClaim(), () => {
+    closes += 1;
+  });
+
+  fireEvent.keyDown(document, { key: "Enter" });
+
+  expect(closes).toBe(0);
+});
+
+test("escape after the panel is gone closes nothing, so the listener cannot outlive the panel", () => {
+  let closes = 0;
+  const { unmount } = renderPanel(buildInquiryClaim(), () => {
+    closes += 1;
+  });
+
+  unmount();
+  fireEvent.keyDown(document, { key: "Escape" });
+
+  expect(closes).toBe(0);
 });

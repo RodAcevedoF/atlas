@@ -26,6 +26,12 @@ export interface InquiryClaim {
   sourceImageUrl: string | null;
 }
 
+const LOW_CONFIDENCE_CEILING = 0.5;
+
+export function isLowConfidenceClaim(claim: Pick<InquiryClaim, "confidence">): boolean {
+  return claim.confidence < LOW_CONFIDENCE_CEILING;
+}
+
 export interface InquiryPlaceRead {
   text: string;
   sourceUrls: string[];

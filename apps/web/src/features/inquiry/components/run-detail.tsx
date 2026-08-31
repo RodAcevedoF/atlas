@@ -1,5 +1,6 @@
 import { CTA_SOLID, Eyebrow, HAIRLINE_ROW, eyebrowVariants } from "@/shared/ui";
-import { formatDate, formatPercent, formatRelativeTime } from "@/shared/utils/index.ts";
+import { formatDate, formatRelativeTime } from "@/shared/utils/index.ts";
+import { isLowConfidenceClaim } from "@atlas/domain";
 import { Button, cn } from "@atlas/ui";
 import { Map as MapIcon } from "lucide-react";
 import { useMemo } from "react";
@@ -10,6 +11,7 @@ import type {
   InquiryPlaceRecord,
   InquiryRunRecord,
 } from "../repositories/inquiry-repository.ts";
+import { ClaimConfidence } from "./claim-confidence.tsx";
 import { DeleteRunButton } from "./delete-run-button.tsx";
 import { isPaintableRun } from "./paintable-run.ts";
 import { RUN_STATUS_LABEL, isFailedRun, runStatusClass } from "./run-status.ts";
@@ -18,7 +20,6 @@ const NO_SYNTHESIS = "No synthesis for this run.";
 const NO_PLACES = "This run placed no claim on the map.";
 const NO_REASON = "No reason was recorded for this failure.";
 
-const LOW_CONFIDENCE = 0.5;
 const COST_DECIMALS = 3;
 
 const SECTION_HEAD = "flex items-center justify-between gap-3";
@@ -63,7 +64,7 @@ function StatGrid({ stats }: { stats: RunStat[] }) {
 }
 
 function ClaimRow({ claim }: { claim: InquiryClaimRecord }) {
-  const isLowConfidence = claim.confidence < LOW_CONFIDENCE;
+  const isLowConfidence = isLowConfidenceClaim(claim);
 
   return (
     <li className={cn(HAIRLINE_ROW, "py-2.5")}>
@@ -83,10 +84,7 @@ function ClaimRow({ claim }: { claim: InquiryClaimRecord }) {
           {claim.publishedDate ? (
             <span className="shrink-0">{formatDate(claim.publishedDate)}</span>
           ) : null}
-          <span className={cn("shrink-0", isLowConfidence ? "text-conviction" : null)}>
-            {isLowConfidence ? "low " : null}extraction confidence ·{" "}
-            {formatPercent(claim.confidence)}
-          </span>
+          <ClaimConfidence claim={claim} />
         </span>
       </a>
     </li>

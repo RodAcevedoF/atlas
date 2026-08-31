@@ -1,13 +1,16 @@
 import type { InquiryClaimRecord, InquiryPlaceRecord } from "@/features/inquiry";
+import { ClaimConfidence } from "@/features/inquiry";
 import { Eyebrow, HAIRLINE_ROW, PANEL_GLASS } from "@/shared/ui";
+import { isLowConfidenceClaim } from "@atlas/domain";
 import { cn } from "@atlas/ui";
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function ClaimRow({ claim }: { claim: InquiryClaimRecord }) {
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const imageUrl =
     claim.sourceImageUrl && claim.sourceImageUrl !== failedImageUrl ? claim.sourceImageUrl : null;
+  const isLowConfidence = isLowConfidenceClaim(claim);
 
   return (
     <li className={cn(HAIRLINE_ROW, "py-2.5")}>
@@ -30,15 +33,21 @@ function ClaimRow({ claim }: { claim: InquiryClaimRecord }) {
             href={claim.sourceUrl}
             target="_blank"
             rel="noreferrer noopener"
-            className="text-[12.5px] leading-relaxed text-card-foreground hover:underline"
+            className={cn(
+              "text-[12.5px] leading-relaxed hover:underline",
+              isLowConfidence ? "text-muted-foreground" : "text-card-foreground",
+            )}
           >
             {claim.text}
           </a>
-          <p className="mt-1.5 flex items-baseline gap-1.5 font-mono text-[10.5px] text-faint empty:hidden">
-            {claim.sourceTitle ? <span className="truncate">{claim.sourceTitle}</span> : null}
+          <p className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-1 font-mono text-[10.5px] text-faint">
+            {claim.sourceTitle ? (
+              <span className="max-w-full truncate">{claim.sourceTitle}</span>
+            ) : null}
             {claim.publishedDate ? (
               <span className="shrink-0 tabular-nums">{claim.publishedDate.slice(0, 10)}</span>
             ) : null}
+            <ClaimConfidence claim={claim} className="tabular-nums" />
           </p>
         </div>
       </div>
@@ -52,6 +61,15 @@ interface PlaceClaimsPanelProps {
 }
 
 export function PlaceClaimsPanel({ place, onClose }: PlaceClaimsPanelProps) {
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
   return (
     <div
       className={cn(

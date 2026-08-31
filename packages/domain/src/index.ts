@@ -15,6 +15,7 @@ export type {
 export {
   makeInquiryRunId,
   mayActOnInquiryRun,
+  isLowConfidenceClaim,
   toPublicInquiryRun,
   toInquiryRunSummary,
 } from "./entities/inquiry-run.ts";

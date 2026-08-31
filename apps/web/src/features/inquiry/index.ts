@@ -1,3 +1,4 @@
+export { ClaimConfidence } from "./components/claim-confidence.tsx";
 export { InquiryAskBox } from "./components/inquiry-ask-box.tsx";
 export { InquiryHistory } from "./components/inquiry-history.tsx";
 export { isPaintableRun } from "./components/paintable-run.ts";
