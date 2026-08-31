@@ -1,7 +1,7 @@
 import { useAuth } from "@/features/auth/auth-provider.tsx";
 import { AccountMenu } from "@/features/auth/components/account-menu.tsx";
 import { AppHeader } from "@/shared/app-shell";
-import { PANEL } from "@/shared/ui";
+import { AsyncState, PANEL } from "@/shared/ui";
 import { Card, cn } from "@atlas/ui";
 import { useCallback } from "react";
 import { AnalyticsPanel } from "./components/analytics-panel.tsx";
@@ -39,18 +39,40 @@ export function AdminPage() {
                 </p>
               </div>
               {user ? (
-                <span className="rounded-full border border-border bg-background/35 px-3 py-1.5 text-xs capitalize text-muted-foreground">
-                  {user.role.replace("_", " ")}
-                </span>
+                <div className="flex min-h-8 w-48 shrink-0 items-center justify-end">
+                  {analytics && isLoading ? (
+                    <AsyncState
+                      activity="active"
+                      className="gap-2 text-xs"
+                      flowClassName="h-5 w-12"
+                    >
+                      Refreshing analytics…
+                    </AsyncState>
+                  ) : (
+                    <span className="rounded-full border border-border bg-background/35 px-3 py-1.5 text-xs capitalize text-muted-foreground">
+                      {user.role.replace("_", " ")}
+                    </span>
+                  )}
+                </div>
               ) : null}
             </div>
           </header>
 
-          {analytics ? <AnalyticsPanel analytics={analytics} /> : null}
-          {!analytics && isLoading ? (
-            <Card className={cn(PANEL, "p-6 text-[14px] text-muted-foreground")}>{LOADING}</Card>
+          {analytics ? (
+            <div className="atlas4-reveal">
+              <AnalyticsPanel analytics={analytics} />
+            </div>
           ) : null}
-          {error ? <p className="text-[14px] text-destructive">{error}</p> : null}
+          {!analytics && isLoading ? (
+            <Card className={cn(PANEL, "p-6")}>
+              <AsyncState activity="active">{LOADING}</AsyncState>
+            </Card>
+          ) : null}
+          {error ? (
+            <Card className={cn(PANEL, "px-5 py-3")}>
+              <AsyncState tone="error">{error}</AsyncState>
+            </Card>
+          ) : null}
           {user ? <UserDirectory currentUser={user} directory={directory} /> : null}
         </div>
       </main>

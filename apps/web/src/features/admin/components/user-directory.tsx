@@ -1,4 +1,4 @@
-import { Eyebrow, PANEL } from "@/shared/ui";
+import { AsyncState, Eyebrow, PANEL } from "@/shared/ui";
 import type { PublicUser } from "@atlas/domain";
 import { Button, Card, cn, useToast } from "@atlas/ui";
 import { Plus, ShieldCheck, UserRound } from "lucide-react";
@@ -71,64 +71,76 @@ export function UserDirectory({ currentUser, directory }: UserDirectoryProps) {
             <span>Sign-in</span>
             <span>Role</span>
           </div>
-          <div className="divide-y divide-border">
-            {directory.users.map((user) => (
-              <button
-                type="button"
-                key={user.id}
-                onClick={() => {
-                  setSelectedId(user.id);
-                  setIsCreating(false);
-                }}
-                className={cn(
-                  "grid w-full grid-cols-[minmax(0,1fr)_110px_112px] items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-foreground/[0.035]",
-                  selected?.id === user.id && !isCreating ? "bg-primary/[0.06]" : null,
-                )}
-              >
-                <span className="flex min-w-0 items-center gap-3">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-background/60 text-[10px] font-semibold text-muted-foreground">
-                    {initials(user.email)}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-card-foreground">
-                      {user.email}
-                    </span>
-                    <span className="mt-0.5 block truncate font-mono text-[10px] text-faint">
-                      {user.id}
-                    </span>
-                  </span>
-                </span>
-                <span className="truncate text-xs capitalize text-muted-foreground">
-                  {user.identityProviders.join(", ") || "None"}
-                </span>
-                <span className="flex items-center gap-1.5 text-xs text-card-foreground">
-                  {user.role === "super_admin" ? (
-                    <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-                  ) : (
-                    <UserRound className="h-3.5 w-3.5 text-faint" />
+          {directory.users.length > 0 ? (
+            <div className="atlas4-reveal divide-y divide-border">
+              {directory.users.map((user) => (
+                <button
+                  type="button"
+                  key={user.id}
+                  onClick={() => {
+                    setSelectedId(user.id);
+                    setIsCreating(false);
+                  }}
+                  className={cn(
+                    "grid w-full grid-cols-[minmax(0,1fr)_110px_112px] items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-foreground/[0.035]",
+                    selected?.id === user.id && !isCreating ? "bg-primary/[0.06]" : null,
                   )}
-                  {ROLE_LABEL[user.role]}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {directory.isLoading ? (
-            <p className="px-4 py-5 text-sm text-muted-foreground">Loading users…</p>
-          ) : null}
-          {!directory.isLoading && directory.users.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-muted-foreground">No users found.</p>
-          ) : null}
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-background/60 text-[10px] font-semibold text-muted-foreground">
+                      {initials(user.email)}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-card-foreground">
+                        {user.email}
+                      </span>
+                      <span className="mt-0.5 block truncate font-mono text-[10px] text-faint">
+                        {user.id}
+                      </span>
+                    </span>
+                  </span>
+                  <span className="truncate text-xs capitalize text-muted-foreground">
+                    {user.identityProviders.join(", ") || "None"}
+                  </span>
+                  <span className="flex items-center gap-1.5 text-xs text-card-foreground">
+                    {user.role === "super_admin" ? (
+                      <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                    ) : (
+                      <UserRound className="h-3.5 w-3.5 text-faint" />
+                    )}
+                    {ROLE_LABEL[user.role]}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : directory.isLoading ? (
+            <AsyncState activity="active" className="p-5">
+              Loading users…
+            </AsyncState>
+          ) : directory.error ? (
+            <AsyncState tone="error" className="px-4 py-8">
+              {directory.error}
+            </AsyncState>
+          ) : (
+            <AsyncState activity="idle" className="p-5">
+              No users found.
+            </AsyncState>
+          )}
           {directory.nextCursor ? (
             <div className="border-t border-border p-3 text-center">
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={directory.isLoading}
-                onClick={() => void directory.loadMore()}
-              >
-                Load more
-              </Button>
+              {directory.isLoading ? (
+                <AsyncState
+                  activity="active"
+                  className="justify-center gap-2 text-xs"
+                  flowClassName="h-6 w-16"
+                >
+                  Loading more users…
+                </AsyncState>
+              ) : (
+                <Button type="button" variant="ghost" onClick={() => void directory.loadMore()}>
+                  Load more
+                </Button>
+              )}
             </div>
           ) : null}
         </div>
@@ -155,10 +167,10 @@ export function UserDirectory({ currentUser, directory }: UserDirectoryProps) {
         </aside>
       </div>
 
-      {directory.error ? (
-        <p className="border-t border-border px-5 py-3 text-xs text-destructive">
+      {directory.error && directory.users.length > 0 ? (
+        <AsyncState tone="error" className="border-t border-border px-5 py-3 text-xs">
           {directory.error}
-        </p>
+        </AsyncState>
       ) : null}
     </Card>
   );

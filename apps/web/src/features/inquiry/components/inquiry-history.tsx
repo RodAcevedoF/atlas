@@ -1,6 +1,5 @@
 import { useAuth } from "@/features/auth/auth-provider.tsx";
-import { EvidenceFlow } from "@/shared/brand";
-import { PANEL, PANEL_HEAD, eyebrowVariants } from "@/shared/ui";
+import { AsyncState, PANEL, PANEL_HEAD, eyebrowVariants } from "@/shared/ui";
 import { Card, cn } from "@atlas/ui";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -30,16 +29,8 @@ interface InquiryHistoryProps {
 function Notice({ children, activity }: { children: ReactNode; activity?: "active" | "idle" }) {
   return (
     <div className="px-8.5 py-7">
-      <Card
-        className={cn(
-          PANEL,
-          "atlas4-reveal flex items-center gap-5 p-6 text-[14px] text-muted-foreground",
-        )}
-      >
-        {activity ? (
-          <EvidenceFlow active={activity === "active"} className="w-32 shrink-0" />
-        ) : null}
-        <p>{children}</p>
+      <Card className={cn(PANEL, "p-6")}>
+        <AsyncState activity={activity}>{children}</AsyncState>
       </Card>
     </div>
   );
@@ -55,10 +46,13 @@ function DetailPane({
   if (detail.run) return <RunDetail key={detail.run.id} run={detail.run} onDelete={onDelete} />;
   if (detail.error) return <p className="text-[14px] text-destructive">{detail.error}</p>;
   return (
-    <div className="atlas4-reveal flex max-w-sm flex-col gap-4 text-[14px] text-muted-foreground">
-      <EvidenceFlow active />
-      <p>{LOADING_RUN}</p>
-    </div>
+    <AsyncState
+      activity="active"
+      className="max-w-sm flex-col items-stretch gap-4"
+      flowClassName="w-full"
+    >
+      {LOADING_RUN}
+    </AsyncState>
   );
 }
 
