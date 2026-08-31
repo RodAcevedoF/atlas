@@ -7,6 +7,8 @@ import type {
 } from "@atlas/application";
 import { INQUIRY_MAX_ATTEMPTS } from "@atlas/application";
 import type {
+  InquiryClaim,
+  InquiryPlace,
   InquiryRun,
   InquiryRunId,
   InquiryRunListRow,
@@ -65,8 +67,25 @@ function docToListRow(doc: InquiryRunListDoc): InquiryRunListRow {
 
 type ClaimShapeField = "places" | "claimCount" | "unplacedClaims" | "costUsd";
 
+type StoredInquiryClaim = Omit<InquiryClaim, "sourceImageUrl"> &
+  Partial<Pick<InquiryClaim, "sourceImageUrl">>;
+
+type StoredInquiryPlace = Omit<InquiryPlace, "claims"> & { claims: StoredInquiryClaim[] };
+
 type StoredInquiryRunDoc = Omit<InquiryRunDoc, ClaimShapeField> &
-  Partial<Pick<InquiryRunDoc, ClaimShapeField>>;
+  Partial<Omit<Pick<InquiryRunDoc, ClaimShapeField>, "places">> & {
+    places?: StoredInquiryPlace[];
+  };
+
+export function normalizeStoredPlaces(places: StoredInquiryPlace[] | undefined): InquiryPlace[] {
+  return (places ?? []).map((place) => ({
+    ...place,
+    claims: place.claims.map((claim) => ({
+      ...claim,
+      sourceImageUrl: claim.sourceImageUrl ?? null,
+    })),
+  }));
+}
 
 function docToInquiryRun(doc: StoredInquiryRunDoc): InquiryRun {
   return {
@@ -76,7 +95,7 @@ function docToInquiryRun(doc: StoredInquiryRunDoc): InquiryRun {
     questionKey: doc.questionKey,
     day: doc.day,
     window: doc.window,
-    places: doc.places ?? [],
+    places: normalizeStoredPlaces(doc.places),
     claimCount: doc.claimCount ?? 0,
     unplacedClaims: doc.unplacedClaims ?? 0,
     costUsd: doc.costUsd ?? 0,

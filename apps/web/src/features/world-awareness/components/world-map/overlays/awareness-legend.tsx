@@ -85,8 +85,10 @@ export function AwarenessLegend({ run, plotted }: AwarenessLegendProps) {
       )}
     >
       <div className="flex flex-col gap-1.5">
-        <Eyebrow variant="meta">claims · {run.window}</Eyebrow>
-        <p className="line-clamp-2 text-[14px] font-medium leading-snug tracking-[-0.015em] text-card-foreground">
+        <Eyebrow variant="meta" className="text-context/85">
+          claims · {run.window}
+        </Eyebrow>
+        <p className="break-words text-[14px] font-medium leading-snug tracking-[-0.015em] text-card-foreground">
           {run.question}
         </p>
       </div>
@@ -102,7 +104,7 @@ export function AwarenessLegend({ run, plotted }: AwarenessLegendProps) {
         <Eyebrow variant="meta">many</Eyebrow>
       </div>
 
-      <p className="font-mono text-[10.5px] leading-relaxed tabular-nums text-faint">
+      <p className="font-mono text-[11.5px] leading-relaxed tabular-nums text-faint">
         {run.claimCount} claims across {plotted} places
         {run.unplacedClaims > 0 ? <span> · {run.unplacedClaims} could not be placed</span> : null}
       </p>

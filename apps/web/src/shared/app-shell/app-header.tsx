@@ -32,11 +32,11 @@ function LivePulse() {
 export function AppHeader({ subtitle, actions, account }: AppHeaderProps) {
   return (
     <header className="relative z-40 flex h-17 flex-none items-center gap-6 border-b border-border px-8.5">
-      <div className="flex items-center gap-3">
+      <div className="flex w-40 shrink-0 items-center gap-3">
         <img src="/atlas_emblem.svg" alt="Atlas" className="h-7 w-7" />
         <div className="flex flex-col leading-none">
           <span className="text-[17px] font-semibold tracking-[-0.02em]">Atlas</span>
-          <Eyebrow variant="header" className="mt-1 text-[9.5px]">
+          <Eyebrow variant="header" className="mt-1 text-[9.5px] text-context/85">
             {subtitle}
           </Eyebrow>
         </div>

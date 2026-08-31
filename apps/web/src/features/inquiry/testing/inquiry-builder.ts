@@ -12,6 +12,7 @@ export function buildInquiryClaim(overrides: Partial<InquiryClaimRecord> = {}): 
     sourceUrl: "https://example.test/article",
     sourceTitle: "a headline",
     publishedDate: "2026-08-18T00:00:00.000Z",
+    sourceImageUrl: null,
     ...overrides,
   };
 }

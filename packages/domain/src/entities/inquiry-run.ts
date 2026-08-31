@@ -23,6 +23,7 @@ export interface InquiryClaim {
   sourceUrl: string;
   sourceTitle: string | null;
   publishedDate: string | null;
+  sourceImageUrl: string | null;
 }
 
 export interface InquiryPlace {

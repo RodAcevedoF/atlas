@@ -8,6 +8,7 @@ import json
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 from langsmith import traceable
@@ -86,6 +87,22 @@ def _optional_str(value: Any) -> str | None:
     return value if isinstance(value, str) and value.strip() else None
 
 
+def _optional_https_url(value: Any) -> str | None:
+    candidate = _optional_str(value)
+    if candidate is None or candidate != candidate.strip():
+        return None
+    try:
+        parsed = urlsplit(candidate)
+        _ = parsed.port
+    except ValueError:
+        return None
+    if parsed.scheme != "https" or not parsed.hostname:
+        return None
+    if parsed.username is not None or parsed.password is not None:
+        return None
+    return candidate
+
+
 def _highlights(result: dict[str, Any]) -> list[str]:
     raw = result.get("highlights")
     if not isinstance(raw, list):
@@ -100,6 +117,7 @@ def _to_document(result: dict[str, Any]) -> SourceDocument:
         published_date=_optional_str(result.get("publishedDate")),
         text=_optional_str(result.get("text")),
         highlights=_highlights(result),
+        image_url=_optional_https_url(result.get("image")),
     )
 
 
@@ -133,6 +151,7 @@ def _to_claim(extracted: dict[str, Any], document: SourceDocument) -> Claim | No
         source_url=document.url,
         source_title=document.title,
         published_date=document.published_date,
+        source_image_url=document.image_url,
     )
 
 

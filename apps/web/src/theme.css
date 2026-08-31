@@ -24,6 +24,7 @@
   --positive: #4fe3c1;
   --negative: #ff6e8a;
   --info: #8aa4ff;
+  --context: #f0a46f;
   --warning: #ffab58;
   --destructive: #ff6e8a;
   --destructive-foreground: #05081a;
@@ -125,6 +126,7 @@
   --color-positive: var(--positive);
   --color-negative: var(--negative);
   --color-info: var(--info);
+  --color-context: var(--context);
   --color-warning: var(--warning);
   --color-sentiment-negative: var(--sentiment-negative);
   --color-sentiment-neutral: var(--sentiment-neutral);

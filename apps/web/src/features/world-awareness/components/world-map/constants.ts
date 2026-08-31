@@ -118,6 +118,10 @@ export const AWARENESS_CLUSTER_COUNT_TEXT = [
   "point_count_abbreviated",
 ] as unknown as ExpressionSpecification;
 
+export const AWARENESS_CLUSTER_PROPERTIES = {
+  claimCount: ["+", ["get", "claimCount"]],
+};
+
 export const AWARENESS_LABEL_TEXT = ["get", "place"] as unknown as ExpressionSpecification;
 
 export function placeLabelFilter(peak: number): FilterSpecification {

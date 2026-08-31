@@ -43,6 +43,7 @@ function place(name: string): InquiryPlace {
         sourceUrl: "https://example.test/article",
         sourceTitle: null,
         publishedDate: null,
+        sourceImageUrl: null,
       },
     ],
   };

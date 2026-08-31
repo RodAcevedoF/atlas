@@ -9,6 +9,7 @@ function claim(text: string): InquiryClaim {
     sourceUrl: "https://example.test/article",
     sourceTitle: null,
     publishedDate: null,
+    sourceImageUrl: null,
   };
 }
 

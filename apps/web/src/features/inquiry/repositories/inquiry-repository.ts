@@ -6,6 +6,7 @@ export interface InquiryClaimRecord {
   sourceUrl: string;
   sourceTitle: string | null;
   publishedDate: string | null;
+  sourceImageUrl: string | null;
 }
 
 export interface InquiryPlaceRecord {

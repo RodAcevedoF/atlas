@@ -3,6 +3,7 @@ import { createPropertyExpression } from "@maplibre/maplibre-gl-style-spec";
 import {
   AWARENESS_CLUSTER_COUNT_SIZE,
   AWARENESS_CLUSTER_COUNT_TEXT,
+  AWARENESS_CLUSTER_PROPERTIES,
   AWARENESS_GLOW_OPACITY,
   AWARENESS_LABEL_TEXT,
   AWARENESS_ORB_OPACITY,
@@ -119,5 +120,11 @@ describe("orb sizing", () => {
 
   test("the quietest orb stays large enough to see", () => {
     expect(radiusAt(orbRadius(PEAK), 1, 1.3)).toBeGreaterThan(10);
+  });
+});
+
+test("clusters sum the claim counts already carried by their member places", () => {
+  expect(AWARENESS_CLUSTER_PROPERTIES).toEqual({
+    claimCount: ["+", ["get", "claimCount"]],
   });
 });

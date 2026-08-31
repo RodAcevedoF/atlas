@@ -61,34 +61,73 @@ function isNullableText(value: unknown): value is string | null {
   return value === null || typeof value === "string";
 }
 
-function isClaim(value: unknown): value is InquiryClaim {
-  if (typeof value !== "object" || value === null) return false;
+function isSafeSourceImageUrl(value: string): boolean {
+  if (value !== value.trim()) return false;
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === "https:" &&
+      url.hostname.length > 0 &&
+      url.username === "" &&
+      url.password === ""
+    );
+  } catch {
+    return false;
+  }
+}
+
+function asClaim(value: unknown): InquiryClaim | null {
+  if (typeof value !== "object" || value === null) return null;
   const row = value as Record<string, unknown>;
-  return (
-    typeof row.text === "string" &&
-    typeof row.confidence === "number" &&
-    typeof row.sourceUrl === "string" &&
-    isNullableText(row.sourceTitle) &&
-    isNullableText(row.publishedDate)
-  );
+  if (typeof row.text !== "string") return null;
+  if (typeof row.confidence !== "number") return null;
+  if (typeof row.sourceUrl !== "string") return null;
+  if (!isNullableText(row.sourceTitle)) return null;
+  if (!isNullableText(row.publishedDate)) return null;
+  if (
+    row.sourceImageUrl !== undefined &&
+    row.sourceImageUrl !== null &&
+    (typeof row.sourceImageUrl !== "string" || !isSafeSourceImageUrl(row.sourceImageUrl))
+  ) {
+    return null;
+  }
+  return {
+    text: row.text,
+    confidence: row.confidence,
+    sourceUrl: row.sourceUrl,
+    sourceTitle: row.sourceTitle,
+    publishedDate: row.publishedDate,
+    sourceImageUrl: row.sourceImageUrl ?? null,
+  };
 }
 
 /**
  * A place without real coordinates cannot be an orb, so it must never reach the map, and a
  * `claimCount` that disagrees with the claims beside it would print a wrong number over a right list.
  */
-function isPlace(value: unknown): value is InquiryPlace {
-  if (typeof value !== "object" || value === null) return false;
+function asPlace(value: unknown): InquiryPlace | null {
+  if (typeof value !== "object" || value === null) return null;
   const row = value as Record<string, unknown>;
-  return (
-    typeof row.place === "string" &&
-    isNullableText(row.country) &&
-    typeof row.latitude === "number" &&
-    typeof row.longitude === "number" &&
-    Array.isArray(row.claims) &&
-    row.claims.every(isClaim) &&
-    row.claimCount === row.claims.length
-  );
+  if (typeof row.place !== "string") return null;
+  if (!isNullableText(row.country)) return null;
+  if (typeof row.latitude !== "number") return null;
+  if (typeof row.longitude !== "number") return null;
+  if (!Array.isArray(row.claims)) return null;
+  const claims: InquiryClaim[] = [];
+  for (const value of row.claims) {
+    const claim = asClaim(value);
+    if (claim === null) return null;
+    claims.push(claim);
+  }
+  if (row.claimCount !== claims.length) return null;
+  return {
+    place: row.place,
+    country: row.country,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    claimCount: claims.length,
+    claims,
+  };
 }
 
 function asText(value: unknown): string | null {
@@ -98,8 +137,13 @@ function asText(value: unknown): string | null {
 function asPlaces(value: unknown): InquiryPlace[] | null {
   if (value === undefined || value === null) return [];
   if (!Array.isArray(value)) return null;
-  const rows = value.filter(isPlace);
-  return rows.length === value.length ? rows : null;
+  const places: InquiryPlace[] = [];
+  for (const row of value) {
+    const place = asPlace(row);
+    if (place === null) return null;
+    places.push(place);
+  }
+  return places;
 }
 
 function asCount(value: unknown): number | null {

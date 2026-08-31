@@ -2,24 +2,46 @@ import type { InquiryClaimRecord, InquiryPlaceRecord } from "@/features/inquiry"
 import { Eyebrow, HAIRLINE_ROW, PANEL_GLASS } from "@/shared/ui";
 import { cn } from "@atlas/ui";
 import { X } from "lucide-react";
+import { useState } from "react";
 
 function ClaimRow({ claim }: { claim: InquiryClaimRecord }) {
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const imageUrl =
+    claim.sourceImageUrl && claim.sourceImageUrl !== failedImageUrl ? claim.sourceImageUrl : null;
+
   return (
     <li className={cn(HAIRLINE_ROW, "py-2.5")}>
-      <a
-        href={claim.sourceUrl}
-        target="_blank"
-        rel="noreferrer noopener"
-        className="text-[12.5px] leading-relaxed text-card-foreground hover:underline"
-      >
-        {claim.text}
-      </a>
-      <p className="mt-1.5 flex items-baseline gap-1.5 font-mono text-[10.5px] text-faint empty:hidden">
-        {claim.sourceTitle ? <span className="truncate">{claim.sourceTitle}</span> : null}
-        {claim.publishedDate ? (
-          <span className="shrink-0 tabular-nums">{claim.publishedDate.slice(0, 10)}</span>
+      <div className="flex items-start gap-2.5">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt=""
+            width={76}
+            height={52}
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={() => setFailedImageUrl(imageUrl)}
+            className="h-13 w-19 shrink-0 rounded-sm border border-border object-cover"
+          />
         ) : null}
-      </p>
+        <div className="min-w-0 flex-1">
+          <a
+            href={claim.sourceUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="text-[12.5px] leading-relaxed text-card-foreground hover:underline"
+          >
+            {claim.text}
+          </a>
+          <p className="mt-1.5 flex items-baseline gap-1.5 font-mono text-[10.5px] text-faint empty:hidden">
+            {claim.sourceTitle ? <span className="truncate">{claim.sourceTitle}</span> : null}
+            {claim.publishedDate ? (
+              <span className="shrink-0 tabular-nums">{claim.publishedDate.slice(0, 10)}</span>
+            ) : null}
+          </p>
+        </div>
+      </div>
     </li>
   );
 }

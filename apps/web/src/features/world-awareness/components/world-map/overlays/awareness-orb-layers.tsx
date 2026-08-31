@@ -7,6 +7,7 @@ import {
   AWARENESS_CLUSTER_COUNT_TEXT,
   AWARENESS_CLUSTER_LAYER,
   AWARENESS_CLUSTER_OPACITY,
+  AWARENESS_CLUSTER_PROPERTIES,
   AWARENESS_GLOW_LAYER,
   AWARENESS_GLOW_OPACITY,
   AWARENESS_LABEL_LAYER,
@@ -61,6 +62,7 @@ function AwarenessOrbLayersView({ data, selectedPlace }: AwarenessOrbLayersProps
       cluster
       clusterRadius={CLUSTER_RADIUS}
       clusterMaxZoom={CLUSTER_MAX_ZOOM}
+      clusterProperties={AWARENESS_CLUSTER_PROPERTIES}
     >
       <Layer
         id={AWARENESS_GLOW_LAYER}

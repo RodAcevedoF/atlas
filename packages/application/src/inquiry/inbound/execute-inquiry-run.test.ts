@@ -76,6 +76,7 @@ const SUCCESS_BODY = {
           sourceUrl: "https://example.test/article",
           sourceTitle: "a headline",
           publishedDate: "2026-08-20T00:00:00.000Z",
+          sourceImageUrl: "https://images.example.test/article.jpg",
         },
       ],
     },
@@ -118,6 +119,9 @@ describe("ExecuteInquiryRunUseCase", () => {
     expect(stored?.synthesis).toBe("Reported activity concentrates on Khartoum.");
     expect(stored?.places).toHaveLength(1);
     expect(stored?.places[0]?.claims[0]?.sourceUrl).toBe("https://example.test/article");
+    expect(stored?.places[0]?.claims[0]?.sourceImageUrl).toBe(
+      "https://images.example.test/article.jpg",
+    );
     expect(stored?.completedAt).not.toBeNull();
   });
 
@@ -335,6 +339,58 @@ describe("ExecuteInquiryRunUseCase", () => {
     expect(stored?.status).toBe("failed_permanent");
     expect(stored?.error).toContain("unusable graph places");
   });
+
+  test("a historical graph response without an image field is normalized to null", async () => {
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
+    const place = SUCCESS_BODY.places[0];
+    const claim = place.claims[0];
+    const { sourceImageUrl, ...historicalClaim } = claim;
+    const useCase = new ExecuteInquiryRunUseCase(
+      store,
+      answering({
+        ...SUCCESS_BODY,
+        places: [{ ...place, claims: [historicalClaim] }],
+      }),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    await useCase.execute();
+
+    const [stored] = runs();
+    expect(sourceImageUrl).toBe("https://images.example.test/article.jpg");
+    expect(stored?.places[0]?.claims[0]?.sourceImageUrl).toBeNull();
+  });
+
+  const unsafeImageUrls = [
+    "http://images.example.test/article.jpg",
+    "https://reader:secret@images.example.test/article.jpg",
+    "https://",
+    " https://images.example.test/article.jpg ",
+  ];
+
+  for (const sourceImageUrl of unsafeImageUrls) {
+    test(`an unsafe source image URL is rejected: ${sourceImageUrl}`, async () => {
+      const { store, runs } = inMemoryInquiryRunStore([run()]);
+      const place = SUCCESS_BODY.places[0];
+      const claim = place.claims[0];
+      const useCase = new ExecuteInquiryRunUseCase(
+        store,
+        answering({
+          ...SUCCESS_BODY,
+          places: [{ ...place, claims: [{ ...claim, sourceImageUrl }] }],
+        }),
+        RETRY_AFTER_MS,
+        RUN_TIMEOUT_MS,
+      );
+
+      await useCase.execute();
+
+      const [stored] = runs();
+      expect(stored?.status).toBe("failed_permanent");
+      expect(stored?.error).toContain("unusable graph places");
+    });
+  }
 
   test("a count that is not a count is permanent, not silently zeroed", async () => {
     const { store, runs } = inMemoryInquiryRunStore([run()]);

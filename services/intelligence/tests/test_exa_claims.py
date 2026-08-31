@@ -109,6 +109,7 @@ class TestClaimExtraction:
                             "confidence": 0.8,
                         }
                     ],
+                    image="https://images.example.test/sudan.jpg",
                 )
             ]
         }
@@ -123,6 +124,37 @@ class TestClaimExtraction:
         assert claim.confidence == 0.8
         assert claim.source_url == "https://example.com/sudan"
         assert claim.published_date == "2026-08-20T00:00:00.000Z"
+        assert claim.source_image_url == "https://images.example.test/sudan.jpg"
+        assert retrieval.documents[0].image_url == "https://images.example.test/sudan.jpg"
+
+    unsafe_images = [
+        ("an absent image", None),
+        ("a non-HTTPS image", "http://images.example.test/article.jpg"),
+        ("an image without a hostname", "https:///article.jpg"),
+        ("an image with credentials", "https://reader:secret@images.example.test/article.jpg"),
+        ("an image with surrounding whitespace", " https://images.example.test/article.jpg "),
+        ("an image with an invalid port", "https://images.example.test:nope/article.jpg"),
+        ("a non-string image", 7),
+    ]
+
+    @pytest.mark.parametrize(
+        ("name", "image"), unsafe_images, ids=[case[0] for case in unsafe_images]
+    )
+    def test_an_unsafe_image_candidate_is_dropped(self, name: str, image: Any) -> None:
+        payload = {
+            "results": [
+                result(
+                    "https://example.com/a",
+                    [{"claim": "c", "place": "Darfur", "confidence": 1}],
+                    image=image,
+                )
+            ]
+        }
+
+        retrieval = parse_retrieval(payload, "q", PRICING)
+
+        assert retrieval.documents[0].image_url is None, name
+        assert retrieval.claims[0].source_image_url is None, name
 
     def test_coordinates_are_left_for_the_normaliser(self) -> None:
         payload = {
@@ -163,7 +195,6 @@ class TestClaimExtraction:
         retrieval = parse_retrieval(payload, "q", PRICING)
 
         assert retrieval.claims[0].confidence == 0.0
-
 
     def test_the_extractor_inputs_survive_a_summary_that_yielded_nothing(self) -> None:
         payload = {"results": [result("https://example.com/a", None, summary="not json at all")]}

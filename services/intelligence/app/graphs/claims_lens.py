@@ -84,6 +84,7 @@ def to_place_record(group: PlaceGroup) -> dict[str, Any]:
                 "sourceUrl": item.claim.source_url,
                 "sourceTitle": item.claim.source_title,
                 "publishedDate": item.claim.published_date,
+                "sourceImageUrl": item.claim.source_image_url,
             }
             for item in group.claims
         ],
@@ -91,7 +92,6 @@ def to_place_record(group: PlaceGroup) -> dict[str, Any]:
 
 
 class ClaimsLensGraph:
-
     def __init__(
         self,
         source: ClaimSourcePort,

@@ -30,6 +30,7 @@ class Claim:
     source_url: str
     source_title: str | None = None
     published_date: str | None = None
+    source_image_url: str | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -39,6 +40,7 @@ class SourceDocument:
     published_date: str | None
     text: str | None
     highlights: list[str]
+    image_url: str | None = None
 
 
 @dataclass(slots=True, frozen=True)

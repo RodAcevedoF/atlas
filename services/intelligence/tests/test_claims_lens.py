@@ -36,6 +36,7 @@ def claim(text: str, place: str, confidence: float = 0.8) -> Claim:
         source_url="https://example.test/article",
         source_title="a headline",
         published_date="2026-08-20T00:00:00.000Z",
+        source_image_url="https://images.example.test/article.jpg",
     )
 
 
@@ -333,4 +334,5 @@ class TestPlaceRecord:
 
         assert record["claims"][0]["sourceUrl"] == "https://example.test/article"
         assert record["claims"][0]["publishedDate"] == "2026-08-20T00:00:00.000Z"
+        assert record["claims"][0]["sourceImageUrl"] == "https://images.example.test/article.jpg"
         assert record["latitude"] == 15.5
