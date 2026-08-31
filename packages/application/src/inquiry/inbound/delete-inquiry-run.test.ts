@@ -31,6 +31,7 @@ function heldRun(id: InquiryRun["id"], ownerId: UserId | null = OWNER_ID): Inqui
     costUsd: 0,
     synthesis: null,
     status: "succeeded",
+    failure: null,
     error: null,
     attempts: 1,
     createdAt: new Date(2026, 7, 25, 9, 0, 0),

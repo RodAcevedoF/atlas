@@ -8,6 +8,7 @@ import {
   buildInquiryRun,
 } from "../testing/inquiry-builder.ts";
 import { RunDetail } from "./run-detail.tsx";
+import { RUN_FAILURE_MESSAGE } from "./run-status.ts";
 
 afterEach(cleanup);
 
@@ -31,7 +32,7 @@ describe("RunDetail states what a run cost", () => {
       buildInquiryRun({
         retrievalCostUsd: 0,
         status: "failed_permanent",
-        error: "response carried no timeline",
+        failure: "unusable_result",
       }),
     );
 
@@ -87,5 +88,19 @@ describe("RunDetail keeps claims traceable", () => {
     renderRun(buildInquiryRun({ places: [buildInquiryPlace({ claims: [claim] })] }));
 
     expect(screen.getByText("low extraction confidence · 30%")).toBeDefined();
+  });
+});
+
+describe("RunDetail explains a failure without handing over Atlas internals", () => {
+  test("a classified failure reads as a sentence a reader can act on", () => {
+    renderRun(buildInquiryRun({ status: "failed_permanent", failure: "transport", places: [] }));
+
+    expect(screen.getByText(RUN_FAILURE_MESSAGE.transport)).toBeDefined();
+  });
+
+  test("a failure with no class says so, rather than rendering an empty reason", () => {
+    renderRun(buildInquiryRun({ status: "failed_permanent", failure: null, places: [] }));
+
+    expect(screen.getByText("No reason was recorded for this failure.")).toBeDefined();
   });
 });

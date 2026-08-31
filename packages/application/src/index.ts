@@ -20,7 +20,10 @@ export type {
   GraphEvent,
   OrchestrationPort,
 } from "./world/outbound/orchestration.ts";
-export { GraphUnavailableError } from "./world/outbound/orchestration.ts";
+export {
+  GraphUnavailableError,
+  GraphUnreadableError,
+} from "./world/outbound/orchestration.ts";
 export type { UserPage, UserPageInput, UserStorePort } from "./auth/outbound/user-store.ts";
 export type { SessionPort } from "./auth/outbound/session-store.ts";
 export type { PasswordHasherPort } from "./auth/outbound/password-hasher.ts";

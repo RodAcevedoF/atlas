@@ -1,5 +1,7 @@
 import type {
+  FailedInquiryStatus,
   InquiryClaim,
+  InquiryFailureKind,
   InquiryPlace,
   InquiryPlaceRead,
   InquiryRun,
@@ -7,9 +9,9 @@ import type {
   InquiryRunStatus,
   InquirySourceDocument,
 } from "@atlas/domain";
-import { INQUIRY_RUN_STATUSES } from "@atlas/domain";
+import { INQUIRY_RUN_STATUSES, isFailedInquiryStatus } from "@atlas/domain";
 import type { OrchestrationPort } from "../../world/outbound/orchestration.ts";
-import { GraphUnavailableError } from "../../world/outbound/orchestration.ts";
+import { GraphUnavailableError, GraphUnreadableError } from "../../world/outbound/orchestration.ts";
 import type {
   CompleteInquiryRunInput,
   InquiryRunStorePort,
@@ -17,7 +19,7 @@ import type {
 import { INQUIRY_MAX_ATTEMPTS } from "../outbound/inquiry-run-store.ts";
 
 const GRAPH_NAME = "inquiry";
-const ERROR_SAMPLE_CHARS = 200;
+const ERROR_SAMPLE_CHARS = 2000;
 const STALE_TIMEOUT_MULTIPLE = 2;
 const IN_FLIGHT_STATUSES = ["queued", "running"] as const satisfies readonly InquiryRunStatus[];
 
@@ -31,7 +33,11 @@ export interface ExecuteInquiryRun {
 }
 
 type RunOutcome = Omit<CompleteInquiryRunInput, "id" | "completedAt">;
-type FailedStatus = Extract<InquiryRunStatus, "failed_retryable" | "failed_permanent">;
+
+interface FailureDetail {
+  kind: InquiryFailureKind;
+  error: string;
+}
 
 class GraphTimeoutError extends Error {
   constructor(timeoutMs: number) {
@@ -204,14 +210,15 @@ function isExhausted(status: InquiryRunStatus, attempts: number): boolean {
 }
 
 function failure(
-  status: FailedStatus,
-  error: string,
+  status: FailedInquiryStatus,
+  detail: FailureDetail,
   attempts: number,
   documents: InquirySourceDocument[] = [],
 ): RunOutcome {
   return {
     status: isExhausted(status, attempts) ? "failed_permanent" : status,
-    error,
+    failure: detail.kind,
+    error: detail.error,
     places: [],
     documents,
     claimCount: 0,
@@ -223,14 +230,18 @@ function failure(
 
 function toOutcome(body: Record<string, unknown>, attempts: number): RunOutcome {
   if (!isTerminalStatus(body.status)) {
-    return failure("failed_permanent", `unusable graph status: ${String(body.status)}`, attempts);
+    return failure(
+      "failed_permanent",
+      { kind: "unusable_result", error: `unusable graph status: ${String(body.status)}` },
+      attempts,
+    );
   }
 
   const documents = asDocuments(body.documents);
   if (!documents) {
     return failure(
       "failed_permanent",
-      `unusable graph documents: ${sample(body.documents)}`,
+      { kind: "unusable_result", error: `unusable graph documents: ${sample(body.documents)}` },
       attempts,
     );
   }
@@ -239,7 +250,7 @@ function toOutcome(body: Record<string, unknown>, attempts: number): RunOutcome 
   if (!places) {
     return failure(
       "failed_permanent",
-      `unusable graph places: ${sample(body.places)}`,
+      { kind: "unusable_result", error: `unusable graph places: ${sample(body.places)}` },
       attempts,
       documents,
     );
@@ -256,7 +267,7 @@ function toOutcome(body: Record<string, unknown>, attempts: number): RunOutcome 
     };
     return failure(
       "failed_permanent",
-      `unusable graph counts: ${sample(counts)}`,
+      { kind: "unusable_result", error: `unusable graph counts: ${sample(counts)}` },
       attempts,
       documents,
     );
@@ -264,6 +275,7 @@ function toOutcome(body: Record<string, unknown>, attempts: number): RunOutcome 
 
   return {
     status: isExhausted(body.status, attempts) ? "failed_permanent" : body.status,
+    failure: isFailedInquiryStatus(body.status) ? "transport" : null,
     error: asText(body.error),
     places,
     documents,
@@ -300,7 +312,10 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
     if (run.attempts > INQUIRY_MAX_ATTEMPTS) {
       return failure(
         "failed_permanent",
-        `abandoned after ${INQUIRY_MAX_ATTEMPTS} interrupted attempts`,
+        {
+          kind: "abandoned",
+          error: `abandoned after ${INQUIRY_MAX_ATTEMPTS} interrupted attempts`,
+        },
         run.attempts,
         run.documents,
       );
@@ -308,7 +323,7 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
     if (run.attempts > 1 && this.outlivedRetryBudget(run, now)) {
       return failure(
         "failed_permanent",
-        "abandoned: outlived its retry budget",
+        { kind: "abandoned", error: "abandoned: outlived its retry budget" },
         run.attempts,
         run.documents,
       );
@@ -336,11 +351,24 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
       return { ...outcome, documents: run.documents };
     } catch (error) {
       if (error instanceof GraphTimeoutError || error instanceof GraphUnavailableError) {
-        return failure("failed_retryable", error.message, run.attempts, run.documents);
+        return failure(
+          "failed_retryable",
+          { kind: "transport", error: error.message },
+          run.attempts,
+          run.documents,
+        );
+      }
+      if (error instanceof GraphUnreadableError) {
+        return failure(
+          "failed_permanent",
+          { kind: "unusable_result", error: error.message },
+          run.attempts,
+          run.documents,
+        );
       }
       return failure(
         "failed_permanent",
-        error instanceof Error ? error.message : String(error),
+        { kind: "internal", error: error instanceof Error ? error.message : String(error) },
         run.attempts,
         run.documents,
       );

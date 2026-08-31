@@ -1,6 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryRun } from "./inquiry-run.ts";
-import { isLowConfidenceClaim, makeInquiryRunId, toPublicInquiryRun } from "./inquiry-run.ts";
+import type { InquiryRunStatus } from "./inquiry-run.ts";
+import {
+  INQUIRY_RUN_STATUSES,
+  isFailedInquiryStatus,
+  isLowConfidenceClaim,
+  makeInquiryRunId,
+  toPublicInquiryRun,
+} from "./inquiry-run.ts";
 import { makeUserId } from "./user.ts";
 
 function succeededRun(overrides: Partial<InquiryRun> = {}): InquiryRun {
@@ -18,6 +25,7 @@ function succeededRun(overrides: Partial<InquiryRun> = {}): InquiryRun {
     costUsd: 0.047,
     synthesis: "Lithium extraction is expanding.",
     status: "succeeded",
+    failure: null,
     error: null,
     attempts: 1,
     createdAt: new Date("2026-08-23T12:00:00Z"),
@@ -36,10 +44,28 @@ describe("the public run carries what a reader is charged for", () => {
 
   test("a failed run reports no retrieval cost rather than omitting the field", () => {
     const publicRun = toPublicInquiryRun(
-      succeededRun({ status: "failed_permanent", costUsd: 0, error: "no timeline" }),
+      succeededRun({
+        status: "failed_permanent",
+        costUsd: 0,
+        failure: "unusable_result",
+        error: "no timeline",
+      }),
     );
 
     expect(publicRun.retrievalCostUsd).toBe(0);
+  });
+
+  test("the raw failure text stays server-side while its class reaches the reader", () => {
+    const publicRun = toPublicInquiryRun(
+      succeededRun({
+        status: "failed_permanent",
+        failure: "transport",
+        error: "POST /graphs/inquiry/run 502 Bad Gateway",
+      }),
+    );
+
+    expect(publicRun.failure).toBe("transport");
+    expect(publicRun).not.toHaveProperty("error");
   });
 
   test("questionKey stays server-side — it is a dedupe key, not something a reader asked for", () => {
@@ -119,6 +145,16 @@ describe("one threshold decides what every surface calls a weak claim", () => {
   for (const testCase of cases) {
     test(testCase.name, () => {
       expect(isLowConfidenceClaim({ confidence: testCase.confidence })).toBe(testCase.isLow);
+    });
+  }
+});
+
+describe("a failed status is named in one place, because two readers judge it", () => {
+  const failed: InquiryRunStatus[] = ["failed_retryable", "failed_permanent"];
+
+  for (const status of INQUIRY_RUN_STATUSES) {
+    test(`${status} ${failed.includes(status) ? "is" : "is not"} a failure`, () => {
+      expect(isFailedInquiryStatus(status)).toBe(failed.includes(status));
     });
   }
 });

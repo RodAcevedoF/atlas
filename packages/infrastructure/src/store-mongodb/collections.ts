@@ -1,4 +1,9 @@
-import type { InquiryPlace, InquiryRunStatus, InquirySourceDocument } from "@atlas/domain";
+import type {
+  InquiryFailureKind,
+  InquiryPlace,
+  InquiryRunStatus,
+  InquirySourceDocument,
+} from "@atlas/domain";
 
 export interface MigrationDoc {
   _id: string;
@@ -19,6 +24,7 @@ export interface InquiryRunDoc {
   costUsd: number;
   synthesis: string | null;
   status: InquiryRunStatus;
+  failure?: InquiryFailureKind | null;
   error: string | null;
   attempts: number;
   createdAt: Date;

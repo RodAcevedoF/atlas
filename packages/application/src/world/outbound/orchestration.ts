@@ -5,6 +5,13 @@ export class GraphUnavailableError extends Error {
   }
 }
 
+export class GraphUnreadableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GraphUnreadableError";
+  }
+}
+
 export interface GraphRunInput {
   graphName: string;
   input: Record<string, unknown>;

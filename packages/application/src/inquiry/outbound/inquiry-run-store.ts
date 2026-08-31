@@ -24,6 +24,7 @@ export type CompleteInquiryRunInput = Pick<
   | "unplacedClaims"
   | "costUsd"
   | "synthesis"
+  | "failure"
   | "error"
 > & { completedAt: Date };
 

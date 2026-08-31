@@ -36,6 +36,7 @@ function run(id: string, overrides: Partial<InquiryRun> = {}): InquiryRun {
     costUsd: 0,
     synthesis: null,
     status: "succeeded",
+    failure: null,
     error: null,
     attempts: 1,
     createdAt: new Date(),

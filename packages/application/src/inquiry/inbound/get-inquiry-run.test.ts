@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { InquiryRun, InquiryRunActor, InquiryRunStatus } from "@atlas/domain";
+import type { InquiryFailureKind, InquiryRun, InquiryRunActor } from "@atlas/domain";
 import { makeInquiryRunId, makeUserId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import { GetInquiryRunUseCase } from "./get-inquiry-run.ts";
@@ -11,7 +11,7 @@ const stranger: InquiryRunActor = { id: makeUserId("user-2"), role: "user" };
 const admin: InquiryRunActor = { id: makeUserId("user-admin"), role: "admin" };
 const superAdmin: InquiryRunActor = { id: makeUserId("user-super"), role: "super_admin" };
 
-function failedRun(status: InquiryRunStatus, error: string | null, attempts: number): InquiryRun {
+function failedRun(overrides: Partial<InquiryRun> = {}): InquiryRun {
   return {
     id: FAILED_ID,
     ownerId: OWNER_ID,
@@ -25,12 +25,14 @@ function failedRun(status: InquiryRunStatus, error: string | null, attempts: num
     unplacedClaims: 0,
     costUsd: 0,
     synthesis: null,
-    status,
-    error,
-    attempts,
+    status: "failed_permanent",
+    failure: null,
+    error: null,
+    attempts: 1,
     createdAt: new Date(2026, 7, 23, 9, 0, 0),
     startedAt: new Date(2026, 7, 23, 9, 0, 1),
     completedAt: new Date(2026, 7, 23, 9, 0, 30),
+    ...overrides,
   };
 }
 
@@ -40,37 +42,45 @@ function useCaseOver(seed: InquiryRun[]): GetInquiryRunUseCase {
 }
 
 describe("GetInquiryRunUseCase", () => {
-  const cases = [
+  const cases: { name: string; run: Partial<InquiryRun>; failure: InquiryFailureKind | null }[] = [
     {
-      name: "a permanent failure reaches the reader with its reason, or the UI can only say Failed",
-      status: "failed_permanent" as InquiryRunStatus,
-      error: "exa search returned 502",
-      attempts: 3,
+      name: "a permanent failure reaches the reader as a class, or the UI can only say Failed",
+      run: { status: "failed_permanent", failure: "transport", attempts: 3 },
+      failure: "transport",
     },
     {
       name: "a retryable failure carries the attempt count, so a retry loop is visible",
-      status: "failed_retryable" as InquiryRunStatus,
-      error: "extraction timed out",
-      attempts: 1,
+      run: { status: "failed_retryable", failure: "transport", attempts: 1 },
+      failure: "transport",
     },
     {
-      name: "a failure with no recorded reason serves null rather than dropping the key",
-      status: "failed_permanent" as InquiryRunStatus,
-      error: null,
-      attempts: 2,
+      name: "a failure with no recorded class serves null rather than dropping the key",
+      run: { status: "failed_permanent", failure: null, attempts: 2 },
+      failure: null,
     },
   ];
 
   for (const testCase of cases) {
     test(testCase.name, async () => {
-      const useCase = useCaseOver([failedRun(testCase.status, testCase.error, testCase.attempts)]);
+      const useCase = useCaseOver([failedRun(testCase.run)]);
 
       const served = await useCase.execute(FAILED_ID, owner);
 
-      expect(served?.error).toBe(testCase.error);
-      expect(served?.attempts).toBe(testCase.attempts);
+      expect(served?.failure).toBe(testCase.failure);
+      expect(served?.attempts).toBe(testCase.run.attempts);
     });
   }
+
+  test("the raw upstream text never reaches the reader, only the class does", async () => {
+    const useCase = useCaseOver([
+      failedRun({ failure: "transport", error: "exa search returned 502 for key sk-live-abc" }),
+    ]);
+
+    const served = await useCase.execute(FAILED_ID, owner);
+
+    expect(served?.failure).toBe("transport");
+    expect(served).not.toHaveProperty("error");
+  });
 
   test("an unknown run is not found", async () => {
     const useCase = useCaseOver([]);
@@ -87,7 +97,7 @@ describe("GetInquiryRunUseCase", () => {
 
   for (const { name, actor } of hiddenCases) {
     test(name, async () => {
-      const useCase = useCaseOver([failedRun("succeeded", null, 1)]);
+      const useCase = useCaseOver([failedRun({ status: "succeeded" })]);
 
       const served = await useCase.execute(FAILED_ID, actor);
 
@@ -96,7 +106,7 @@ describe("GetInquiryRunUseCase", () => {
   }
 
   test("a super admin can read another user's run", async () => {
-    const useCase = useCaseOver([failedRun("succeeded", null, 1)]);
+    const useCase = useCaseOver([failedRun({ status: "succeeded" })]);
 
     const served = await useCase.execute(FAILED_ID, superAdmin);
 

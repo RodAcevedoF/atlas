@@ -1,4 +1,5 @@
-import type { InquiryRunStatus } from "@atlas/domain";
+import type { InquiryFailureKind, InquiryRunStatus } from "@atlas/domain";
+import { isFailedInquiryStatus } from "@atlas/domain";
 
 export const RUN_STATUS_LABEL: Record<InquiryRunStatus, string> = {
   queued: "Queued",
@@ -10,12 +11,13 @@ export const RUN_STATUS_LABEL: Record<InquiryRunStatus, string> = {
   failed_permanent: "Failed",
 };
 
-const FAILED_STATUSES: InquiryRunStatus[] = ["failed_retryable", "failed_permanent"];
-
-export function isFailedRun(status: InquiryRunStatus): boolean {
-  return FAILED_STATUSES.includes(status);
-}
+export const RUN_FAILURE_MESSAGE: Record<InquiryFailureKind, string> = {
+  transport: "A source this run depends on did not answer.",
+  unusable_result: "The research came back in a shape Atlas could not read.",
+  abandoned: "The run was interrupted too many times and was given up on.",
+  internal: "Something inside Atlas broke while measuring this run.",
+};
 
 export function runStatusClass(status: InquiryRunStatus): string {
-  return isFailedRun(status) ? "text-destructive" : "text-muted-foreground";
+  return isFailedInquiryStatus(status) ? "text-destructive" : "text-muted-foreground";
 }

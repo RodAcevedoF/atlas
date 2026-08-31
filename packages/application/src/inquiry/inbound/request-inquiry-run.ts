@@ -90,6 +90,7 @@ function queuedRun(input: {
     costUsd: 0,
     synthesis: null,
     status: "queued",
+    failure: null,
     error: null,
     attempts: 0,
     createdAt: input.now,

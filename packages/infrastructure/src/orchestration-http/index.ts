@@ -4,7 +4,7 @@ import type {
   GraphRunInput,
   OrchestrationPort,
 } from "@atlas/application";
-import { GraphUnavailableError } from "@atlas/application";
+import { GraphUnavailableError, GraphUnreadableError } from "@atlas/application";
 
 interface WireEvent {
   runId: string;
@@ -45,7 +45,12 @@ export class HttpOrchestration implements OrchestrationPort {
     if (!res.ok) {
       throw new Error(`${route} ${res.status} ${res.statusText}`);
     }
-    return (await res.json()) as Record<string, unknown>;
+    try {
+      return (await res.json()) as Record<string, unknown>;
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new GraphUnreadableError(`${route} answered with an unreadable body: ${reason}`);
+    }
   }
 
   async *stream(input: GraphRunInput): AsyncIterable<GraphEvent> {

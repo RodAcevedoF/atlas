@@ -17,6 +17,18 @@ export const INQUIRY_RUN_STATUSES = [
 ] as const;
 export type InquiryRunStatus = (typeof INQUIRY_RUN_STATUSES)[number];
 
+const FAILED_INQUIRY_STATUSES = [
+  "failed_retryable",
+  "failed_permanent",
+] as const satisfies readonly InquiryRunStatus[];
+export type FailedInquiryStatus = (typeof FAILED_INQUIRY_STATUSES)[number];
+
+export function isFailedInquiryStatus(status: InquiryRunStatus): boolean {
+  return (FAILED_INQUIRY_STATUSES as readonly string[]).includes(status);
+}
+
+export type InquiryFailureKind = "transport" | "unusable_result" | "abandoned" | "internal";
+
 export interface InquiryClaim {
   text: string;
   confidence: number;
@@ -69,6 +81,7 @@ export interface InquiryRun {
   costUsd: number;
   synthesis: string | null;
   status: InquiryRunStatus;
+  failure: InquiryFailureKind | null;
   error: string | null;
   attempts: number;
   createdAt: Date;
@@ -88,7 +101,7 @@ export interface PublicInquiryRun {
   retrievalCostUsd: number;
   synthesis: string | null;
   status: InquiryRunStatus;
-  error: string | null;
+  failure: InquiryFailureKind | null;
   attempts: number;
   createdAt: Date;
   startedAt: Date | null;
@@ -167,7 +180,7 @@ export function toPublicInquiryRun(run: InquiryRun): PublicInquiryRun {
     retrievalCostUsd: run.costUsd,
     synthesis: run.synthesis,
     status: run.status,
-    error: run.error,
+    failure: run.failure,
     attempts: run.attempts,
     createdAt: run.createdAt,
     startedAt: run.startedAt,

@@ -33,6 +33,7 @@ function run(index: number, ownerId: UserId | null = OWNER_ID): InquiryRun {
     costUsd: 0,
     synthesis: null,
     status: "succeeded",
+    failure: null,
     error: null,
     attempts: 1,
     createdAt: new Date(2026, 7, 17, 0, 0, index),

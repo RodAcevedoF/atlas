@@ -1,4 +1,4 @@
-import type { InquiryRunStatus } from "@atlas/domain";
+import type { InquiryFailureKind, InquiryRunStatus } from "@atlas/domain";
 
 export interface InquiryClaimRecord {
   text: string;
@@ -36,7 +36,7 @@ export interface InquiryRunRecord {
   retrievalCostUsd: number;
   synthesis: string | null;
   status: InquiryRunStatus;
-  error: string | null;
+  failure: InquiryFailureKind | null;
   attempts: number;
   createdAt: string;
   startedAt: string | null;

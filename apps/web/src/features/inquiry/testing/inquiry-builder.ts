@@ -43,7 +43,7 @@ export function buildInquiryRun(overrides: Partial<InquiryRunRecord> = {}): Inqu
     retrievalCostUsd: 0.047,
     synthesis: null,
     status: "succeeded",
-    error: null,
+    failure: null,
     attempts: 1,
     createdAt: "2026-08-18T09:00:00.000Z",
     startedAt: "2026-08-18T09:00:01.000Z",

@@ -1,6 +1,6 @@
 import { CTA_SOLID, Eyebrow, HAIRLINE_ROW, eyebrowVariants } from "@/shared/ui";
 import { formatDate, formatRelativeTime } from "@/shared/utils/index.ts";
-import { isLowConfidenceClaim } from "@atlas/domain";
+import { isFailedInquiryStatus, isLowConfidenceClaim } from "@atlas/domain";
 import { Button, cn } from "@atlas/ui";
 import { Map as MapIcon } from "lucide-react";
 import { useMemo } from "react";
@@ -14,7 +14,7 @@ import type {
 import { ClaimConfidence } from "./claim-confidence.tsx";
 import { DeleteRunButton } from "./delete-run-button.tsx";
 import { isPaintableRun } from "./paintable-run.ts";
-import { RUN_STATUS_LABEL, isFailedRun, runStatusClass } from "./run-status.ts";
+import { RUN_FAILURE_MESSAGE, RUN_STATUS_LABEL, runStatusClass } from "./run-status.ts";
 
 const NO_SYNTHESIS = "No synthesis for this run.";
 const NO_PLACES = "This run placed no claim on the map.";
@@ -145,7 +145,11 @@ function FailureReason({ run }: { run: InquiryRunRecord }) {
         </span>
       </div>
       <p className={cn(BODY, "text-destructive")}>
-        {run.error || <span className="text-muted-foreground">{NO_REASON}</span>}
+        {run.failure ? (
+          RUN_FAILURE_MESSAGE[run.failure]
+        ) : (
+          <span className="text-muted-foreground">{NO_REASON}</span>
+        )}
       </p>
     </section>
   );
@@ -219,7 +223,7 @@ export function RunDetail({
 
       <StatGrid stats={stats} />
 
-      {isFailedRun(run.status) ? <FailureReason run={run} /> : null}
+      {isFailedInquiryStatus(run.status) ? <FailureReason run={run} /> : null}
 
       <section className="flex flex-col gap-2">
         <Eyebrow variant="meta">synthesis</Eyebrow>

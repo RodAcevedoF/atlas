@@ -1,6 +1,8 @@
 export type {
   InquiryRunId,
   InquiryRunStatus,
+  FailedInquiryStatus,
+  InquiryFailureKind,
   InquiryClaim,
   InquiryPlaceRead,
   InquiryPlace,
@@ -14,6 +16,7 @@ export type {
 } from "./entities/inquiry-run.ts";
 export {
   makeInquiryRunId,
+  isFailedInquiryStatus,
   mayActOnInquiryRun,
   isLowConfidenceClaim,
   toPublicInquiryRun,

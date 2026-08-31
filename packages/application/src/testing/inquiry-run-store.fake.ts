@@ -80,6 +80,7 @@ export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquir
         status: "running",
         startedAt: input.now,
         completedAt: null,
+        failure: null,
         error: null,
         attempts: next.attempts + 1,
       };

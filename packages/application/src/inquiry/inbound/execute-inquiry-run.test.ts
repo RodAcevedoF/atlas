@@ -3,7 +3,7 @@ import type { InquiryRun } from "@atlas/domain";
 import { makeInquiryRunId, makeUserId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import type { OrchestrationPort } from "../../world/outbound/orchestration.ts";
-import { GraphUnavailableError } from "../../world/outbound/orchestration.ts";
+import { GraphUnavailableError, GraphUnreadableError } from "../../world/outbound/orchestration.ts";
 import { INQUIRY_MAX_ATTEMPTS } from "../outbound/inquiry-run-store.ts";
 import { ExecuteInquiryRunUseCase } from "./execute-inquiry-run.ts";
 
@@ -27,6 +27,7 @@ function run(overrides: Partial<InquiryRun> = {}): InquiryRun {
     costUsd: 0,
     synthesis: null,
     status: "queued",
+    failure: null,
     error: null,
     attempts: 0,
     createdAt: CREATED_AT,
@@ -138,6 +139,7 @@ describe("ExecuteInquiryRunUseCase", () => {
     expect(result.status).toBe("succeeded");
     const [stored] = runs();
     expect(stored?.status).toBe("succeeded");
+    expect(stored?.failure).toBeNull();
     expect(stored?.synthesis).toBe("Reported activity concentrates on Khartoum.");
     expect(stored?.places).toHaveLength(1);
     expect(stored?.places[0]?.claims[0]?.sourceUrl).toBe("https://example.test/article");
@@ -163,6 +165,7 @@ describe("ExecuteInquiryRunUseCase", () => {
 
     const [stored] = runs();
     expect(stored?.status).toBe("failed_retryable");
+    expect(stored?.failure).toBe("transport");
     expect(stored?.error).toBe("Please limit requests");
     expect(stored?.attempts).toBe(1);
   });
@@ -246,6 +249,7 @@ describe("ExecuteInquiryRunUseCase", () => {
 
     const [stored] = runs();
     expect(stored?.status).toBe("failed_retryable");
+    expect(stored?.failure).toBe("transport");
     expect(stored?.error).toBe("POST /graphs/inquiry/run unreachable: fetch failed");
   });
 
@@ -277,6 +281,7 @@ describe("ExecuteInquiryRunUseCase", () => {
 
     const [stored] = runs();
     expect(stored?.status).toBe("failed_permanent");
+    expect(stored?.failure).toBe("internal");
     expect(stored?.error).toBe("POST /graphs/inquiry/run 422 Unprocessable Entity");
   });
 
@@ -311,6 +316,7 @@ describe("ExecuteInquiryRunUseCase", () => {
 
     const [stored] = runs();
     expect(stored?.status).toBe("failed_permanent");
+    expect(stored?.failure).toBe("unusable_result");
     expect(stored?.error).toBe("unusable graph status: kinda_worked");
   });
 
@@ -620,6 +626,7 @@ describe("ExecuteInquiryRunUseCase", () => {
 
     const [stored] = runs();
     expect(stored?.status).toBe("failed_permanent");
+    expect(stored?.failure).toBe("abandoned");
     expect(stored?.error).toBe("abandoned after 2 interrupted attempts");
     expect(stored?.documents).toEqual(SUCCESS_BODY.documents);
     expect(stored?.completedAt).not.toBeNull();
@@ -644,6 +651,7 @@ describe("ExecuteInquiryRunUseCase", () => {
 
     const [stored] = runs();
     expect(stored?.status).toBe("failed_permanent");
+    expect(stored?.failure).toBe("abandoned");
     expect(stored?.error).toBe("abandoned: outlived its retry budget");
   });
 
@@ -694,7 +702,65 @@ describe("ExecuteInquiryRunUseCase", () => {
     expect(result.status).toBe("failed_retryable");
     const [stored] = runs();
     expect(stored?.status).toBe("failed_retryable");
+    expect(stored?.failure).toBe("transport");
     expect(stored?.error).toContain("did not answer within 5ms");
     expect(stored?.completedAt).not.toBeNull();
+  });
+
+  test("a graph answering with an unreadable body blames the answer, not Atlas", async () => {
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
+    const useCase = new ExecuteInquiryRunUseCase(
+      store,
+      failing(
+        new GraphUnreadableError("POST /graphs/inquiry/run answered with an unreadable body"),
+      ),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    await useCase.execute();
+
+    const [stored] = runs();
+    expect(stored?.status).toBe("failed_permanent");
+    expect(stored?.failure).toBe("unusable_result");
+  });
+
+  test("an honest empty answer carries no class — no coverage is not a failure", async () => {
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
+    const useCase = new ExecuteInquiryRunUseCase(
+      store,
+      answering({ ...SUCCESS_BODY, status: "no_coverage", places: [] }),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    await useCase.execute();
+
+    const [stored] = runs();
+    expect(stored?.status).toBe("no_coverage");
+    expect(stored?.failure).toBeNull();
+  });
+
+  test("a re-claimed run drops the class of its last attempt rather than carrying it", async () => {
+    const retried = run({
+      status: "failed_retryable",
+      failure: "transport",
+      error: "POST /graphs/inquiry/run unreachable",
+      attempts: 1,
+      completedAt: new Date(CREATED_AT.getTime() - RETRY_AFTER_MS - 1),
+    });
+    const { store, runs } = inMemoryInquiryRunStore([retried]);
+    const useCase = new ExecuteInquiryRunUseCase(
+      store,
+      answering(SUCCESS_BODY),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    await useCase.execute();
+
+    const [stored] = runs();
+    expect(stored?.status).toBe("succeeded");
+    expect(stored?.failure).toBeNull();
   });
 });
