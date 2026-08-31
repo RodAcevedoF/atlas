@@ -26,12 +26,18 @@ export interface InquiryClaim {
   sourceImageUrl: string | null;
 }
 
+export interface InquiryPlaceRead {
+  text: string;
+  sourceUrls: string[];
+}
+
 export interface InquiryPlace {
   place: string;
   country: string | null;
   latitude: number;
   longitude: number;
   claimCount: number;
+  read: InquiryPlaceRead | null;
   claims: InquiryClaim[];
 }
 

@@ -7,7 +7,7 @@ import pytest
 from app.core.errors import GraphInputError
 from app.graphs.claims_lens import ClaimsLensGraph, render_summary, to_place_record
 from app.graphs.places import group_by_place, place_claims
-from app.ports.analyst import InquiryAnalystUnavailable
+from app.ports.analyst import InquiryAnalysis, InquiryAnalystUnavailable, PlaceRead
 from app.ports.claims import (
     Claim,
     ClaimPlace,
@@ -24,16 +24,25 @@ PLACE_COORDINATES: dict[str, tuple[str, str | None, float | None, float | None]]
     "Khartoum, Sudan": ("Khartoum", "Sudan", 15.5, 32.5),
     "El Fasher": ("El Fasher", "Sudan", 13.6, 25.3),
     "el-Fasher": ("El Fasher", "Sudan", 13.6, 25.3),
+    "Kassala": ("Kassala", "Sudan", 15.45, 36.4),
+    "Nyala": ("Nyala", "Sudan", 12.05, 24.88),
+    "Omdurman": ("Omdurman", "Sudan", 15.65, 32.48),
+    "Port Sudan": ("Port Sudan", "Sudan", 19.62, 37.22),
     "Regional institutions (IGAD)": ("Regional institutions", None, None, None),
 }
 
 
-def claim(text: str, place: str, confidence: float = 0.8) -> Claim:
+def claim(
+    text: str,
+    place: str,
+    confidence: float = 0.8,
+    source_url: str = "https://example.test/article",
+) -> Claim:
     return Claim(
         text=text,
         place=ClaimPlace(name=place),
         confidence=confidence,
-        source_url="https://example.test/article",
+        source_url=source_url,
         source_title="a headline",
         published_date="2026-08-20T00:00:00.000Z",
         source_image_url="https://images.example.test/article.jpg",
@@ -96,15 +105,22 @@ class StubNormaliser:
 
 
 class StubAnalyst:
-    def __init__(self, failure: Exception | None = None) -> None:
+    def __init__(
+        self,
+        analysis: InquiryAnalysis | None = None,
+        failure: Exception | None = None,
+    ) -> None:
+        self._analysis = analysis or InquiryAnalysis(
+            synthesis="Most reported activity is around Khartoum.", place_reads=[]
+        )
         self._failure = failure
         self.summary_seen: str | None = None
 
-    async def synthesize(self, question: str, places_summary: str) -> str:
+    async def synthesize(self, question: str, places_summary: str) -> InquiryAnalysis:
         if self._failure is not None:
             raise self._failure
         self.summary_seen = places_summary
-        return "Most reported activity is around Khartoum."
+        return self._analysis
 
 
 def build(
@@ -327,6 +343,106 @@ class TestSummary:
         summary = render_summary(places, 0)
 
         assert "could not be placed" not in summary
+
+
+class TestPlaceReads:
+    def test_an_eligible_place_carries_a_read_and_the_sources_that_support_it(self) -> None:
+        first_url = "https://example.test/khartoum-1"
+        analyst = StubAnalyst(
+            analysis=InquiryAnalysis(
+                synthesis="Reported activity concentrates on Khartoum.",
+                place_reads=[
+                    PlaceRead(
+                        place="Khartoum",
+                        country="Sudan",
+                        text="Reports describe displacement and disrupted aid routes.",
+                        source_urls=[first_url],
+                    )
+                ],
+            )
+        )
+        graph = build(
+            retrieval(
+                [
+                    claim("families were displaced", "Khartoum", source_url=first_url),
+                    claim(
+                        "aid routes were disrupted",
+                        "Khartoum, Sudan",
+                        source_url="https://example.test/khartoum-2",
+                    ),
+                ]
+            ),
+            analyst=analyst,
+        )
+
+        result = run(graph)
+
+        assert result["places"][0]["read"] == {
+            "text": "Reports describe displacement and disrupted aid routes.",
+            "sourceUrls": [first_url],
+        }
+        assert analyst.summary_seen is not None
+        assert first_url in analyst.summary_seen
+
+    def test_an_outside_citation_is_dropped_without_losing_the_run(self) -> None:
+        analyst = StubAnalyst(
+            analysis=InquiryAnalysis(
+                synthesis="Reported activity concentrates on Khartoum.",
+                place_reads=[
+                    PlaceRead(
+                        place="Khartoum",
+                        country="Sudan",
+                        text="An unsupported read.",
+                        source_urls=["https://example.test/not-a-khartoum-source"],
+                    )
+                ],
+            )
+        )
+        graph = build(
+            retrieval([claim("a", "Khartoum"), claim("b", "Khartoum, Sudan")]),
+            analyst=analyst,
+        )
+
+        result = run(graph)
+
+        assert result["status"] == "succeeded"
+        assert result["synthesis"] == "Reported activity concentrates on Khartoum."
+        assert result["places"][0]["read"] is None
+
+    def test_only_five_multi_claim_places_are_offered_for_reads(self) -> None:
+        analyst = StubAnalyst()
+        place_names = ["Khartoum", "El Fasher", "Kassala", "Nyala", "Omdurman", "Port Sudan"]
+        claims = [
+            claim(f"{place_name} claim {index}", place_name)
+            for place_name in place_names
+            for index in range(2)
+        ]
+        graph = build(retrieval(claims), analyst=analyst)
+
+        run(graph)
+
+        assert analyst.summary_seen is not None
+        assert analyst.summary_seen.count("[place-read candidate]") == 5
+
+    def test_a_single_claim_place_is_not_eligible_for_a_paraphrase(self) -> None:
+        analyst = StubAnalyst(
+            analysis=InquiryAnalysis(
+                synthesis="One report mentions Khartoum.",
+                place_reads=[
+                    PlaceRead(
+                        place="Khartoum",
+                        country="Sudan",
+                        text="A redundant paraphrase.",
+                        source_urls=["https://example.test/article"],
+                    )
+                ],
+            )
+        )
+        graph = build(retrieval([claim("a", "Khartoum")]), analyst=analyst)
+
+        result = run(graph)
+
+        assert result["places"][0]["read"] is None
 
 
 class TestPlaceRecord:

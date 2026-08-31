@@ -12,6 +12,7 @@ export { isInquiryRunSettled } from "./use-cases/watch-inquiry-run.ts";
 export type {
   InquiryClaimRecord,
   InquiryPlaceRecord,
+  InquiryPlaceReadRecord,
   InquiryRunRecord,
   InquiryRunSummaryRecord,
 } from "./repositories/inquiry-repository.ts";

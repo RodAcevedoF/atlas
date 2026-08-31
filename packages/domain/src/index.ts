@@ -2,6 +2,7 @@ export type {
   InquiryRunId,
   InquiryRunStatus,
   InquiryClaim,
+  InquiryPlaceRead,
   InquiryPlace,
   InquirySourceDocument,
   InquiryRun,

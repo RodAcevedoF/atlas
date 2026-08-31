@@ -24,6 +24,7 @@ export function buildInquiryPlace(overrides: Partial<InquiryPlaceRecord> = {}): 
     latitude: 15.5,
     longitude: 32.56,
     claimCount: 1,
+    read: null,
     claims: [buildInquiryClaim()],
     ...overrides,
   };

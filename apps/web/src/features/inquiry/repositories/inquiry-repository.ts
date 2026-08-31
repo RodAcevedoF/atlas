@@ -15,7 +15,13 @@ export interface InquiryPlaceRecord {
   latitude: number;
   longitude: number;
   claimCount: number;
+  read: InquiryPlaceReadRecord | null;
   claims: InquiryClaimRecord[];
+}
+
+export interface InquiryPlaceReadRecord {
+  text: string;
+  sourceUrls: string[];
 }
 
 export interface InquiryRunRecord {

@@ -1,11 +1,12 @@
 import { CTA_SOLID, Eyebrow, HAIRLINE_ROW, eyebrowVariants } from "@/shared/ui";
-import { formatRelativeTime } from "@/shared/utils/index.ts";
+import { formatDate, formatPercent, formatRelativeTime } from "@/shared/utils/index.ts";
 import { Button, cn } from "@atlas/ui";
 import { Map as MapIcon } from "lucide-react";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import type {
   InquiryClaimRecord,
+  InquiryPlaceReadRecord,
   InquiryPlaceRecord,
   InquiryRunRecord,
 } from "../repositories/inquiry-repository.ts";
@@ -62,24 +63,55 @@ function StatGrid({ stats }: { stats: RunStat[] }) {
 }
 
 function ClaimRow({ claim }: { claim: InquiryClaimRecord }) {
+  const isLowConfidence = claim.confidence < LOW_CONFIDENCE;
+
   return (
-    <li className={cn(HAIRLINE_ROW, "py-2")}>
-      <a
-        href={claim.sourceUrl}
-        target="_blank"
-        rel="noreferrer noopener"
-        className={cn(
-          "text-[13.5px] leading-relaxed hover:underline",
-          claim.confidence < LOW_CONFIDENCE ? "text-muted-foreground" : "text-card-foreground",
-        )}
-      >
-        {claim.text}
+    <li className={cn(HAIRLINE_ROW, "py-2.5")}>
+      <a href={claim.sourceUrl} target="_blank" rel="noreferrer noopener" className="group block">
+        <span
+          className={cn(
+            "block text-[13.5px] leading-relaxed group-hover:underline",
+            isLowConfidence ? "text-muted-foreground" : "text-card-foreground",
+          )}
+        >
+          {claim.text}
+        </span>
+        <span className={cn(NUMERIC, "mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1")}>
+          {claim.sourceTitle ? (
+            <span className="max-w-full truncate text-muted-foreground">{claim.sourceTitle}</span>
+          ) : null}
+          {claim.publishedDate ? (
+            <span className="shrink-0">{formatDate(claim.publishedDate)}</span>
+          ) : null}
+          <span className={cn("shrink-0", isLowConfidence ? "text-conviction" : null)}>
+            {isLowConfidence ? "low " : null}extraction confidence ·{" "}
+            {formatPercent(claim.confidence)}
+          </span>
+        </span>
       </a>
-      <span className={cn(NUMERIC, "ml-2")}>
-        {claim.confidence.toFixed(2)}
-        {claim.publishedDate ? ` · ${claim.publishedDate.slice(0, 10)}` : null}
-      </span>
     </li>
+  );
+}
+
+function PlaceReadBlock({ read }: { read: InquiryPlaceReadRecord }) {
+  return (
+    <div className="mb-2.5 border-l-2 border-conviction/60 bg-conviction/[0.04] px-3 py-2.5">
+      <p className="text-[13.5px] leading-relaxed text-card-foreground">{read.text}</p>
+      <p className={cn(NUMERIC, "mt-1.5 flex flex-wrap items-center gap-x-2")}>
+        <span>read from</span>
+        {read.sourceUrls.map((sourceUrl, index) => (
+          <a
+            key={sourceUrl}
+            href={sourceUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="text-muted-foreground hover:underline"
+          >
+            source {index + 1}
+          </a>
+        ))}
+      </p>
+    </div>
   );
 }
 
@@ -95,6 +127,7 @@ function PlaceBlock({ place }: { place: InquiryPlaceRecord }) {
         </span>
         <span className={cn(NUMERIC, "shrink-0 text-conviction")}>{place.claimCount} claims</span>
       </div>
+      {place.read ? <PlaceReadBlock read={place.read} /> : null}
       <ul className="flex flex-col">
         {place.claims.map((claim) => (
           <ClaimRow key={`${claim.sourceUrl}:${claim.text}`} claim={claim} />

@@ -8,13 +8,14 @@ from langgraph.graph import END, START, StateGraph
 from app.core.errors import GraphInputError
 from app.core.events import GraphEvent
 from app.graphs.places import (
+    PlacedClaim,
     PlaceGroup,
     distinct_places,
     group_by_place,
     place_claims,
     unplaced_count,
 )
-from app.ports.analyst import InquiryAnalystPort, InquiryAnalystUnavailable
+from app.ports.analyst import InquiryAnalystPort, InquiryAnalystUnavailable, PlaceRead
 from app.ports.claims import (
     ClaimSourcePort,
     ClaimSourceRetryable,
@@ -29,6 +30,11 @@ DEFAULT_RESULT_LIMIT = 25
 # bounds the synthesis prompt.
 PLACES_IN_SUMMARY = 20
 CLAIMS_PER_PLACE_IN_SUMMARY = 3
+PLACE_READ_LIMIT = 5
+PLACE_READ_MIN_CLAIMS = 2
+
+PlaceCoordinates = tuple[float, float]
+PlaceReads = dict[PlaceCoordinates, PlaceRead]
 
 
 class ClaimsState(TypedDict):
@@ -39,6 +45,7 @@ class ClaimsState(TypedDict):
     places: list[PlaceGroup]
     unplaced: int
     synthesis: str
+    place_reads: PlaceReads
     status: str
     error: str
 
@@ -52,32 +59,86 @@ def _route(state: ClaimsState) -> str:
     return "open" if _still_open(state) else "end"
 
 
-def _claim_line(group: PlaceGroup) -> str:
+def _summary_claims(group: PlaceGroup) -> list[PlacedClaim]:
     ordered = sorted(group.claims, key=lambda item: -item.claim.confidence)
+    return ordered[:CLAIMS_PER_PLACE_IN_SUMMARY]
+
+
+def _claim_line(group: PlaceGroup) -> str:
     return "\n".join(
-        f"    - [{item.claim.confidence:.2f}] {item.claim.text}"
-        for item in ordered[:CLAIMS_PER_PLACE_IN_SUMMARY]
+        f"    - [{item.claim.confidence:.2f}] {item.claim.text} (source: {item.claim.source_url})"
+        for item in _summary_claims(group)
     )
 
 
+def place_read_candidates(places: list[PlaceGroup]) -> list[PlaceGroup]:
+    return [group for group in places if len(group.claims) >= PLACE_READ_MIN_CLAIMS][
+        :PLACE_READ_LIMIT
+    ]
+
+
 def render_summary(places: list[PlaceGroup], unplaced: int) -> str:
+    candidate_coordinates = {
+        (group.latitude, group.longitude) for group in place_read_candidates(places)
+    }
     lines = [f"{len(places)} places carry claims, most claims first:"]
     for group in places[:PLACES_IN_SUMMARY]:
         where = f"{group.name} ({group.country})" if group.country else group.name
-        lines.append(f"- {where}: {len(group.claims)} claims")
+        candidate = (
+            " [place-read candidate]"
+            if (group.latitude, group.longitude) in candidate_coordinates
+            else ""
+        )
+        lines.append(f"- {where}: {len(group.claims)} claims{candidate}")
         lines.append(_claim_line(group))
     if unplaced:
         lines.append(f"\n{unplaced} further claims could not be placed and are not on the map.")
     return "\n".join(lines)
 
 
-def to_place_record(group: PlaceGroup) -> dict[str, Any]:
+def _validated_place_reads(places: list[PlaceGroup], proposed: list[PlaceRead]) -> PlaceReads:
+    candidates = place_read_candidates(places)
+    accepted: PlaceReads = {}
+    for place_read in proposed:
+        if not place_read.text.strip() or not place_read.source_urls:
+            continue
+        matching = []
+        for group in candidates:
+            source_urls = {item.claim.source_url for item in _summary_claims(group)}
+            if (
+                place_read.place == group.name
+                and place_read.country == group.country
+                and all(source_url in source_urls for source_url in place_read.source_urls)
+            ):
+                matching.append(group)
+        if len(matching) != 1:
+            continue
+        group = matching[0]
+        coordinates = (group.latitude, group.longitude)
+        if coordinates in accepted:
+            continue
+        accepted[coordinates] = PlaceRead(
+            place=place_read.place,
+            country=place_read.country,
+            text=place_read.text.strip(),
+            source_urls=list(dict.fromkeys(place_read.source_urls)),
+        )
+    return accepted
+
+
+def to_place_record(group: PlaceGroup, place_read: PlaceRead | None = None) -> dict[str, Any]:
     return {
         "place": group.name,
         "country": group.country,
         "latitude": group.latitude,
         "longitude": group.longitude,
         "claimCount": len(group.claims),
+        "read": {
+            "text": place_read.text,
+            "sourceUrls": place_read.source_urls,
+        }
+        if place_read
+        else None,
         "claims": [
             {
                 "text": item.claim.text,
@@ -148,11 +209,15 @@ class ClaimsLensGraph:
         async def synthesize_node(state: ClaimsState) -> dict[str, Any]:
             summary = render_summary(state["places"], state["unplaced"])
             try:
-                read = await self._analyst.synthesize(state["question"], summary)
+                analysis = await self._analyst.synthesize(state["question"], summary)
             except InquiryAnalystUnavailable as error:
                 return {"status": "failed_retryable", "error": str(error)}
 
-            return {"synthesis": read, "status": "succeeded"}
+            return {
+                "synthesis": analysis.synthesis,
+                "place_reads": _validated_place_reads(state["places"], analysis.place_reads),
+                "status": "succeeded",
+            }
 
         builder = StateGraph(ClaimsState)
         builder.add_node("retrieve", retrieve_node)
@@ -188,10 +253,14 @@ class ClaimsLensGraph:
 
 def _result(state: ClaimsState) -> dict[str, Any]:
     retrieval = state.get("retrieval")
+    place_reads = state.get("place_reads") or {}
     return {
         "status": state["status"],
         "error": state.get("error"),
-        "places": [to_place_record(group) for group in state.get("places") or []],
+        "places": [
+            to_place_record(group, place_reads.get((group.latitude, group.longitude)))
+            for group in state.get("places") or []
+        ],
         "documents": [to_document_record(document) for document in retrieval.documents]
         if retrieval
         else [],

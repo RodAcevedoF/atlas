@@ -48,12 +48,41 @@ describe("the public run carries what a reader is charged for", () => {
     expect(publicRun).not.toHaveProperty("questionKey");
   });
 
-  test("source bodies stay server-side until a bounded presentation contract exists", () => {
+  test("source bodies stay server-side while a derived place read remains traceable in public", () => {
+    const sourceUrl = "https://example.test/article";
     const publicRun = toPublicInquiryRun(
       succeededRun({
+        places: [
+          {
+            place: "Khartoum",
+            country: "Sudan",
+            latitude: 15.5,
+            longitude: 32.56,
+            claimCount: 2,
+            read: { text: "Reports describe disrupted aid routes.", sourceUrls: [sourceUrl] },
+            claims: [
+              {
+                text: "families were displaced",
+                confidence: 0.8,
+                sourceUrl,
+                sourceTitle: "a headline",
+                publishedDate: "2026-08-20T00:00:00.000Z",
+                sourceImageUrl: null,
+              },
+              {
+                text: "aid routes were disrupted",
+                confidence: 0.7,
+                sourceUrl,
+                sourceTitle: "a headline",
+                publishedDate: "2026-08-20T00:00:00.000Z",
+                sourceImageUrl: null,
+              },
+            ],
+          },
+        ],
         documents: [
           {
-            url: "https://example.test/article",
+            url: sourceUrl,
             title: "a headline",
             publishedDate: "2026-08-20T00:00:00.000Z",
             text: "the complete article body",
@@ -63,6 +92,7 @@ describe("the public run carries what a reader is charged for", () => {
       }),
     );
 
+    expect(publicRun.places[0]?.read?.sourceUrls).toEqual([sourceUrl]);
     expect(publicRun).not.toHaveProperty("documents");
   });
 });

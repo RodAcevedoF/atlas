@@ -1,6 +1,7 @@
 import type {
   InquiryClaim,
   InquiryPlace,
+  InquiryPlaceRead,
   InquiryRun,
   InquiryRunId,
   InquiryRunStatus,
@@ -102,6 +103,21 @@ function asClaim(value: unknown): InquiryClaim | null {
   };
 }
 
+function asPlaceRead(value: unknown, claims: InquiryClaim[]): InquiryPlaceRead | null {
+  if (value === undefined || value === null || claims.length < 2) return null;
+  if (typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  if (typeof row.text !== "string" || row.text.trim().length === 0) return null;
+  if (!Array.isArray(row.sourceUrls) || row.sourceUrls.length === 0) return null;
+  if (!row.sourceUrls.every((sourceUrl) => typeof sourceUrl === "string")) return null;
+  const claimSourceUrls = new Set(claims.map((claim) => claim.sourceUrl));
+  if (!row.sourceUrls.every((sourceUrl) => claimSourceUrls.has(sourceUrl))) return null;
+  return {
+    text: row.text.trim(),
+    sourceUrls: [...new Set(row.sourceUrls)],
+  };
+}
+
 function asPlace(value: unknown): InquiryPlace | null {
   if (typeof value !== "object" || value === null) return null;
   const row = value as Record<string, unknown>;
@@ -123,6 +139,7 @@ function asPlace(value: unknown): InquiryPlace | null {
     latitude: row.latitude,
     longitude: row.longitude,
     claimCount: claims.length,
+    read: asPlaceRead(row.read, claims),
     claims,
   };
 }

@@ -26,6 +26,7 @@ function place(
     latitude,
     longitude,
     claimCount: claims.length,
+    read: null,
     claims: claims.map(claim),
   };
 }

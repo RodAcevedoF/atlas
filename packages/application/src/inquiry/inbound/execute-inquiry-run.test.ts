@@ -69,7 +69,11 @@ const SUCCESS_BODY = {
       country: "Sudan",
       latitude: 15.5,
       longitude: 32.56,
-      claimCount: 1,
+      claimCount: 2,
+      read: {
+        text: "Reports describe displacement and disrupted aid routes.",
+        sourceUrls: ["https://example.test/article"],
+      },
       claims: [
         {
           text: "clashes displaced 7,800 people",
@@ -78,6 +82,14 @@ const SUCCESS_BODY = {
           sourceTitle: "a headline",
           publishedDate: "2026-08-20T00:00:00.000Z",
           sourceImageUrl: "https://images.example.test/article.jpg",
+        },
+        {
+          text: "aid routes were disrupted",
+          confidence: 0.7,
+          sourceUrl: "https://example.test/article-2",
+          sourceTitle: "another headline",
+          publishedDate: "2026-08-20T00:00:00.000Z",
+          sourceImageUrl: null,
         },
       ],
     },
@@ -92,7 +104,7 @@ const SUCCESS_BODY = {
     },
   ],
   claimCount: 3,
-  unplacedClaims: 2,
+  unplacedClaims: 1,
   costUsd: 0.045,
   synthesis: "Reported activity concentrates on Khartoum.",
 };
@@ -132,6 +144,7 @@ describe("ExecuteInquiryRunUseCase", () => {
     expect(stored?.places[0]?.claims[0]?.sourceImageUrl).toBe(
       "https://images.example.test/article.jpg",
     );
+    expect(stored?.places[0]?.read).toEqual(SUCCESS_BODY.places[0]?.read);
     expect(stored?.documents).toEqual(SUCCESS_BODY.documents);
     expect(stored?.completedAt).not.toBeNull();
   });
@@ -362,7 +375,12 @@ describe("ExecuteInquiryRunUseCase", () => {
       store,
       answering({
         ...SUCCESS_BODY,
-        places: [{ ...place, claims: [{ ...place.claims[0], sourceTitle: 7 }] }],
+        places: [
+          {
+            ...place,
+            claims: [{ ...place.claims[0], sourceTitle: 7 }, place.claims[1]],
+          },
+        ],
       }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
@@ -384,7 +402,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       store,
       answering({
         ...SUCCESS_BODY,
-        places: [{ ...place, claims: [historicalClaim] }],
+        places: [{ ...place, claims: [historicalClaim, place.claims[1]] }],
       }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
@@ -395,6 +413,50 @@ describe("ExecuteInquiryRunUseCase", () => {
     const [stored] = runs();
     expect(sourceImageUrl).toBe("https://images.example.test/article.jpg");
     expect(stored?.places[0]?.claims[0]?.sourceImageUrl).toBeNull();
+  });
+
+  test("a historical graph response without a place read normalizes it to null", async () => {
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
+    const place = SUCCESS_BODY.places[0];
+    const { read, ...historicalPlace } = place;
+    const useCase = new ExecuteInquiryRunUseCase(
+      store,
+      answering({ ...SUCCESS_BODY, places: [historicalPlace] }),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    await useCase.execute();
+
+    const [stored] = runs();
+    expect(read).not.toBeNull();
+    expect(stored?.places[0]?.read).toBeNull();
+  });
+
+  test("a place read citing another source is dropped without losing the research run", async () => {
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
+    const place = SUCCESS_BODY.places[0];
+    const useCase = new ExecuteInquiryRunUseCase(
+      store,
+      answering({
+        ...SUCCESS_BODY,
+        places: [
+          {
+            ...place,
+            read: { text: place.read.text, sourceUrls: ["https://example.test/not-a-claim"] },
+          },
+        ],
+      }),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    await useCase.execute();
+
+    const [stored] = runs();
+    expect(stored?.status).toBe("succeeded");
+    expect(stored?.synthesis).toBe(SUCCESS_BODY.synthesis);
+    expect(stored?.places[0]?.read).toBeNull();
   });
 
   test("a historical graph response without documents persists an empty collection", async () => {
@@ -450,7 +512,12 @@ describe("ExecuteInquiryRunUseCase", () => {
         store,
         answering({
           ...SUCCESS_BODY,
-          places: [{ ...place, claims: [{ ...claim, sourceImageUrl }] }],
+          places: [
+            {
+              ...place,
+              claims: [{ ...claim, sourceImageUrl }, place.claims[1]],
+            },
+          ],
         }),
         RETRY_AFTER_MS,
         RUN_TIMEOUT_MS,

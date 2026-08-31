@@ -25,4 +25,5 @@ test("a historical stored claim without an image URL deserializes with an explic
   const places: InquiryPlace[] = normalizeStoredPlaces(historicalPlaces);
 
   expect(places[0]?.claims[0]?.sourceImageUrl).toBeNull();
+  expect(places[0]?.read).toBeNull();
 });

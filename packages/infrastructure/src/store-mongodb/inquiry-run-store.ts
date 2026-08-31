@@ -70,7 +70,10 @@ type ClaimShapeField = "places" | "claimCount" | "unplacedClaims" | "costUsd";
 type StoredInquiryClaim = Omit<InquiryClaim, "sourceImageUrl"> &
   Partial<Pick<InquiryClaim, "sourceImageUrl">>;
 
-type StoredInquiryPlace = Omit<InquiryPlace, "claims"> & { claims: StoredInquiryClaim[] };
+type StoredInquiryPlace = Omit<InquiryPlace, "claims" | "read"> & {
+  claims: StoredInquiryClaim[];
+  read?: InquiryPlace["read"];
+};
 
 type StoredInquiryRunDoc = Omit<InquiryRunDoc, ClaimShapeField | "documents"> &
   Partial<Omit<Pick<InquiryRunDoc, ClaimShapeField>, "places">> & {
@@ -81,6 +84,7 @@ type StoredInquiryRunDoc = Omit<InquiryRunDoc, ClaimShapeField | "documents"> &
 export function normalizeStoredPlaces(places: StoredInquiryPlace[] | undefined): InquiryPlace[] {
   return (places ?? []).map((place) => ({
     ...place,
+    read: place.read ?? null,
     claims: place.claims.map((claim) => ({
       ...claim,
       sourceImageUrl: claim.sourceImageUrl ?? null,

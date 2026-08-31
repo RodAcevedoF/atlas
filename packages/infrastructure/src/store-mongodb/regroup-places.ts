@@ -34,6 +34,7 @@ function mergeIntoOnePlace(group: InquiryPlace[]): InquiryPlace {
     latitude: canonical.latitude,
     longitude: canonical.longitude,
     claimCount: claims.length,
+    read: canonical.read,
     claims,
   };
 }

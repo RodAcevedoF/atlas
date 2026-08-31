@@ -48,6 +48,7 @@ function place(name: string): InquiryPlace {
     latitude: 15.5,
     longitude: 32.56,
     claimCount: 1,
+    read: null,
     claims: [
       {
         text: `something happened in ${name}`,
