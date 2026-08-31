@@ -1,12 +1,14 @@
+import { useAuth } from "@/features/auth/auth-provider.tsx";
 import { CTA_PRIMARY, PANEL_GLASS } from "@/shared/ui";
 import type { InquiryRunStatus } from "@atlas/domain";
 import { Button, cn } from "@atlas/ui";
-import { LoaderCircle, Paperclip, Plus, RefreshCw, Sparkles, X } from "lucide-react";
-import { type ChangeEvent, type FormEvent, useRef } from "react";
+import { Bookmark, LoaderCircle, Paperclip, Plus, RefreshCw, Sparkles, X } from "lucide-react";
+import { type ChangeEvent, type FormEvent, useMemo, useRef } from "react";
 import { useInquiryAsk } from "../hooks/use-inquiry-ask.ts";
 import { useInquiryAttachmentIntent } from "../hooks/use-inquiry-attachment-intent.ts";
 import { useInquiryBudget } from "../hooks/use-inquiry-budget.ts";
 import type { InquiryAskState } from "../infra/store/inquiry.slice.ts";
+import { buildPreferenceSeed, offersPreferenceSeed } from "../use-cases/preference-seed.ts";
 import { INQUIRY_QUESTION_MAX_CHARS } from "../use-cases/request-inquiry-run.ts";
 import { AttachmentThinkingState } from "./attachment-thinking-state.tsx";
 
@@ -99,7 +101,7 @@ function DailySearchAllowance({ remaining }: { remaining: number }) {
     <output
       aria-live="polite"
       className={cn(
-        "mx-3 mt-2 inline-flex items-center gap-1.75 rounded-full border px-2.5 py-1 font-mono text-[10.5px] font-medium tabular-nums",
+        "inline-flex items-center gap-1.75 rounded-full border px-2.5 py-1 font-mono text-[10.5px] font-medium tabular-nums",
         exhausted
           ? "border-destructive/30 bg-destructive/10 text-destructive"
           : "border-context/30 bg-context/[0.08] text-context",
@@ -111,17 +113,46 @@ function DailySearchAllowance({ remaining }: { remaining: number }) {
   );
 }
 
+function PreferenceSeedButton({ onSeed }: { onSeed: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant={null}
+      size={null}
+      onClick={onSeed}
+      className="gap-1.75 rounded-full border border-border-strong bg-secondary px-2.5 py-1 text-[10.5px] font-medium text-muted-foreground hover:text-card-foreground"
+    >
+      <Bookmark aria-hidden="true" className="h-3 w-3" />
+      Use my preferences
+    </Button>
+  );
+}
+
 export function InquiryAskBox() {
   const { ask, ...state } = useInquiryAsk();
   const intent = useInquiryAttachmentIntent();
   const budget = useInquiryBudget();
+  const { user } = useAuth();
   const fileInput = useRef<HTMLInputElement>(null);
+  const questionInput = useRef<HTMLInputElement>(null);
   const message = askMessage(state);
   const remaining = budget?.remaining ?? null;
   const atCap = remaining === 0;
   const attachmentBusy = intent.stage === "uploading" || intent.stage === "interpreting";
   const finalSubmission = intent.stage === "idle" || intent.stage === "reviewing";
   const needsResponse = intent.stage === "clarifying" || intent.stage === "refining";
+  const preferenceSeed = useMemo(() => {
+    if (!user) return null;
+    return buildPreferenceSeed({
+      topics: user.profile.preferredTopics,
+      regions: user.profile.preferredRegions,
+    });
+  }, [user]);
+  const offersSeed = offersPreferenceSeed({
+    seed: preferenceSeed,
+    stage: intent.stage,
+    question: intent.question,
+  });
   const cannotSubmit =
     state.isAsking ||
     attachmentBusy ||
@@ -136,6 +167,12 @@ export function InquiryAskBox() {
     if (!submission) return;
     ask(submission.question, submission.attachmentId);
     intent.submitted();
+  };
+
+  const seedFromPreferences = () => {
+    if (!preferenceSeed) return;
+    intent.setQuestion(preferenceSeed);
+    questionInput.current?.focus();
   };
 
   const selectFile = (event: ChangeEvent<HTMLInputElement>) => {
@@ -172,6 +209,7 @@ export function InquiryAskBox() {
           <Plus className="h-4 w-4" />
         </Button>
         <input
+          ref={questionInput}
           aria-label="Ask a question"
           placeholder={PLACEHOLDER[intent.stage]}
           value={intent.question}
@@ -259,7 +297,12 @@ export function InquiryAskBox() {
         <p className="px-3 pb-1 pt-2 text-[11.5px] text-destructive">{intent.error}</p>
       ) : null}
 
-      {remaining !== null ? <DailySearchAllowance remaining={remaining} /> : null}
+      {offersSeed || remaining !== null ? (
+        <div className="mx-3 mt-2 flex flex-wrap items-center gap-2">
+          {offersSeed ? <PreferenceSeedButton onSeed={seedFromPreferences} /> : null}
+          {remaining !== null ? <DailySearchAllowance remaining={remaining} /> : null}
+        </div>
+      ) : null}
 
       {message ? (
         <p

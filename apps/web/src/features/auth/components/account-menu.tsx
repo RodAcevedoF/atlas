@@ -237,7 +237,9 @@ export function AccountMenu() {
             </div>
 
             <p className="text-xs leading-normal text-muted-foreground">
-              Preferences fill in the world scan when you don't pick a topic or region.
+              Saved topics and regions add a{" "}
+              <strong className="font-medium text-card-foreground">Use my preferences</strong>{" "}
+              button to the ask box. It writes a starting question you can edit before asking.
             </p>
 
             <div className="flex flex-col gap-2">
