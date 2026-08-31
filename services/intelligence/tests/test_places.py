@@ -5,7 +5,7 @@ from app.graphs.places import (
     unplaced_count,
 )
 from app.ports.claims import Claim, ClaimPlace
-from app.ports.places import NormalisedPlace
+from app.ports.places import NormalisedPlace, PlaceKind
 
 
 def claim(text: str, place: str, confidence: float = 0.8) -> Claim:
@@ -23,9 +23,15 @@ def normalised(
     country: str | None = "Sudan",
     latitude: float | None = 15.5,
     longitude: float | None = 32.5,
+    kind: PlaceKind = "specific",
 ) -> NormalisedPlace:
     return NormalisedPlace(
-        raw=raw, name=name, country=country, latitude=latitude, longitude=longitude
+        raw=raw,
+        name=name,
+        country=country,
+        kind=kind,
+        latitude=latitude,
+        longitude=longitude,
     )
 
 
@@ -179,6 +185,50 @@ class TestGroupByPlace:
 
         assert [group.name for group in groups] == ["Khartoum"]
 
+    def test_supranational_regions_do_not_paint_but_physical_features_still_do(self) -> None:
+        claims = [
+            claim("global claim", "Earth"),
+            claim("continental claim", "Europe"),
+            claim("maritime claim", "Red Sea"),
+            claim("strait claim", "Strait of Hormuz"),
+        ]
+        places = [
+            normalised(
+                "Earth",
+                "Earth",
+                country=None,
+                latitude=0.0,
+                longitude=0.0,
+                kind="supranational",
+            ),
+            normalised(
+                "Europe",
+                "Europe",
+                country=None,
+                latitude=54.5,
+                longitude=15.3,
+                kind="supranational",
+            ),
+            normalised(
+                "Red Sea",
+                "Red Sea",
+                country=None,
+                latitude=20.2,
+                longitude=38.1,
+            ),
+            normalised(
+                "Strait of Hormuz",
+                "Strait of Hormuz",
+                country=None,
+                latitude=26.6,
+                longitude=56.3,
+            ),
+        ]
+
+        groups = group_by_place(place_claims(claims, places))
+
+        assert [group.name for group in groups] == ["Red Sea", "Strait of Hormuz"]
+
     def test_a_place_on_the_equator_is_plotted_rather_than_read_as_missing(self) -> None:
         claims = [claim("a", "Macapá")]
         places = [normalised("Macapá", "Macapá", country="Brazil", latitude=0.0, longitude=0.0)]
@@ -206,6 +256,24 @@ class TestUnplacedCount:
         placed = place_claims(
             claims,
             [normalised("IGAD", "IGAD", country=None, latitude=None, longitude=None)],
+        )
+
+        assert unplaced_count(placed, 1) == 1
+
+    def test_a_supranational_claim_counts_as_unplaced_even_with_a_centroid(self) -> None:
+        claims = [claim("a", "Europe")]
+        placed = place_claims(
+            claims,
+            [
+                normalised(
+                    "Europe",
+                    "Europe",
+                    country=None,
+                    latitude=54.5,
+                    longitude=15.3,
+                    kind="supranational",
+                )
+            ],
         )
 
         assert unplaced_count(placed, 1) == 1

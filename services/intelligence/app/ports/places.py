@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Literal, Protocol
+
+PlaceKind = Literal["specific", "country", "supranational", "not_place"]
 
 
 class PlaceNormaliserUnavailable(Exception):
@@ -13,17 +15,21 @@ class PlaceNormaliserUnavailable(Exception):
 
 @dataclass(slots=True, frozen=True)
 class NormalisedPlace:
-    """raw is the string the extractor produced and the rest is what a map can use.
-    """
+    """raw is the string the extractor produced and the rest is what a map can use."""
 
     raw: str
     name: str
     country: str | None
+    kind: PlaceKind
     latitude: float | None
     longitude: float | None
 
     def is_plottable(self) -> bool:
-        return self.latitude is not None and self.longitude is not None
+        return (
+            self.kind in ("specific", "country")
+            and self.latitude is not None
+            and self.longitude is not None
+        )
 
 
 class PlaceNormaliserPort(Protocol):

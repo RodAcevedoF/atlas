@@ -64,6 +64,8 @@ def group_by_place(placed: Iterable[PlacedClaim]) -> list[PlaceGroup]:
     groups: dict[tuple[float, float], list[PlacedClaim]] = {}
 
     for item in placed:
+        if not item.place.is_plottable():
+            continue
         latitude, longitude = item.place.latitude, item.place.longitude
         if latitude is None or longitude is None:
             continue

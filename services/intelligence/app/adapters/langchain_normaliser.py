@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from app.adapters.chat_model import LazyChatModel
 from app.core.config import Settings
-from app.ports.places import NormalisedPlace, PlaceNormaliserUnavailable
+from app.ports.places import NormalisedPlace, PlaceKind, PlaceNormaliserUnavailable
 
 NORMALISE_SYSTEM_PROMPT = """You canonicalise place strings extracted from news articles so they \
 can be plotted on a map.
@@ -22,13 +22,21 @@ Rules:
 - `name` is the canonical English name of the place, at the most specific level the input \
 supports. "Khartoum", "Khartoum, Sudan", "Khartoum state, Sudan" and "Khartoum and central \
 Sudan" are all the city Khartoum. "el-Fasher" and "El Fasher" are one place.
+- `kind` says whether the answer can honestly be represented on a point map:
+  - `specific` for a bounded named location or physical feature, including a city, subnational \
+area, sea, strait, island, or mountain;
+  - `country` when the input names one sovereign country on its own;
+  - `supranational` for a continent, the whole world, a multi-country region, or a political or \
+economic union such as Europe, Earth, the Middle East, or the European Union; and
+  - `not_place` for prose, an institution, or another abstraction that is not a location.
 - `country` is the canonical English country name the place sits in, or null if the input names \
-no country and implies none.
+no country and implies none. For `kind: country`, repeat the canonical country name here.
 - `latitude` and `longitude` are the place's centre in decimal degrees.
-- A string that is not a place on the earth's surface gets null coordinates. Prose like \
+- `supranational` and `not_place` answers get null coordinates. Prose like \
 "Regional institutions (IGAD)", "Shipping routes near UAE (global context)" or "areas with needs \
 most acute" is not a place. Give it null latitude and null longitude rather than guessing.
-- A country named on its own IS a place — give it the country's centroid.
+- A country named on its own IS plottable — classify it as `country` and give it the country's \
+centroid. A named sea or strait IS a specific physical location even when it has no country.
 - Never invent coordinates you are not confident in. Null is a correct answer; a wrong orb \
 is not."""
 
@@ -36,6 +44,7 @@ is not."""
 class _NormalisedPlace(BaseModel):
     index: int = Field(description="the index of the input place string this entry answers")
     name: str
+    kind: PlaceKind
     country: str | None = None
     latitude: float | None = None
     longitude: float | None = None
@@ -56,6 +65,7 @@ def to_normalised(entry: _NormalisedPlace, raw: str) -> NormalisedPlace:
         raw=raw,
         name=name or raw,
         country=(entry.country or "").strip() or None,
+        kind=entry.kind if name else "not_place",
         latitude=entry.latitude if name else None,
         longitude=entry.longitude if name else None,
     )

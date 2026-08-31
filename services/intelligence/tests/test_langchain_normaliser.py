@@ -9,7 +9,8 @@ from app.adapters.langchain_normaliser import (
 
 
 def entry(index: int, name: str, **overrides: Any) -> _NormalisedPlace:
-    return _NormalisedPlace(index=index, name=name, **overrides)
+    kind = overrides.pop("kind", "specific")
+    return _NormalisedPlace(index=index, name=name, kind=kind, **overrides)
 
 
 class TestRenderPlaces:
@@ -19,7 +20,6 @@ class TestRenderPlaces:
 
 class TestCollect:
     def test_entries_are_matched_by_index_not_by_position(self) -> None:
-        # a model that answers out of order must not shift every place onto the wrong claim.
         entries = [entry(1, "Darfur"), entry(0, "Khartoum")]
 
         resolved = collect(entries, ["Khartoum", "Darfur"])
@@ -60,3 +60,36 @@ class TestToNormalised:
 
         assert place.name == "IGAD"
         assert not place.is_plottable()
+
+    def test_a_supranational_region_stays_unplottable_even_if_the_model_gave_a_centroid(
+        self,
+    ) -> None:
+        place = to_normalised(
+            entry(0, "Europe", kind="supranational", latitude=54.5, longitude=15.3),
+            "Europe",
+        )
+
+        assert not place.is_plottable()
+
+    def test_a_named_body_of_water_remains_a_specific_location(self) -> None:
+        place = to_normalised(
+            entry(0, "Red Sea", country=None, latitude=20.2, longitude=38.1),
+            "Red Sea",
+        )
+
+        assert place.is_plottable()
+
+    def test_a_country_named_on_its_own_remains_plottable(self) -> None:
+        place = to_normalised(
+            entry(
+                0,
+                "Sudan",
+                kind="country",
+                country="Sudan",
+                latitude=15.6,
+                longitude=30.2,
+            ),
+            "Sudan",
+        )
+
+        assert place.is_plottable()

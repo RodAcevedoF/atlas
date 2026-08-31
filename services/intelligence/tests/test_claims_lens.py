@@ -97,6 +97,7 @@ class StubNormaliser:
                     raw=raw,
                     name=name,
                     country=country,
+                    kind="specific",
                     latitude=latitude,
                     longitude=longitude,
                 )
@@ -333,6 +334,7 @@ class TestSummary:
                         raw="Khartoum",
                         name="Khartoum",
                         country="Sudan",
+                        kind="specific",
                         latitude=15.5,
                         longitude=32.5,
                     )
@@ -455,6 +457,7 @@ class TestPlaceRecord:
                         raw="Khartoum",
                         name="Khartoum",
                         country="Sudan",
+                        kind="specific",
                         latitude=15.5,
                         longitude=32.5,
                     )
