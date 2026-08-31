@@ -5,6 +5,7 @@ import { InMemoryInquiryAttachmentStore } from "../../testing/inquiry-attachment
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import {
   InquiryDailyCapReachedError,
+  InquiryEmailVerificationRequiredError,
   InvalidInquiryQuestionError,
   RequestInquiryRunUseCase,
 } from "./request-inquiry-run.ts";
@@ -50,6 +51,7 @@ function run(overrides: Partial<InquiryRun> = {}): InquiryRun {
 
     window: "1w",
     places: [],
+    documents: [],
     claimCount: 0,
     unplacedClaims: 0,
     costUsd: 0,
@@ -65,11 +67,28 @@ function run(overrides: Partial<InquiryRun> = {}): InquiryRun {
 }
 
 describe("RequestInquiryRunUseCase", () => {
+  test("an unverified account cannot start an inquiry", async () => {
+    const { store, runs } = inMemoryInquiryRunStore();
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+
+    const request = useCase.execute({
+      emailVerified: false,
+      ownerId: OWNER,
+      role: "user",
+      question: QUESTION,
+      refresh: false,
+    });
+
+    await expect(request).rejects.toBeInstanceOf(InquiryEmailVerificationRequiredError);
+    expect(runs()).toHaveLength(0);
+  });
+
   test("a new question is queued for the worker", async () => {
     const { store, runs } = inMemoryInquiryRunStore();
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({
+      emailVerified: true,
       ownerId: OWNER,
       role: "user",
       question: QUESTION,
@@ -94,6 +113,7 @@ describe("RequestInquiryRunUseCase", () => {
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, attachments);
 
     const result = await useCase.execute({
+      emailVerified: true,
       ownerId: OWNER,
       role: "user",
       question: QUESTION,
@@ -113,6 +133,7 @@ describe("RequestInquiryRunUseCase", () => {
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, attachments);
 
     const request = useCase.execute({
+      emailVerified: true,
       ownerId: OWNER,
       role: "user",
       question: QUESTION,
@@ -141,6 +162,7 @@ describe("RequestInquiryRunUseCase", () => {
       const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
       const result = await useCase.execute({
+        emailVerified: true,
         ownerId: OWNER,
         role: "user",
         question: QUESTION,
@@ -157,6 +179,7 @@ describe("RequestInquiryRunUseCase", () => {
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({
+      emailVerified: true,
       ownerId: makeUserId("user-2"),
       role: "user",
       question: QUESTION,
@@ -173,6 +196,7 @@ describe("RequestInquiryRunUseCase", () => {
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({
+      emailVerified: true,
       ownerId: OWNER,
       role: "user",
       question: QUESTION,
@@ -195,6 +219,7 @@ describe("RequestInquiryRunUseCase", () => {
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({
+      emailVerified: true,
       ownerId: OWNER,
       role: "user",
       question: QUESTION,
@@ -210,6 +235,7 @@ describe("RequestInquiryRunUseCase", () => {
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({
+      emailVerified: true,
       ownerId: OWNER,
       role: "user",
       question: "  Who is COVERING   the Sudan\nfamine  ",
@@ -226,6 +252,7 @@ describe("RequestInquiryRunUseCase", () => {
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({
+      emailVerified: true,
       ownerId: OWNER,
       role: "user",
       question: QUESTION,
@@ -244,6 +271,7 @@ describe("RequestInquiryRunUseCase", () => {
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const request = useCase.execute({
+      emailVerified: true,
       ownerId: OWNER,
       role: "user",
       question: QUESTION,
@@ -262,6 +290,7 @@ describe("RequestInquiryRunUseCase", () => {
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({
+      emailVerified: true,
       ownerId: OWNER,
       role: "user",
       question: QUESTION,
@@ -287,6 +316,7 @@ describe("RequestInquiryRunUseCase", () => {
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({
+      emailVerified: true,
       ownerId: OWNER,
       role: "user",
       question: QUESTION,
@@ -302,6 +332,7 @@ describe("RequestInquiryRunUseCase", () => {
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({
+      emailVerified: true,
       ownerId: OWNER,
       role: "user",
       question: QUESTION,
@@ -326,6 +357,7 @@ describe("RequestInquiryRunUseCase", () => {
       const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
       const result = await useCase.execute({
+        emailVerified: true,
         ownerId: OWNER,
         role: "user",
         question: QUESTION,
@@ -348,6 +380,7 @@ describe("RequestInquiryRunUseCase", () => {
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({
+      emailVerified: true,
       ownerId: OWNER,
       role: "user",
       question: QUESTION,
@@ -371,6 +404,7 @@ describe("RequestInquiryRunUseCase", () => {
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({
+      emailVerified: true,
       ownerId: OWNER,
       role: "user",
       question: QUESTION,
@@ -392,6 +426,7 @@ describe("RequestInquiryRunUseCase", () => {
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
     const result = await useCase.execute({
+      emailVerified: true,
       ownerId: OWNER,
       role: "user",
       question: QUESTION,
@@ -415,6 +450,7 @@ describe("RequestInquiryRunUseCase", () => {
       const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
       const result = await useCase.execute({
+        emailVerified: true,
         ownerId: OWNER,
         role,
         question: QUESTION,
@@ -439,6 +475,7 @@ describe("RequestInquiryRunUseCase", () => {
       const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
 
       const request = useCase.execute({
+        emailVerified: true,
         ownerId: OWNER,
         role: "user",
         question,

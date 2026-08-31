@@ -12,6 +12,7 @@ function succeededRun(overrides: Partial<InquiryRun> = {}): InquiryRun {
     day: "2026-08-23",
     window: "1w",
     places: [],
+    documents: [],
     claimCount: 12,
     unplacedClaims: 3,
     costUsd: 0.047,
@@ -45,5 +46,23 @@ describe("the public run carries what a reader is charged for", () => {
     const publicRun = toPublicInquiryRun(succeededRun());
 
     expect(publicRun).not.toHaveProperty("questionKey");
+  });
+
+  test("source bodies stay server-side until a bounded presentation contract exists", () => {
+    const publicRun = toPublicInquiryRun(
+      succeededRun({
+        documents: [
+          {
+            url: "https://example.test/article",
+            title: "a headline",
+            publishedDate: "2026-08-20T00:00:00.000Z",
+            text: "the complete article body",
+            highlights: ["a highlighted passage"],
+          },
+        ],
+      }),
+    );
+
+    expect(publicRun).not.toHaveProperty("documents");
   });
 });

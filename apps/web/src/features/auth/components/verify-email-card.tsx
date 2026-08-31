@@ -39,7 +39,7 @@ export function VerifyEmailCard() {
       </div>
 
       <p className="text-[12.5px] leading-relaxed text-muted-foreground">
-        Confirm your address so we know it's you. We sent a link to{" "}
+        Confirm your address before starting an inquiry. We sent a link to{" "}
         <strong className="font-medium text-card-foreground">{user.email}</strong>.
       </p>
 

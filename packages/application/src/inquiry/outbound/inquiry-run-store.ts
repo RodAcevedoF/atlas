@@ -16,7 +16,15 @@ export interface ClaimInquiryRunInput {
 
 export type CompleteInquiryRunInput = Pick<
   InquiryRun,
-  "id" | "status" | "places" | "claimCount" | "unplacedClaims" | "costUsd" | "synthesis" | "error"
+  | "id"
+  | "status"
+  | "places"
+  | "documents"
+  | "claimCount"
+  | "unplacedClaims"
+  | "costUsd"
+  | "synthesis"
+  | "error"
 > & { completedAt: Date };
 
 export interface InquiryRunPage {

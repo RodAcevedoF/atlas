@@ -5,6 +5,7 @@ import {
   InquiryAttachmentTooLargeError,
   InquiryAttachmentUploadCapError,
   InquiryDailyCapReachedError,
+  InquiryEmailVerificationRequiredError,
   InvalidAdminUserCursorError,
   InvalidCredentialsError,
   InvalidInquiryAttachmentError,
@@ -20,46 +21,53 @@ import {
 import type { FastifyError, FastifyInstance } from "fastify";
 import { ForbiddenError, InvalidInputError } from "./errors.ts";
 
+function clientErrorStatus(error: FastifyError): number | null {
+  if (
+    error.validation ||
+    error instanceof InvalidInputError ||
+    error instanceof InvalidAdminUserCursorError ||
+    error instanceof UnknownProviderError ||
+    error instanceof InvalidVerificationTokenError ||
+    error instanceof InvalidInquiryQuestionError ||
+    error instanceof InvalidInquiryAttachmentError ||
+    error instanceof InvalidTableError ||
+    error instanceof InvalidProfileImageError
+  ) {
+    return 400;
+  }
+  if (error instanceof InvalidCredentialsError) return 401;
+  if (
+    error instanceof InquiryEmailVerificationRequiredError ||
+    error instanceof ForbiddenError ||
+    error instanceof RoleChangeForbiddenError
+  ) {
+    return 403;
+  }
+  if (error instanceof InquiryAttachmentNotFoundError || error instanceof UserNotFoundError) {
+    return 404;
+  }
+  if (error instanceof EmailInUseError) return 409;
+  if (
+    error instanceof InquiryAttachmentTooLargeError ||
+    error instanceof ProfileImageTooLargeError
+  ) {
+    return 413;
+  }
+  if (
+    error instanceof InquiryAttachmentInterpretationCapError ||
+    error instanceof InquiryAttachmentUploadCapError ||
+    error instanceof InquiryDailyCapReachedError
+  ) {
+    return 429;
+  }
+  if (typeof error.statusCode === "number" && error.statusCode < 500) return error.statusCode;
+  return null;
+}
+
 export function registerErrorHandler(app: FastifyInstance): void {
   app.setErrorHandler((error: FastifyError, req, reply) => {
-    if (error.validation) return reply.code(400).send({ error: error.message });
-    if (error instanceof InvalidInputError) return reply.code(400).send({ error: error.message });
-    if (error instanceof InvalidAdminUserCursorError)
-      return reply.code(400).send({ error: error.message });
-    if (error instanceof UnknownProviderError)
-      return reply.code(400).send({ error: error.message });
-    if (error instanceof InvalidVerificationTokenError)
-      return reply.code(400).send({ error: error.message });
-    if (error instanceof InvalidCredentialsError) {
-      return reply.code(401).send({ error: error.message });
-    }
-    if (error instanceof InvalidInquiryQuestionError)
-      return reply.code(400).send({ error: error.message });
-    if (error instanceof InvalidInquiryAttachmentError || error instanceof InvalidTableError)
-      return reply.code(400).send({ error: error.message });
-    if (error instanceof InquiryAttachmentNotFoundError)
-      return reply.code(404).send({ error: error.message });
-    if (error instanceof InquiryAttachmentTooLargeError)
-      return reply.code(413).send({ error: error.message });
-    if (error instanceof InquiryAttachmentInterpretationCapError)
-      return reply.code(429).send({ error: error.message });
-    if (error instanceof InquiryAttachmentUploadCapError)
-      return reply.code(429).send({ error: error.message });
-    if (error instanceof InvalidProfileImageError)
-      return reply.code(400).send({ error: error.message });
-    if (error instanceof ProfileImageTooLargeError)
-      return reply.code(413).send({ error: error.message });
-    if (error instanceof InquiryDailyCapReachedError)
-      return reply.code(429).send({ error: error.message });
-    if (error instanceof EmailInUseError) return reply.code(409).send({ error: error.message });
-    if (error instanceof UserNotFoundError) return reply.code(404).send({ error: error.message });
-    if (error instanceof ForbiddenError) return reply.code(403).send({ error: error.message });
-    if (error instanceof RoleChangeForbiddenError)
-      return reply.code(403).send({ error: error.message });
-
-    if (typeof error.statusCode === "number" && error.statusCode < 500) {
-      return reply.code(error.statusCode).send({ error: error.message });
-    }
+    const status = clientErrorStatus(error);
+    if (status !== null) return reply.code(status).send({ error: error.message });
 
     req.log.error(error);
     return reply.code(500).send({ error: "Internal server error" });

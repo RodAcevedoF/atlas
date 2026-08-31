@@ -72,9 +72,10 @@ type StoredInquiryClaim = Omit<InquiryClaim, "sourceImageUrl"> &
 
 type StoredInquiryPlace = Omit<InquiryPlace, "claims"> & { claims: StoredInquiryClaim[] };
 
-type StoredInquiryRunDoc = Omit<InquiryRunDoc, ClaimShapeField> &
+type StoredInquiryRunDoc = Omit<InquiryRunDoc, ClaimShapeField | "documents"> &
   Partial<Omit<Pick<InquiryRunDoc, ClaimShapeField>, "places">> & {
     places?: StoredInquiryPlace[];
+    documents?: InquiryRunDoc["documents"];
   };
 
 export function normalizeStoredPlaces(places: StoredInquiryPlace[] | undefined): InquiryPlace[] {
@@ -96,6 +97,7 @@ function docToInquiryRun(doc: StoredInquiryRunDoc): InquiryRun {
     day: doc.day,
     window: doc.window,
     places: normalizeStoredPlaces(doc.places),
+    documents: doc.documents ?? [],
     claimCount: doc.claimCount ?? 0,
     unplacedClaims: doc.unplacedClaims ?? 0,
     costUsd: doc.costUsd ?? 0,
@@ -121,6 +123,7 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
       day: run.day,
       window: run.window,
       places: run.places,
+      documents: run.documents,
       claimCount: run.claimCount,
       unplacedClaims: run.unplacedClaims,
       costUsd: run.costUsd,
@@ -201,6 +204,7 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
         $set: {
           status: input.status,
           places: input.places,
+          documents: input.documents,
           claimCount: input.claimCount,
           unplacedClaims: input.unplacedClaims,
           costUsd: input.costUsd,

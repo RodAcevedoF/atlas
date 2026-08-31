@@ -1,4 +1,4 @@
-import type { InquiryPlace, InquiryRunStatus } from "@atlas/domain";
+import type { InquiryPlace, InquiryRunStatus, InquirySourceDocument } from "@atlas/domain";
 
 export interface MigrationDoc {
   _id: string;
@@ -13,6 +13,7 @@ export interface InquiryRunDoc {
   day: string;
   window: string;
   places: InquiryPlace[];
+  documents: InquirySourceDocument[];
   claimCount: number;
   unplacedClaims: number;
   costUsd: number;

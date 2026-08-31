@@ -25,6 +25,7 @@ function heldRun(id: InquiryRun["id"], ownerId: UserId | null = OWNER_ID): Inqui
     day: "2026-08-25",
     window: "1w",
     places: [],
+    documents: [],
     claimCount: 0,
     unplacedClaims: 0,
     costUsd: 0,

@@ -58,6 +58,7 @@ export function App() {
           </GuestRoute>
         }
       />
+      <Route path="/verify-email" element={<VerifyEmailView />} />
       <Route path="/verify" element={<VerifyEmailView />} />
       <Route element={<ProtectedShell />}>
         <Route path="/world" element={<WorldAwarenessPage />} />

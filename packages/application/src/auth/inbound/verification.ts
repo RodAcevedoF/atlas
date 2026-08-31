@@ -20,11 +20,11 @@ export async function issueVerification(
 }
 
 function buildVerificationEmail(webAppUrl: string, token: string, to: string): EmailMessage {
-  const link = `${webAppUrl}/verify?token=${token}`;
+  const link = `${webAppUrl}/verify-email?token=${token}`;
   return {
     to,
     subject: "Verify your Atlas email",
-    html: `<p>Welcome to Atlas.</p><p>Confirm your email to unlock world scans:</p><p><a href="${link}">Verify email</a></p><p>This link expires in 24 hours.</p>`,
-    text: `Welcome to Atlas.\n\nConfirm your email to unlock world scans:\n${link}\n\nThis link expires in 24 hours.`,
+    html: `<p>Welcome to Atlas.</p><p>Confirm your email before starting an inquiry:</p><p><a href="${link}">Verify email</a></p><p>This link expires in 24 hours.</p>`,
+    text: `Welcome to Atlas.\n\nConfirm your email before starting an inquiry:\n${link}\n\nThis link expires in 24 hours.`,
   };
 }

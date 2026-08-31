@@ -55,6 +55,7 @@ export async function registerInquiryRoutes(
       ...parseInquiryRunBody(body),
       ownerId: user.id,
       role: user.role,
+      emailVerified: user.emailVerified,
     });
     return reply.code(202).send(result);
   });

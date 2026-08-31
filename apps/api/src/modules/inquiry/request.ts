@@ -6,7 +6,7 @@ import { type RawQuery, parseLimit } from "../../core/parsing.ts";
 
 export function parseInquiryRunBody(
   body: Record<string, unknown> | undefined,
-): Omit<RequestInquiryRunInput, "ownerId" | "role"> {
+): Omit<RequestInquiryRunInput, "ownerId" | "role" | "emailVerified"> {
   const source = body ?? {};
   return {
     question: typeof source.question === "string" ? source.question : "",

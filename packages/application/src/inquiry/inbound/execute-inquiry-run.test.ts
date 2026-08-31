@@ -21,6 +21,7 @@ function run(overrides: Partial<InquiryRun> = {}): InquiryRun {
     day: "2026-08-16",
     window: "1w",
     places: [],
+    documents: [],
     claimCount: 0,
     unplacedClaims: 0,
     costUsd: 0,
@@ -81,6 +82,15 @@ const SUCCESS_BODY = {
       ],
     },
   ],
+  documents: [
+    {
+      url: "https://example.test/article",
+      title: "a headline",
+      publishedDate: "2026-08-20T00:00:00.000Z",
+      text: "the article body",
+      highlights: ["a highlighted passage"],
+    },
+  ],
   claimCount: 3,
   unplacedClaims: 2,
   costUsd: 0.045,
@@ -122,6 +132,7 @@ describe("ExecuteInquiryRunUseCase", () => {
     expect(stored?.places[0]?.claims[0]?.sourceImageUrl).toBe(
       "https://images.example.test/article.jpg",
     );
+    expect(stored?.documents).toEqual(SUCCESS_BODY.documents);
     expect(stored?.completedAt).not.toBeNull();
   });
 
@@ -164,6 +175,30 @@ describe("ExecuteInquiryRunUseCase", () => {
     const [stored] = runs();
     expect(stored?.attempts).toBe(2);
     expect(stored?.status).toBe("failed_permanent");
+  });
+
+  test("a later pre-retrieval failure does not erase documents paid for on an earlier attempt", async () => {
+    const paidDocuments = SUCCESS_BODY.documents;
+    const retrying = run({
+      status: "failed_retryable",
+      attempts: 1,
+      documents: paidDocuments,
+      error: "normaliser unavailable",
+      completedAt: new Date(CREATED_AT.getTime() - RETRY_AFTER_MS - 1),
+    });
+    const { store, runs } = inMemoryInquiryRunStore([retrying]);
+    const useCase = new ExecuteInquiryRunUseCase(
+      store,
+      answering({ status: "failed_retryable", error: "Exa unavailable" }),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    await useCase.execute();
+
+    const [stored] = runs();
+    expect(stored?.status).toBe("failed_permanent");
+    expect(stored?.documents).toEqual(paidDocuments);
   });
 
   test("a run still inside its quiet interval is not claimed", async () => {
@@ -362,6 +397,43 @@ describe("ExecuteInquiryRunUseCase", () => {
     expect(stored?.places[0]?.claims[0]?.sourceImageUrl).toBeNull();
   });
 
+  test("a historical graph response without documents persists an empty collection", async () => {
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
+    const { documents, ...historicalBody } = SUCCESS_BODY;
+    const useCase = new ExecuteInquiryRunUseCase(
+      store,
+      answering(historicalBody),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    await useCase.execute();
+
+    const [stored] = runs();
+    expect(documents).toHaveLength(1);
+    expect(stored?.documents).toEqual([]);
+  });
+
+  test("an unusable source document cannot corrupt the stored extraction inputs", async () => {
+    const { store, runs } = inMemoryInquiryRunStore([run()]);
+    const useCase = new ExecuteInquiryRunUseCase(
+      store,
+      answering({
+        ...SUCCESS_BODY,
+        documents: [{ ...SUCCESS_BODY.documents[0], highlights: "not a list" }],
+      }),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    await useCase.execute();
+
+    const [stored] = runs();
+    expect(stored?.status).toBe("failed_permanent");
+    expect(stored?.error).toContain("unusable graph documents");
+    expect(stored?.documents).toEqual([]);
+  });
+
   const unsafeImageUrls = [
     "http://images.example.test/article.jpg",
     "https://reader:secret@images.example.test/article.jpg",
@@ -466,6 +538,7 @@ describe("ExecuteInquiryRunUseCase", () => {
     const exhausted = run({
       status: "running",
       attempts: 2,
+      documents: SUCCESS_BODY.documents,
       startedAt: new Date(Date.now() - RUN_TIMEOUT_MS * 3),
     });
     const { store, runs } = inMemoryInquiryRunStore([exhausted]);
@@ -481,6 +554,7 @@ describe("ExecuteInquiryRunUseCase", () => {
     const [stored] = runs();
     expect(stored?.status).toBe("failed_permanent");
     expect(stored?.error).toBe("abandoned after 2 interrupted attempts");
+    expect(stored?.documents).toEqual(SUCCESS_BODY.documents);
     expect(stored?.completedAt).not.toBeNull();
   });
 

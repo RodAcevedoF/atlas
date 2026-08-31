@@ -20,6 +20,7 @@ function failedRun(status: InquiryRunStatus, error: string | null, attempts: num
     day: "2026-08-23",
     window: "1w",
     places: [],
+    documents: [],
     claimCount: 0,
     unplacedClaims: 0,
     costUsd: 0,

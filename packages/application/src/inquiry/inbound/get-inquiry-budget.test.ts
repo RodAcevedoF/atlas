@@ -21,6 +21,7 @@ function run(overrides: Partial<InquiryRun> = {}): InquiryRun {
     day: today(),
     window: "1w",
     places: [],
+    documents: [],
     claimCount: 0,
     unplacedClaims: 0,
     costUsd: 0,

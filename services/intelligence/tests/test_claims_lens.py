@@ -159,6 +159,21 @@ class TestSuccessfulRun:
         assert result["costUsd"] == 0.045
         assert result["costReported"] is True
 
+    def test_the_extraction_inputs_ride_out_on_the_result_for_persistence(self) -> None:
+        graph = build(retrieval([claim("a", "Khartoum")]))
+
+        result = run(graph)
+
+        assert result["documents"] == [
+            {
+                "url": "https://example.test/article",
+                "title": "a headline",
+                "publishedDate": "2026-08-20T00:00:00.000Z",
+                "text": "the article body",
+                "highlights": ["a passage"],
+            }
+        ]
+
     def test_an_unplaceable_claim_is_counted_rather_than_silently_dropped(self) -> None:
         graph = build(
             retrieval([claim("a", "Khartoum"), claim("b", "Regional institutions (IGAD)")])
@@ -214,6 +229,7 @@ class TestEndedRuns:
 
         assert result["status"] == "no_coverage"
         assert result["places"] == []
+        assert result["documents"][0]["text"] == "the article body"
 
     def test_claims_that_all_fail_to_place_end_as_below_floor(self) -> None:
         graph = build(retrieval([claim("a", "Regional institutions (IGAD)")]))

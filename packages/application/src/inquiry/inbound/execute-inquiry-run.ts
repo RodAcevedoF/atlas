@@ -4,6 +4,7 @@ import type {
   InquiryRun,
   InquiryRunId,
   InquiryRunStatus,
+  InquirySourceDocument,
 } from "@atlas/domain";
 import { INQUIRY_RUN_STATUSES } from "@atlas/domain";
 import type { OrchestrationPort } from "../../world/outbound/orchestration.ts";
@@ -101,10 +102,6 @@ function asClaim(value: unknown): InquiryClaim | null {
   };
 }
 
-/**
- * A place without real coordinates cannot be an orb, so it must never reach the map, and a
- * `claimCount` that disagrees with the claims beside it would print a wrong number over a right list.
- */
 function asPlace(value: unknown): InquiryPlace | null {
   if (typeof value !== "object" || value === null) return null;
   const row = value as Record<string, unknown>;
@@ -146,6 +143,36 @@ function asPlaces(value: unknown): InquiryPlace[] | null {
   return places;
 }
 
+function asSourceDocument(value: unknown): InquirySourceDocument | null {
+  if (typeof value !== "object" || value === null) return null;
+  const row = value as Record<string, unknown>;
+  if (typeof row.url !== "string") return null;
+  if (!isNullableText(row.title)) return null;
+  if (!isNullableText(row.publishedDate)) return null;
+  if (!isNullableText(row.text)) return null;
+  if (!Array.isArray(row.highlights)) return null;
+  if (!row.highlights.every((highlight) => typeof highlight === "string")) return null;
+  return {
+    url: row.url,
+    title: row.title,
+    publishedDate: row.publishedDate,
+    text: row.text,
+    highlights: row.highlights,
+  };
+}
+
+function asDocuments(value: unknown): InquirySourceDocument[] | null {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) return null;
+  const documents: InquirySourceDocument[] = [];
+  for (const row of value) {
+    const document = asSourceDocument(row);
+    if (document === null) return null;
+    documents.push(document);
+  }
+  return documents;
+}
+
 function asCount(value: unknown): number | null {
   if (value === undefined || value === null) return 0;
   return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : null;
@@ -159,11 +186,17 @@ function isExhausted(status: InquiryRunStatus, attempts: number): boolean {
   return status === "failed_retryable" && attempts >= INQUIRY_MAX_ATTEMPTS;
 }
 
-function failure(status: FailedStatus, error: string, attempts: number): RunOutcome {
+function failure(
+  status: FailedStatus,
+  error: string,
+  attempts: number,
+  documents: InquirySourceDocument[] = [],
+): RunOutcome {
   return {
     status: isExhausted(status, attempts) ? "failed_permanent" : status,
     error,
     places: [],
+    documents,
     claimCount: 0,
     unplacedClaims: 0,
     costUsd: 0,
@@ -176,9 +209,23 @@ function toOutcome(body: Record<string, unknown>, attempts: number): RunOutcome 
     return failure("failed_permanent", `unusable graph status: ${String(body.status)}`, attempts);
   }
 
+  const documents = asDocuments(body.documents);
+  if (!documents) {
+    return failure(
+      "failed_permanent",
+      `unusable graph documents: ${sample(body.documents)}`,
+      attempts,
+    );
+  }
+
   const places = asPlaces(body.places);
   if (!places) {
-    return failure("failed_permanent", `unusable graph places: ${sample(body.places)}`, attempts);
+    return failure(
+      "failed_permanent",
+      `unusable graph places: ${sample(body.places)}`,
+      attempts,
+      documents,
+    );
   }
 
   const claimCount = asCount(body.claimCount);
@@ -190,13 +237,19 @@ function toOutcome(body: Record<string, unknown>, attempts: number): RunOutcome 
       unplacedClaims: body.unplacedClaims,
       costUsd: body.costUsd,
     };
-    return failure("failed_permanent", `unusable graph counts: ${sample(counts)}`, attempts);
+    return failure(
+      "failed_permanent",
+      `unusable graph counts: ${sample(counts)}`,
+      attempts,
+      documents,
+    );
   }
 
   return {
     status: isExhausted(body.status, attempts) ? "failed_permanent" : body.status,
     error: asText(body.error),
     places,
+    documents,
     claimCount,
     unplacedClaims,
     costUsd,
@@ -232,10 +285,16 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
         "failed_permanent",
         `abandoned after ${INQUIRY_MAX_ATTEMPTS} interrupted attempts`,
         run.attempts,
+        run.documents,
       );
     }
     if (run.attempts > 1 && this.outlivedRetryBudget(run, now)) {
-      return failure("failed_permanent", "abandoned: outlived its retry budget", run.attempts);
+      return failure(
+        "failed_permanent",
+        "abandoned: outlived its retry budget",
+        run.attempts,
+        run.documents,
+      );
     }
     return this.measure(run);
   }
@@ -255,15 +314,18 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
         }),
         this.runTimeoutMs,
       );
-      return toOutcome(body, run.attempts);
+      const outcome = toOutcome(body, run.attempts);
+      if (outcome.documents.length > 0 || run.documents.length === 0) return outcome;
+      return { ...outcome, documents: run.documents };
     } catch (error) {
       if (error instanceof GraphTimeoutError || error instanceof GraphUnavailableError) {
-        return failure("failed_retryable", error.message, run.attempts);
+        return failure("failed_retryable", error.message, run.attempts, run.documents);
       }
       return failure(
         "failed_permanent",
         error instanceof Error ? error.message : String(error),
         run.attempts,
+        run.documents,
       );
     }
   }

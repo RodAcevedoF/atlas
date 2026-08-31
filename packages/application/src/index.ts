@@ -45,6 +45,7 @@ export type {
   RequestInquiryRunOutput,
 } from "./inquiry/inbound/request-inquiry-run.ts";
 export {
+  InquiryEmailVerificationRequiredError,
   InvalidInquiryQuestionError,
   RequestInquiryRunUseCase,
   InquiryDailyCapReachedError,

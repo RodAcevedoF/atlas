@@ -27,6 +27,7 @@ function run(index: number, ownerId: UserId | null = OWNER_ID): InquiryRun {
 
     window: "1w",
     places: [],
+    documents: [],
     claimCount: 0,
     unplacedClaims: 0,
     costUsd: 0,

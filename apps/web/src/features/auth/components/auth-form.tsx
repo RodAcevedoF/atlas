@@ -32,7 +32,7 @@ const FORM: Record<Mode, FormCopy> = {
   register: {
     title: "Create your Atlas",
     step: "Sign up",
-    sub: "Two minutes to set up. Ask your first question the moment you finish.",
+    sub: "Two minutes to set up. Verify your email, then ask your first question.",
     submit: "Create account",
     passwordPlaceholder: "8+ characters",
     switchPrompt: "Already have an account?",

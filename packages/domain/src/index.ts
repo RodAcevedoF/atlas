@@ -3,6 +3,7 @@ export type {
   InquiryRunStatus,
   InquiryClaim,
   InquiryPlace,
+  InquirySourceDocument,
   InquiryRun,
   PublicInquiryRun,
   InquiryRunList,

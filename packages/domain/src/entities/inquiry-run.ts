@@ -35,6 +35,14 @@ export interface InquiryPlace {
   claims: InquiryClaim[];
 }
 
+export interface InquirySourceDocument {
+  url: string;
+  title: string | null;
+  publishedDate: string | null;
+  text: string | null;
+  highlights: string[];
+}
+
 export interface InquiryRun {
   id: InquiryRunId;
   ownerId: UserId | null;
@@ -43,6 +51,7 @@ export interface InquiryRun {
   day: string;
   window: string;
   places: InquiryPlace[];
+  documents: InquirySourceDocument[];
   claimCount: number;
   unplacedClaims: number;
   costUsd: number;

@@ -27,9 +27,17 @@ export class InquiryDailyCapReachedError extends Error {
   }
 }
 
+export class InquiryEmailVerificationRequiredError extends Error {
+  constructor() {
+    super("Verify your email before starting an inquiry");
+    this.name = "InquiryEmailVerificationRequiredError";
+  }
+}
+
 export interface RequestInquiryRunInput {
   ownerId: UserId;
   role: UserRole;
+  emailVerified: boolean;
   question: string;
   refresh: boolean;
   attachmentId?: InquiryAttachmentId;
@@ -53,12 +61,10 @@ function toDay(now: Date): string {
   return now.toISOString().slice(0, 10);
 }
 
-/** a permanent failure is not an answer, so asking again is a new run rather than a replay */
 function isReusable(run: InquiryRun): boolean {
   return run.status !== "failed_permanent";
 }
 
-/** work already under way has no newer answer to fetch, so a refresh waits for it */
 function isInFlight(run: InquiryRun): boolean {
   return run.status === "queued" || run.status === "running";
 }
@@ -78,6 +84,7 @@ function queuedRun(input: {
     day: input.day,
     window: INQUIRY_WINDOW,
     places: [],
+    documents: [],
     claimCount: 0,
     unplacedClaims: 0,
     costUsd: 0,
@@ -99,6 +106,8 @@ export class RequestInquiryRunUseCase implements RequestInquiryRun {
   ) {}
 
   async execute(input: RequestInquiryRunInput): Promise<RequestInquiryRunOutput> {
+    if (!input.emailVerified) throw new InquiryEmailVerificationRequiredError();
+
     const question = input.question.trim();
     if (!question) throw new InvalidInquiryQuestionError("An inquiry question is required");
     if (question.length > MAX_QUESTION_CHARS) {

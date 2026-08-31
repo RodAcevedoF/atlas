@@ -20,6 +20,7 @@ from app.ports.claims import (
     ClaimSourceRetryable,
     ClaimSourceUnavailable,
     ClaimsRetrieval,
+    SourceDocument,
 )
 from app.ports.places import PlaceNormaliserPort, PlaceNormaliserUnavailable
 
@@ -88,6 +89,16 @@ def to_place_record(group: PlaceGroup) -> dict[str, Any]:
             }
             for item in group.claims
         ],
+    }
+
+
+def to_document_record(document: SourceDocument) -> dict[str, Any]:
+    return {
+        "url": document.url,
+        "title": document.title,
+        "publishedDate": document.published_date,
+        "text": document.text,
+        "highlights": document.highlights,
     }
 
 
@@ -181,6 +192,9 @@ def _result(state: ClaimsState) -> dict[str, Any]:
         "status": state["status"],
         "error": state.get("error"),
         "places": [to_place_record(group) for group in state.get("places") or []],
+        "documents": [to_document_record(document) for document in retrieval.documents]
+        if retrieval
+        else [],
         "unplacedClaims": state.get("unplaced") or 0,
         "claimCount": len(retrieval.claims) if retrieval else 0,
         "documentCount": len(retrieval.documents) if retrieval else 0,
