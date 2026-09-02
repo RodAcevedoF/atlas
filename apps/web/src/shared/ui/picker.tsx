@@ -13,7 +13,6 @@ import {
 const POPOVER_HEAD_CLASS = cn(eyebrowVariants({ variant: "meta" }), PANEL_HEAD);
 
 interface PickerProps {
-  /** What the closed trigger reads — usually the current selection. */
   trigger: ReactNode;
   label: string;
   title?: string;
@@ -34,10 +33,11 @@ export function Picker({ trigger, label, title, disabled, children }: PickerProp
     if (!open) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      event.preventDefault();
       close();
     };
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
+    document.addEventListener("keydown", closeOnEscape, true);
+    return () => document.removeEventListener("keydown", closeOnEscape, true);
   }, [open, close]);
 
   return (

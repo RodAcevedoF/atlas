@@ -1,6 +1,7 @@
 import type { InquiryClaimRecord, InquiryPlaceRecord } from "@/features/inquiry";
 import { ClaimConfidence } from "@/features/inquiry";
 import { Eyebrow, HAIRLINE_ROW, PANEL_GLASS } from "@/shared/ui";
+import { formatDate } from "@/shared/utils";
 import { isLowConfidenceClaim } from "@atlas/domain";
 import { cn } from "@atlas/ui";
 import { X } from "lucide-react";
@@ -45,7 +46,7 @@ function ClaimRow({ claim }: { claim: InquiryClaimRecord }) {
               <span className="max-w-full truncate">{claim.sourceTitle}</span>
             ) : null}
             {claim.publishedDate ? (
-              <span className="shrink-0 tabular-nums">{claim.publishedDate.slice(0, 10)}</span>
+              <span className="shrink-0 tabular-nums">{formatDate(claim.publishedDate)}</span>
             ) : null}
             <ClaimConfidence claim={claim} className="tabular-nums" />
           </p>
@@ -63,7 +64,8 @@ interface PlaceClaimsPanelProps {
 export function PlaceClaimsPanel({ place, onClose }: PlaceClaimsPanelProps) {
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      event.preventDefault();
       onClose();
     };
     document.addEventListener("keydown", closeOnEscape);

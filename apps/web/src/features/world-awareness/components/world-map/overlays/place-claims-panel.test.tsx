@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import type { InquiryClaimRecord } from "@/features/inquiry";
+import { Picker } from "@/shared/ui";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import {
   buildInquiryClaim,
@@ -44,6 +45,12 @@ test("a claim without an image remains a complete text row", () => {
   expect(screen.getByText("a headline")).toBeDefined();
 });
 
+test("a claim date matches the readable date used on the run page", () => {
+  renderClaim(null);
+
+  expect(screen.getByText("Aug 18, 2026")).toBeDefined();
+});
+
 test("a broken source image falls back to the unchanged text row", () => {
   const { container } = renderClaim("https://images.example.test/article.jpg");
   const image = container.querySelector("img");
@@ -84,6 +91,34 @@ test("escape closes the panel, so a reader can dismiss it without hunting for th
   });
 
   fireEvent.keyDown(document, { key: "Escape" });
+
+  expect(closes).toBe(1);
+});
+
+test("escape closes an open picker before the claims panel underneath it", () => {
+  let closes = 0;
+  render(
+    <>
+      <Picker trigger="an inquiry" label="Pick an inquiry">
+        {() => <span>picker content</span>}
+      </Picker>
+      <PlaceClaimsPanel
+        place={buildInquiryPlace()}
+        onClose={() => {
+          closes += 1;
+        }}
+      />
+    </>,
+  );
+  const trigger = screen.getByRole("button", { name: "Pick an inquiry" });
+  fireEvent.click(trigger);
+
+  fireEvent.keyDown(document.body, { key: "Escape" });
+
+  expect(trigger.getAttribute("aria-expanded")).toBe("false");
+  expect(closes).toBe(0);
+
+  fireEvent.keyDown(document.body, { key: "Escape" });
 
   expect(closes).toBe(1);
 });
