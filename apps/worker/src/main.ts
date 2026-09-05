@@ -1,40 +1,16 @@
 import { ExecuteInquiryRunUseCase } from "@atlas/application";
 import { RedisInquiryJobQueue, isCommandTimeout } from "@atlas/infra/inquiry-job-queue-redis";
 import { HttpOrchestration } from "@atlas/infra/orchestration-http";
-import { createRedisClient } from "@atlas/infra/session-redis";
+import { createWatchedRedisClient } from "@atlas/infra/redis-client";
 import { MongoInquiryRunStore, createMongoClient } from "@atlas/infra/store-mongodb";
 import { readWorkerConfig } from "./config.ts";
 import { createConsumer } from "./consumer.ts";
 import { runConsumeLoop } from "./loop.ts";
 
-type RedisConnection = ReturnType<typeof createRedisClient>;
-
-const RECONNECT_BACKOFF_STEP_MS = 1_000;
-const RECONNECT_BACKOFF_CAP_MS = 15_000;
+type RedisConnection = ReturnType<typeof createWatchedRedisClient>;
 
 function log(fields: Record<string, unknown>, message: string): void {
   console.log(JSON.stringify({ ...fields, message, at: new Date().toISOString() }));
-}
-
-function reconnectBackoff(attempt: number): number {
-  return Math.min(attempt * RECONNECT_BACKOFF_STEP_MS, RECONNECT_BACKOFF_CAP_MS);
-}
-
-function createWatchedConnection(url: string, name: string, timeoutMs: number): RedisConnection {
-  const connection = createRedisClient(url, {
-    commandTimeout: timeoutMs,
-    socketTimeout: timeoutMs,
-    retryStrategy: reconnectBackoff,
-  });
-  connection.on("error", (error) =>
-    log({ connection: name, err: error }, "redis connection error"),
-  );
-  connection.on("close", () => log({ connection: name }, "redis connection closed"));
-  connection.on("reconnecting", (delayMs: number) =>
-    log({ connection: name, delayMs }, "redis reconnecting"),
-  );
-  connection.on("ready", () => log({ connection: name }, "redis connection ready"));
-  return connection;
 }
 
 async function closeConnection(connection: RedisConnection, name: string): Promise<void> {
@@ -53,12 +29,16 @@ async function main(): Promise<void> {
   await mongo.connect();
   const store = new MongoInquiryRunStore(mongo.db(config.mongoDbName));
 
-  const redis = createWatchedConnection(config.redisUrl, "commands", config.commandTimeoutMs);
-  const blockingRedis = createWatchedConnection(
-    config.redisUrl,
-    "blocking-read",
-    config.blockingCommandTimeoutMs,
-  );
+  const redis = createWatchedRedisClient(config.redisUrl, {
+    name: "commands",
+    timeoutMs: config.commandTimeoutMs,
+    log,
+  });
+  const blockingRedis = createWatchedRedisClient(config.redisUrl, {
+    name: "blocking-read",
+    timeoutMs: config.blockingCommandTimeoutMs,
+    log,
+  });
   const queue = new RedisInquiryJobQueue(redis, blockingRedis, {
     consumerName: config.consumerName,
     blockMs: config.queueBlockMs,

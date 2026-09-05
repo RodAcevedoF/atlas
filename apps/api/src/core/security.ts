@@ -1,10 +1,10 @@
-import type { createRedisClient } from "@atlas/infra/session-redis";
+import type { createWatchedRedisClient } from "@atlas/infra/redis-client";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import type { FastifyInstance } from "fastify";
 
-type RedisClient = ReturnType<typeof createRedisClient>;
+type RedisClient = ReturnType<typeof createWatchedRedisClient>;
 
 const GLOBAL_MAX = 100;
 const GLOBAL_WINDOW = "1 minute";

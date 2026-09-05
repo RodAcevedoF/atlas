@@ -1,3 +1,4 @@
+import { DEFAULT_REDIS_COMMAND_TIMEOUT_MS, DEFAULT_REDIS_URL } from "@atlas/infra/redis-client";
 import { RUN_EXECUTION_DEFAULTS, readPositiveNumber } from "@atlas/shared";
 
 export interface WorkerConfig {
@@ -19,7 +20,6 @@ export interface WorkerConfig {
 
 const DEFAULTS = {
   queueBlockMs: 5_000,
-  commandTimeoutMs: 10_000,
   ownershipRefreshMs: 30_000,
   reconcileIntervalMs: 30_000,
   reclaimBatchSize: 10,
@@ -41,7 +41,7 @@ export function readWorkerConfig(env: Record<string, string | undefined>): Worke
   return {
     mongoUri,
     mongoDbName: env.MONGODB_DB_NAME ?? RUN_EXECUTION_DEFAULTS.mongoDbName,
-    redisUrl: env.REDIS_URL ?? "redis://127.0.0.1:6379",
+    redisUrl: env.REDIS_URL ?? DEFAULT_REDIS_URL,
     intelligenceUrl: env.INTELLIGENCE_URL ?? "http://127.0.0.1:8888",
     retryAfterMs: readPositiveNumber(
       env,
@@ -54,8 +54,8 @@ export function readWorkerConfig(env: Record<string, string | undefined>): Worke
       RUN_EXECUTION_DEFAULTS.runTimeoutMs,
     ),
     queueBlockMs,
-    commandTimeoutMs: DEFAULTS.commandTimeoutMs,
-    blockingCommandTimeoutMs: queueBlockMs + DEFAULTS.commandTimeoutMs,
+    commandTimeoutMs: DEFAULT_REDIS_COMMAND_TIMEOUT_MS,
+    blockingCommandTimeoutMs: queueBlockMs + DEFAULT_REDIS_COMMAND_TIMEOUT_MS,
     ownershipRefreshMs,
     reclaimIdleMs: ownershipRefreshMs * RECLAIM_IDLE_MULTIPLE,
     reconcileIntervalMs: readPositiveNumber(

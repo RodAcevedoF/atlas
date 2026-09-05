@@ -1,5 +1,3 @@
-export * from "./client.ts";
-
 import type { SessionPort } from "@atlas/application";
 import type { Session, SessionToken } from "@atlas/domain";
 import { makeUserId } from "@atlas/domain";
