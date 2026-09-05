@@ -4,12 +4,14 @@ import type { InquiryRunStatus } from "@atlas/domain";
 import { Button, cn } from "@atlas/ui";
 import { Bookmark, LoaderCircle, Paperclip, Plus, RefreshCw, Sparkles, X } from "lucide-react";
 import { type ChangeEvent, type FormEvent, useMemo, useRef } from "react";
+import { useElapsedSeconds } from "../hooks/use-elapsed-seconds.ts";
 import { useInquiryAsk } from "../hooks/use-inquiry-ask.ts";
 import { useInquiryAttachmentIntent } from "../hooks/use-inquiry-attachment-intent.ts";
 import { useInquiryBudget } from "../hooks/use-inquiry-budget.ts";
 import type { InquiryAskState } from "../infra/store/inquiry.slice.ts";
 import { buildPreferenceSeed, offersPreferenceSeed } from "../use-cases/preference-seed.ts";
 import { INQUIRY_QUESTION_MAX_CHARS } from "../use-cases/request-inquiry-run.ts";
+import { TYPICAL_RUN_HINT, formatElapsedSeconds } from "../use-cases/run-timing.ts";
 import { AttachmentThinkingState } from "./attachment-thinking-state.tsx";
 
 type MessageTone = "working" | "error" | "info";
@@ -136,6 +138,8 @@ export function InquiryAskBox() {
   const fileInput = useRef<HTMLInputElement>(null);
   const questionInput = useRef<HTMLInputElement>(null);
   const message = askMessage(state);
+  const elapsedSeconds = useElapsedSeconds(state.isAsking);
+  const showsRunTiming = state.watchedStatus === "running";
   const remaining = budget?.remaining ?? null;
   const atCap = remaining === 0;
   const attachmentBusy = intent.stage === "uploading" || intent.stage === "interpreting";
@@ -305,9 +309,10 @@ export function InquiryAskBox() {
       ) : null}
 
       {message ? (
-        <p
+        <output
+          aria-live="polite"
           className={cn(
-            "flex items-start gap-2 px-3 pb-1 pt-2 text-[11.5px]",
+            "flex flex-wrap items-start gap-x-2 gap-y-0.5 px-3 pb-1 pt-2 text-[11.5px]",
             TONE_TEXT[message.tone],
           )}
         >
@@ -316,7 +321,12 @@ export function InquiryAskBox() {
             className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", TONE_DOT[message.tone])}
           />
           {message.text}
-        </p>
+          {showsRunTiming ? (
+            <span aria-hidden="true" className="tabular-nums text-muted-foreground/70">
+              {formatElapsedSeconds(elapsedSeconds)} · {TYPICAL_RUN_HINT}
+            </span>
+          ) : null}
+        </output>
       ) : null}
     </div>
   );
