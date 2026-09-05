@@ -2,9 +2,16 @@ import type {
   GraphEvent,
   GraphEventType,
   GraphRunInput,
+  GraphStreamInput,
+  InquiryRunEnvelope,
   OrchestrationPort,
 } from "@atlas/application";
-import { GraphUnavailableError, GraphUnreadableError } from "@atlas/application";
+import {
+  GraphUnavailableError,
+  GraphUnreadableError,
+  asRunEnvelope,
+  isTerminalRunEnvelope,
+} from "@atlas/application";
 
 interface WireEvent {
   runId: string;
@@ -25,19 +32,68 @@ export class HttpOrchestration implements OrchestrationPort {
 
   async run(input: GraphRunInput): Promise<Record<string, unknown>> {
     const route = `POST /graphs/${input.graphName}/run`;
+    const res = await this.postGraph(
+      route,
+      `${this.baseUrl}/graphs/${encodeURIComponent(input.graphName)}/run`,
+      { "content-type": "application/json" },
+      { input: input.input, runId: input.runId },
+    );
+    try {
+      return (await res.json()) as Record<string, unknown>;
+    } catch (error) {
+      throw new GraphUnreadableError(
+        `${route} answered with an unreadable body: ${reasonOf(error)}`,
+      );
+    }
+  }
+
+  async *stream(input: GraphStreamInput): AsyncIterable<GraphEvent | InquiryRunEnvelope> {
+    const route = `POST /graphs/${input.graphName}/stream`;
+    const res = await this.postGraph(
+      route,
+      `${this.baseUrl}/graphs/${encodeURIComponent(input.graphName)}/stream`,
+      { "content-type": "application/json", accept: "text/event-stream" },
+      { input: input.input, runId: input.runId, attempt: input.attempt },
+    );
+    if (!res.body) {
+      throw new GraphUnavailableError(`${route} returned no body`);
+    }
+    let lastSequence = 0;
+    for await (const block of sseBlocks(res.body, route)) {
+      const frame = parseSseBlock(block, route);
+      if (frame === null) continue;
+      if ("envelope" in frame) {
+        if (frame.envelope.sequence <= lastSequence) {
+          throw new GraphUnreadableError(
+            `${route} regressed from sequence ${lastSequence} to ${frame.envelope.sequence}`,
+          );
+        }
+        lastSequence = frame.envelope.sequence;
+        yield frame.envelope;
+        if (isTerminalRunEnvelope(frame.envelope)) return;
+        continue;
+      }
+      yield frame.event;
+      if (frame.event.type === "run:complete" || frame.event.type === "run:error") return;
+    }
+    throw new GraphUnavailableError(`${route} ended without a terminal event`);
+  }
+
+  private async postGraph(
+    route: string,
+    url: string,
+    headers: Record<string, string>,
+    body: Record<string, unknown>,
+  ): Promise<Response> {
     let res: Response;
     try {
-      res = await this.fetchImpl(
-        `${this.baseUrl}/graphs/${encodeURIComponent(input.graphName)}/run`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ input: input.input, runId: input.runId }),
-        },
-      );
+      res = await this.fetchImpl(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      });
     } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error);
-      throw new GraphUnavailableError(`${route} unreachable: ${reason}`);
+      throw new GraphUnavailableError(`${route} unreachable: ${reasonOf(error)}`);
     }
     if (res.status >= 500) {
       throw new GraphUnavailableError(`${route} ${res.status} ${res.statusText}`);
@@ -45,53 +101,7 @@ export class HttpOrchestration implements OrchestrationPort {
     if (!res.ok) {
       throw new Error(`${route} ${res.status} ${res.statusText}`);
     }
-    try {
-      return (await res.json()) as Record<string, unknown>;
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error);
-      throw new GraphUnreadableError(`${route} answered with an unreadable body: ${reason}`);
-    }
-  }
-
-  async *stream(input: GraphRunInput): AsyncIterable<GraphEvent> {
-    const res = await this.fetchImpl(
-      `${this.baseUrl}/graphs/${encodeURIComponent(input.graphName)}/stream`,
-      {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          accept: "text/event-stream",
-        },
-        body: JSON.stringify({ input: input.input, runId: input.runId }),
-      },
-    );
-    if (!res.ok) {
-      throw new Error(`POST /graphs/${input.graphName}/stream ${res.status} ${res.statusText}`);
-    }
-    if (!res.body) {
-      throw new Error(`POST /graphs/${input.graphName}/stream returned no body`);
-    }
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = "";
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      let idx = buf.indexOf("\n\n");
-      while (idx !== -1) {
-        const block = buf.slice(0, idx);
-        buf = buf.slice(idx + 2);
-        const event = parseSseBlock(block);
-        if (event) yield event;
-        idx = buf.indexOf("\n\n");
-      }
-    }
-    buf += decoder.decode();
-    if (buf.length > 0) {
-      const event = parseSseBlock(buf);
-      if (event) yield event;
-    }
+    return res;
   }
 
   async resume(
@@ -114,7 +124,42 @@ export class HttpOrchestration implements OrchestrationPort {
   }
 }
 
-function parseSseBlock(block: string): GraphEvent | null {
+async function* sseBlocks(body: ReadableStream<Uint8Array>, route: string): AsyncGenerator<string> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffered = "";
+  let sourceFinished = false;
+  try {
+    while (true) {
+      let chunk: Awaited<ReturnType<typeof reader.read>>;
+      try {
+        chunk = await reader.read();
+      } catch (error) {
+        sourceFinished = true;
+        throw new GraphUnavailableError(`${route} dropped mid-stream: ${reasonOf(error)}`);
+      }
+      if (chunk.done) {
+        sourceFinished = true;
+        return;
+      }
+      buffered += decoder.decode(chunk.value, { stream: true });
+      let separator = buffered.indexOf("\n\n");
+      while (separator !== -1) {
+        yield buffered.slice(0, separator);
+        buffered = buffered.slice(separator + 2);
+        separator = buffered.indexOf("\n\n");
+      }
+    }
+  } finally {
+    if (!sourceFinished) {
+      await reader.cancel();
+    }
+  }
+}
+
+type StreamFrame = { envelope: InquiryRunEnvelope } | { event: GraphEvent };
+
+function parseSseBlock(block: string, route: string): StreamFrame | null {
   let dataLine: string | null = null;
   for (const line of block.split("\n")) {
     if (line.startsWith("data:")) {
@@ -122,12 +167,31 @@ function parseSseBlock(block: string): GraphEvent | null {
     }
   }
   if (dataLine === null) return null;
-  const parsed = JSON.parse(dataLine) as WireEvent;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(dataLine);
+  } catch (error) {
+    throw new GraphUnreadableError(`${route} sent an unreadable frame: ${reasonOf(error)}`);
+  }
+  if (typeof parsed === "object" && parsed !== null && "schemaVersion" in parsed) {
+    const envelope = asRunEnvelope(parsed);
+    if (envelope === null) {
+      throw new GraphUnreadableError(`${route} sent a malformed run envelope`);
+    }
+    return { envelope };
+  }
+  const wire = parsed as WireEvent;
   return {
-    runId: parsed.runId,
-    node: parsed.node,
-    type: parsed.type,
-    data: parsed.data,
-    timestamp: new Date(parsed.timestamp),
+    event: {
+      runId: wire.runId,
+      node: wire.node,
+      type: wire.type,
+      data: wire.data,
+      timestamp: new Date(wire.timestamp),
+    },
   };
+}
+
+function reasonOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

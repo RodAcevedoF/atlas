@@ -21,6 +21,7 @@ export type { ParseTableInput, TabularParserPort } from "./inquiry/outbound/tabu
 export { InvalidTableError } from "./inquiry/outbound/tabular-parser.ts";
 export type {
   GraphRunInput,
+  GraphStreamInput,
   GraphEventType,
   GraphEvent,
   OrchestrationPort,
@@ -29,6 +30,18 @@ export {
   GraphUnavailableError,
   GraphUnreadableError,
 } from "./world/outbound/orchestration.ts";
+export type {
+  InquiryRunEnvelope,
+  InquiryRunEnvelopeType,
+  InquiryRunFailureClass,
+} from "./world/outbound/run-envelope.ts";
+export {
+  INQUIRY_RUN_ENVELOPE_SCHEMA_VERSION,
+  INQUIRY_RUN_ENVELOPE_TYPES,
+  INQUIRY_RUN_FAILURE_CLASSES,
+  asRunEnvelope,
+  isTerminalRunEnvelope,
+} from "./world/outbound/run-envelope.ts";
 export type { UserPage, UserPageInput, UserStorePort } from "./auth/outbound/user-store.ts";
 export type { SessionPort } from "./auth/outbound/session-store.ts";
 export type { PasswordHasherPort } from "./auth/outbound/password-hasher.ts";

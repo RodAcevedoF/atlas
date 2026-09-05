@@ -18,7 +18,9 @@ class StubRunner:
     async def run(self, run_id: str, input: dict[str, Any]) -> dict[str, Any]:
         return {"graph": self.name, "runId": run_id}
 
-    def stream(self, run_id: str, input: dict[str, Any]) -> AsyncIterator[GraphEvent]:
+    def stream(
+        self, run_id: str, input: dict[str, Any], attempt: int
+    ) -> AsyncIterator[GraphEvent]:
         return self._events(run_id)
 
     async def _events(self, run_id: str) -> AsyncIterator[GraphEvent]:

@@ -60,7 +60,9 @@ class AttachmentInterpretationGraph:
             image, media_type, user_text
         )
 
-    async def stream(self, run_id: str, input: dict[str, Any]) -> AsyncIterator[GraphEvent]:
+    async def stream(
+        self, run_id: str, input: dict[str, Any], attempt: int
+    ) -> AsyncIterator[GraphEvent]:
         yield GraphEvent(runId=run_id, node="attachment-interpretation", type="node:start")
         result = await self.run(run_id, input)
         yield GraphEvent(

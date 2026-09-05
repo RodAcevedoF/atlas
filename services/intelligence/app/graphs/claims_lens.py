@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import time
 from collections.abc import AsyncIterator
 from typing import Any, TypedDict, cast
 
 from langgraph.graph import END, START, StateGraph
 
 from app.core.errors import GraphInputError
-from app.core.events import GraphEvent
+from app.core.events import RunEnvelope, RunEnvelopeType
 from app.graphs.places import (
     PlacedClaim,
     PlaceGroup,
@@ -17,6 +18,7 @@ from app.graphs.places import (
 )
 from app.ports.analyst import InquiryAnalystPort, InquiryAnalystUnavailable, PlaceRead
 from app.ports.claims import (
+    Claim,
     ClaimSourcePort,
     ClaimSourceRetryable,
     ClaimSourceUnavailable,
@@ -126,6 +128,10 @@ def _validated_place_reads(places: list[PlaceGroup], proposed: list[PlaceRead]) 
     return accepted
 
 
+def _read_record(place_read: PlaceRead) -> dict[str, Any]:
+    return {"text": place_read.text, "sourceUrls": place_read.source_urls}
+
+
 def to_place_record(group: PlaceGroup, place_read: PlaceRead | None = None) -> dict[str, Any]:
     return {
         "place": group.name,
@@ -133,23 +139,8 @@ def to_place_record(group: PlaceGroup, place_read: PlaceRead | None = None) -> d
         "latitude": group.latitude,
         "longitude": group.longitude,
         "claimCount": len(group.claims),
-        "read": {
-            "text": place_read.text,
-            "sourceUrls": place_read.source_urls,
-        }
-        if place_read
-        else None,
-        "claims": [
-            {
-                "text": item.claim.text,
-                "confidence": item.claim.confidence,
-                "sourceUrl": item.claim.source_url,
-                "sourceTitle": item.claim.source_title,
-                "publishedDate": item.claim.published_date,
-                "sourceImageUrl": item.claim.source_image_url,
-            }
-            for item in group.claims
-        ],
+        "read": _read_record(place_read) if place_read else None,
+        "claims": [_claim_record(item.claim) for item in group.claims],
     }
 
 
@@ -230,6 +221,36 @@ class ClaimsLensGraph:
         return builder.compile()
 
     async def run(self, run_id: str, input: dict[str, Any]) -> dict[str, Any]:
+        result: dict[str, Any] | None = None
+        async for envelope in self._execute(run_id, input, attempt=1):
+            if envelope.type in ("run_complete", "run_failed"):
+                result = envelope.data["result"]
+        if result is None:
+            raise RuntimeError("the claims lens stream ended without a terminal result")
+        return result
+
+    async def stream(
+        self, run_id: str, input: dict[str, Any], attempt: int
+    ) -> AsyncIterator[RunEnvelope]:
+        try:
+            async for envelope in self._execute(run_id, input, attempt):
+                yield envelope
+        except GraphInputError:
+            yield RunEnvelope(
+                runId=run_id,
+                attempt=attempt,
+                sequence=1,
+                type="run_failed",
+                durationMs=0,
+                data={"failureClass": "internal", "result": None},
+            )
+
+    async def resume(self, run_id: str, input: dict[str, Any]) -> dict[str, Any]:
+        return await self.run(run_id, input)
+
+    async def _execute(
+        self, run_id: str, input: dict[str, Any], attempt: int
+    ) -> AsyncIterator[RunEnvelope]:
         question = str(input.get("question") or "").strip()
         if not question:
             raise GraphInputError("an inquiry run needs a question")
@@ -237,18 +258,111 @@ class ClaimsLensGraph:
         if not window:
             raise GraphInputError("an inquiry run needs a window")
 
-        final = await self._graph.ainvoke(
-            {"question": question, "limit": self._limit, "window": window}
-        )
-        return _result(cast(ClaimsState, final))
+        state: dict[str, Any] = {"question": question, "limit": self._limit, "window": window}
+        started = time.monotonic()
+        stage_started = started
+        sequence = 0
 
-    async def stream(self, run_id: str, input: dict[str, Any]) -> AsyncIterator[GraphEvent]:
-        yield GraphEvent(runId=run_id, node="inquiry", type="node:start")
-        result = await self.run(run_id, input)
-        yield GraphEvent(runId=run_id, node="inquiry", type="run:complete", data=result)
+        def sealed(kind: RunEnvelopeType, duration_ms: int, data: dict[str, Any]) -> RunEnvelope:
+            nonlocal sequence
+            sequence += 1
+            return RunEnvelope(
+                runId=run_id,
+                attempt=attempt,
+                sequence=sequence,
+                type=kind,
+                durationMs=duration_ms,
+                data=data,
+            )
 
-    async def resume(self, run_id: str, input: dict[str, Any]) -> dict[str, Any]:
-        return await self.run(run_id, input)
+        async for update in self._graph.astream(dict(state), stream_mode="updates"):
+            stage_ms = int((time.monotonic() - stage_started) * 1000)
+            stage_started = time.monotonic()
+            for node, delta in update.items():
+                state |= delta
+                milestones = _milestones(node, delta, cast(ClaimsState, state))
+                for index, (kind, checkpoint) in enumerate(milestones):
+                    yield sealed(kind, stage_ms if index == 0 else 0, checkpoint)
+
+        status = state.get("status")
+        if status is None:
+            raise RuntimeError("the claims lens graph ended without a terminal status")
+        result = _result(cast(ClaimsState, state))
+        total_ms = int((time.monotonic() - started) * 1000)
+        if status in ("failed_retryable", "failed_permanent"):
+            yield sealed("run_failed", total_ms, {"failureClass": "transport", "result": result})
+            return
+        yield sealed("run_complete", total_ms, {"result": result})
+
+
+def _milestones(
+    node: str, delta: dict[str, Any], state: ClaimsState
+) -> list[tuple[RunEnvelopeType, dict[str, Any]]]:
+    if delta.get("status") not in (None, "succeeded"):
+        return []
+    if node == "retrieve":
+        return [("retrieval_complete", _retrieval_checkpoint(state["retrieval"]))]
+    if node == "normalise":
+        return [("map_ready", _map_checkpoint(state))]
+    if node == "synthesize":
+        reads: list[tuple[RunEnvelopeType, dict[str, Any]]] = [
+            ("place_read_ready", _place_read_checkpoint(coordinates, read))
+            for coordinates, read in state["place_reads"].items()
+        ]
+        return [("synthesis_ready", {"synthesis": state["synthesis"]}), *reads]
+    return []
+
+
+def _retrieval_checkpoint(retrieval: ClaimsRetrieval) -> dict[str, Any]:
+    return {
+        "claimCount": len(retrieval.claims),
+        "documentCount": len(retrieval.documents),
+        "costUsd": retrieval.cost.usd,
+        "costReported": retrieval.cost.reported,
+        "documents": [to_document_record(document) for document in retrieval.documents],
+        "claims": [
+            _claim_record(claim)
+            | {
+                "place": {
+                    "name": claim.place.name,
+                    "country": claim.place.country,
+                    "latitude": claim.place.latitude,
+                    "longitude": claim.place.longitude,
+                }
+            }
+            for claim in retrieval.claims
+        ],
+    }
+
+
+def _claim_record(claim: Claim) -> dict[str, Any]:
+    return {
+        "text": claim.text,
+        "confidence": claim.confidence,
+        "sourceUrl": claim.source_url,
+        "sourceTitle": claim.source_title,
+        "publishedDate": claim.published_date,
+        "sourceImageUrl": claim.source_image_url,
+    }
+
+
+def _map_checkpoint(state: ClaimsState) -> dict[str, Any]:
+    return {
+        "places": [to_place_record(group) for group in state["places"]],
+        "unplacedClaims": state["unplaced"],
+        "claimCount": len(state["retrieval"].claims),
+    }
+
+
+def _place_read_checkpoint(coordinates: PlaceCoordinates, read: PlaceRead) -> dict[str, Any]:
+    latitude, longitude = coordinates
+    return {
+        "place": read.place,
+        "country": read.country,
+        "latitude": latitude,
+        "longitude": longitude,
+        "read": _read_record(read),
+    }
 
 
 def _result(state: ClaimsState) -> dict[str, Any]:

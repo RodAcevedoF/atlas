@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from app.core.errors import GraphInputError, GraphNotFoundError
-from app.core.events import GraphEvent
+from app.core.events import GraphEvent, RunEnvelope
 from app.graphs.registry import registry
 
 router = APIRouter(prefix="/graphs")
@@ -20,6 +20,7 @@ class RunBody(BaseModel):
 
     input: dict[str, Any] = Field(default_factory=dict)
     run_id: str | None = None
+    attempt: int = Field(default=1, ge=1)
 
 
 class ResumeBody(BaseModel):
@@ -47,15 +48,15 @@ async def stream_graph(name: str, body: RunBody) -> StreamingResponse:
         try:
             runner = registry.get(name)
         except GraphNotFoundError:
-            event = GraphEvent(
+            missing = GraphEvent(
                 runId=run_id,
                 node="",
                 type="run:error",
                 data={"error": "graph not found"},
             )
-            yield _sse(event)
+            yield _sse(missing)
             return
-        async for event in runner.stream(run_id=run_id, input=body.input):
+        async for event in runner.stream(run_id=run_id, input=body.input, attempt=body.attempt):
             yield _sse(event)
 
     return StreamingResponse(event_source(), media_type="text/event-stream")
@@ -73,5 +74,5 @@ async def resume_graph(name: str, run_id: str, body: ResumeBody) -> dict[str, An
         raise HTTPException(status_code=422, detail=str(error)) from None
 
 
-def _sse(event: GraphEvent) -> bytes:
+def _sse(event: GraphEvent | RunEnvelope) -> bytes:
     return f"event: graph\ndata: {json.dumps(event.to_json())}\n\n".encode()

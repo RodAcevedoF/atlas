@@ -2,13 +2,15 @@ from collections.abc import AsyncIterator
 from typing import Any, Protocol
 
 from app.core.errors import GraphNotFoundError
-from app.core.events import GraphEvent
+from app.core.events import GraphEvent, RunEnvelope
 
 
 class GraphRunner(Protocol):
     async def run(self, run_id: str, input: dict[str, Any]) -> dict[str, Any]: ...
 
-    def stream(self, run_id: str, input: dict[str, Any]) -> AsyncIterator[GraphEvent]: ...
+    def stream(
+        self, run_id: str, input: dict[str, Any], attempt: int
+    ) -> AsyncIterator[GraphEvent | RunEnvelope]: ...
 
     async def resume(self, run_id: str, input: dict[str, Any]) -> dict[str, Any]: ...
 

@@ -12,10 +12,16 @@ export class GraphUnreadableError extends Error {
   }
 }
 
+import type { InquiryRunEnvelope } from "./run-envelope.ts";
+
 export interface GraphRunInput {
   graphName: string;
   input: Record<string, unknown>;
   runId?: string;
+}
+
+export interface GraphStreamInput extends GraphRunInput {
+  attempt: number;
 }
 
 export type GraphEventType =
@@ -35,7 +41,7 @@ export interface GraphEvent {
 
 export interface OrchestrationPort {
   run(input: GraphRunInput): Promise<Record<string, unknown>>;
-  stream(input: GraphRunInput): AsyncIterable<GraphEvent>;
+  stream(input: GraphStreamInput): AsyncIterable<GraphEvent | InquiryRunEnvelope>;
   resume(
     graphName: string,
     runId: string,
