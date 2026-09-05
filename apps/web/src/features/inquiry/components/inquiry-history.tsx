@@ -28,8 +28,8 @@ interface InquiryHistoryProps {
 
 function Notice({ children, activity }: { children: ReactNode; activity?: "active" | "idle" }) {
   return (
-    <div className="px-8.5 py-7">
-      <Card className={cn(PANEL, "p-6")}>
+    <div className="flex h-full items-center justify-center px-8.5 py-7">
+      <Card className={cn(PANEL, "w-full max-w-md p-6")}>
         <AsyncState activity={activity}>{children}</AsyncState>
       </Card>
     </div>
@@ -46,13 +46,15 @@ function DetailPane({
   if (detail.run) return <RunDetail key={detail.run.id} run={detail.run} onDelete={onDelete} />;
   if (detail.error) return <p className="text-[14px] text-destructive">{detail.error}</p>;
   return (
-    <AsyncState
-      activity="active"
-      className="max-w-sm flex-col items-stretch gap-4"
-      flowClassName="w-full"
-    >
-      {LOADING_RUN}
-    </AsyncState>
+    <div className="flex h-full items-center justify-center">
+      <AsyncState
+        activity="active"
+        className="w-full max-w-sm flex-col items-stretch gap-4"
+        flowClassName="w-full"
+      >
+        {LOADING_RUN}
+      </AsyncState>
+    </div>
   );
 }
 

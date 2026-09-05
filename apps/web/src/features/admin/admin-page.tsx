@@ -65,7 +65,9 @@ export function AdminPage() {
           ) : null}
           {!analytics && isLoading ? (
             <Card className={cn(PANEL, "p-6")}>
-              <AsyncState activity="active">{LOADING}</AsyncState>
+              <AsyncState activity="active" className="min-h-40 justify-center">
+                {LOADING}
+              </AsyncState>
             </Card>
           ) : null}
           {error ? (

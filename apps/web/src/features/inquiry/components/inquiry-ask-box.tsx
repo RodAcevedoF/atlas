@@ -322,8 +322,11 @@ export function InquiryAskBox() {
           />
           {message.text}
           {showsRunTiming ? (
-            <span aria-hidden="true" className="tabular-nums text-muted-foreground/70">
-              {formatElapsedSeconds(elapsedSeconds)} · {TYPICAL_RUN_HINT}
+            <span className="text-muted-foreground/70">
+              <span aria-hidden="true" className="tabular-nums">
+                {formatElapsedSeconds(elapsedSeconds)} ·{" "}
+              </span>
+              {TYPICAL_RUN_HINT}
             </span>
           ) : null}
         </output>
