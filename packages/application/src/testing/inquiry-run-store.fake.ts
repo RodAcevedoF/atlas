@@ -42,6 +42,20 @@ function newestFirst(left: InquiryRun, right: InquiryRun): number {
 export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquiryRunStore {
   const held = new Map<InquiryRunId, InquiryRun>(seed.map((run) => [run.id, run]));
 
+  function claim(run: InquiryRun, input: ClaimInquiryRunInput): InquiryRun {
+    const claimed: InquiryRun = {
+      ...run,
+      status: "running",
+      startedAt: input.now,
+      completedAt: null,
+      failure: null,
+      error: null,
+      attempts: run.attempts + 1,
+    };
+    held.set(claimed.id, claimed);
+    return claimed;
+  }
+
   const store: InquiryRunStorePort = {
     saveInquiryRun(run) {
       if (held.has(run.id)) {
@@ -73,19 +87,12 @@ export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquir
     },
     claimNextInquiryRun(input) {
       const [next] = [...held.values()].filter((run) => isClaimable(run, input)).sort(newestFirst);
-      if (!next) return Promise.resolve(null);
-
-      const claimed: InquiryRun = {
-        ...next,
-        status: "running",
-        startedAt: input.now,
-        completedAt: null,
-        failure: null,
-        error: null,
-        attempts: next.attempts + 1,
-      };
-      held.set(claimed.id, claimed);
-      return Promise.resolve(claimed);
+      return Promise.resolve(next ? claim(next, input) : null);
+    },
+    claimInquiryRunById(id, input) {
+      const run = held.get(id);
+      if (!run || !isClaimable(run, input)) return Promise.resolve(null);
+      return Promise.resolve(claim(run, input));
     },
     deleteInquiryRunById: (id) => Promise.resolve(held.delete(id)),
     completeInquiryRun(input) {

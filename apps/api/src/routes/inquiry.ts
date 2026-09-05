@@ -51,13 +51,19 @@ export async function registerInquiryRoutes(
   app.post("/inquiry/runs", async (req, reply) => {
     const user = requireUser(req);
     const body = req.body as Record<string, unknown> | undefined;
-    const result = await deps.requestInquiryRun.execute({
+    const { dispatched, dispatchError, ...accepted } = await deps.requestInquiryRun.execute({
       ...parseInquiryRunBody(body),
       ownerId: user.id,
       role: user.role,
       emailVerified: user.emailVerified,
     });
-    return reply.code(202).send(result);
+    if (!dispatched) {
+      req.log.warn(
+        { runId: accepted.runId, dispatchError },
+        "inquiry run accepted but not dispatched to the queue",
+      );
+    }
+    return reply.code(202).send(accepted);
   });
 
   app.get("/inquiry/budget", async (req, reply) => {

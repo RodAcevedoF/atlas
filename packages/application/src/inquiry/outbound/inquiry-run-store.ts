@@ -51,6 +51,7 @@ export interface InquiryRunStorePort {
   findInquiryRunListRowById(id: InquiryRunId): Promise<InquiryRunListRow | null>;
   countSucceededQuestionsForOwnerDay(ownerId: UserId, day: string): Promise<number>;
   claimNextInquiryRun(input: ClaimInquiryRunInput): Promise<InquiryRun | null>;
+  claimInquiryRunById(id: InquiryRunId, input: ClaimInquiryRunInput): Promise<InquiryRun | null>;
   deleteInquiryRunById(id: InquiryRunId): Promise<boolean>;
   completeInquiryRun(input: CompleteInquiryRunInput): Promise<void>;
   listInquiryRuns(page: InquiryRunPage): Promise<InquiryRunListRow[]>;

@@ -1,5 +1,6 @@
 import { Redis } from "ioredis";
+import type { RedisOptions } from "ioredis";
 
-export function createRedisClient(url: string): Redis {
-  return new Redis(url);
+export function createRedisClient(url: string, options: RedisOptions = {}): Redis {
+  return new Redis(url, options);
 }

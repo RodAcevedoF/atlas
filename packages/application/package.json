@@ -8,6 +8,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@atlas/domain": "*"
+    "@atlas/domain": "*",
+    "@atlas/shared": "*"
   }
 }

@@ -9,8 +9,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atlas/domain": "*",
     "@atlas/application": "*",
+    "@atlas/domain": "*",
+    "@atlas/infra": "*",
     "@atlas/shared": "*"
   }
 }

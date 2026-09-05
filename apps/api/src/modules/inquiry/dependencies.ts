@@ -1,10 +1,10 @@
 import type {
   DeleteInquiryAttachment,
   DeleteInquiryRun,
-  ExecuteInquiryRun,
   GetInquiryBudget,
   GetInquiryRun,
   InquiryAttachmentStorePort,
+  InquiryJobPublisherPort,
   InquiryRunStorePort,
   InterpretInquiryAttachment,
   ListInquiryRuns,
@@ -16,7 +16,6 @@ import type {
 import {
   DeleteInquiryAttachmentUseCase,
   DeleteInquiryRunUseCase,
-  ExecuteInquiryRunUseCase,
   GetInquiryBudgetUseCase,
   GetInquiryRunUseCase,
   InterpretInquiryAttachmentUseCase,
@@ -27,7 +26,6 @@ import {
 import type { InquiryRunId } from "@atlas/domain";
 
 export interface InquiryDeps {
-  executeInquiryRun: ExecuteInquiryRun;
   requestInquiryRun: RequestInquiryRun;
   getInquiryBudget: GetInquiryBudget;
   getInquiryRun: GetInquiryRun;
@@ -36,7 +34,6 @@ export interface InquiryDeps {
   uploadInquiryAttachment: UploadInquiryAttachment;
   interpretInquiryAttachment: InterpretInquiryAttachment;
   deleteInquiryAttachment: DeleteInquiryAttachment;
-  pollIntervalMs: number;
 }
 
 export function makeInquiryDependencies(deps: {
@@ -44,22 +41,15 @@ export function makeInquiryDependencies(deps: {
   attachmentStore: InquiryAttachmentStorePort;
   tabularParser: TabularParserPort;
   orchestration: OrchestrationPort;
-  retryAfterMs: number;
-  runTimeoutMs: number;
-  pollIntervalMs: number;
+  queue: InquiryJobPublisherPort;
   dailyCap: number;
   pinnedRunId: InquiryRunId | null;
 }): InquiryDeps {
   return {
-    executeInquiryRun: new ExecuteInquiryRunUseCase(
-      deps.store,
-      deps.orchestration,
-      deps.retryAfterMs,
-      deps.runTimeoutMs,
-    ),
     requestInquiryRun: new RequestInquiryRunUseCase(
       deps.store,
       deps.dailyCap,
+      deps.queue,
       deps.attachmentStore,
     ),
     getInquiryBudget: new GetInquiryBudgetUseCase(deps.store, deps.dailyCap),
@@ -79,6 +69,5 @@ export function makeInquiryDependencies(deps: {
       deps.orchestration,
     ),
     deleteInquiryAttachment: new DeleteInquiryAttachmentUseCase(deps.attachmentStore),
-    pollIntervalMs: deps.pollIntervalMs,
   };
 }

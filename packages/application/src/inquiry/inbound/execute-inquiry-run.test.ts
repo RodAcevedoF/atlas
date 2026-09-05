@@ -763,4 +763,57 @@ describe("ExecuteInquiryRunUseCase", () => {
     expect(stored?.status).toBe("succeeded");
     expect(stored?.failure).toBeNull();
   });
+
+  test("a dispatched job executes the run it names, not whichever run is newest", async () => {
+    const target = run({ id: makeInquiryRunId("run-wanted") });
+    const newer = run({
+      id: makeInquiryRunId("run-newer"),
+      createdAt: new Date(CREATED_AT.getTime() + 60_000),
+    });
+    const { store, runs } = inMemoryInquiryRunStore([target, newer]);
+    const useCase = new ExecuteInquiryRunUseCase(
+      store,
+      answering({ status: "no_coverage" }),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    const result = await useCase.execute(target.id);
+
+    expect(result.runId).toBe(target.id);
+    expect(runs().find((stored) => stored.id === newer.id)?.status).toBe("queued");
+  });
+
+  test("a run another worker already holds is not executed a second time", async () => {
+    const held = run({ status: "running", startedAt: CREATED_AT });
+    const { store } = inMemoryInquiryRunStore([held]);
+    const useCase = new ExecuteInquiryRunUseCase(
+      store,
+      answering({ status: "no_coverage" }),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    const result = await useCase.execute(held.id);
+
+    expect(result.runId).toBeNull();
+    expect(result.status).toBeNull();
+  });
+
+  test("a duplicate delivery of the same job runs the inquiry once", async () => {
+    const queued = run();
+    const { store } = inMemoryInquiryRunStore([queued]);
+    const useCase = new ExecuteInquiryRunUseCase(
+      store,
+      answering({ status: "no_coverage" }),
+      RETRY_AFTER_MS,
+      RUN_TIMEOUT_MS,
+    );
+
+    const first = await useCase.execute(queued.id);
+    const second = await useCase.execute(queued.id);
+
+    expect(first.runId).toBe(queued.id);
+    expect(second.runId).toBeNull();
+  });
 });

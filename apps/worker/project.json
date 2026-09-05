@@ -24,6 +24,13 @@
         "cwd": "{projectRoot}"
       },
       "dependsOn": ["^typecheck"]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bun test",
+        "cwd": "{projectRoot}"
+      }
     }
   }
 }

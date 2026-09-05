@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { InquiryAttachment, InquiryRun, InquiryRunStatus } from "@atlas/domain";
 import { makeInquiryAttachmentId, makeInquiryRunId, makeUserId } from "@atlas/domain";
 import { InMemoryInquiryAttachmentStore } from "../../testing/inquiry-attachment-store.fake.ts";
+import { InMemoryInquiryJobQueue } from "../../testing/inquiry-job-queue.fake.ts";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import {
   InquiryDailyCapReachedError,
@@ -70,7 +71,7 @@ function run(overrides: Partial<InquiryRun> = {}): InquiryRun {
 describe("RequestInquiryRunUseCase", () => {
   test("an unverified account cannot start an inquiry", async () => {
     const { store, runs } = inMemoryInquiryRunStore();
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
     const request = useCase.execute({
       emailVerified: false,
@@ -86,7 +87,7 @@ describe("RequestInquiryRunUseCase", () => {
 
   test("a new question is queued for the worker", async () => {
     const { store, runs } = inMemoryInquiryRunStore();
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
     const result = await useCase.execute({
       emailVerified: true,
@@ -111,7 +112,12 @@ describe("RequestInquiryRunUseCase", () => {
     const { store } = inMemoryInquiryRunStore();
     const draft = interpretedAttachment();
     const attachments = new InMemoryInquiryAttachmentStore([draft]);
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, attachments);
+    const useCase = new RequestInquiryRunUseCase(
+      store,
+      DAILY_CAP,
+      new InMemoryInquiryJobQueue(),
+      attachments,
+    );
 
     const result = await useCase.execute({
       emailVerified: true,
@@ -131,7 +137,12 @@ describe("RequestInquiryRunUseCase", () => {
     const { store, runs } = inMemoryInquiryRunStore();
     const draft = { ...interpretedAttachment(), expiresAt: new Date(0) };
     const attachments = new InMemoryInquiryAttachmentStore([draft]);
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, attachments);
+    const useCase = new RequestInquiryRunUseCase(
+      store,
+      DAILY_CAP,
+      new InMemoryInquiryJobQueue(),
+      attachments,
+    );
 
     const request = useCase.execute({
       emailVerified: true,
@@ -160,7 +171,7 @@ describe("RequestInquiryRunUseCase", () => {
   for (const { name, status } of reused) {
     test(name, async () => {
       const { store, runs } = inMemoryInquiryRunStore([run({ status })]);
-      const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+      const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
       const result = await useCase.execute({
         emailVerified: true,
@@ -170,14 +181,19 @@ describe("RequestInquiryRunUseCase", () => {
         refresh: false,
       });
 
-      expect(result).toEqual({ runId: makeInquiryRunId("run-1"), status, deduped: true });
+      expect(result).toEqual({
+        runId: makeInquiryRunId("run-1"),
+        status,
+        deduped: true,
+        dispatched: true,
+      });
       expect(runs()).toHaveLength(1);
     });
   }
 
   test("another user asking the same question today gets their own run to own", async () => {
     const { store, runs } = inMemoryInquiryRunStore([run({ status: "succeeded" })]);
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
     const result = await useCase.execute({
       emailVerified: true,
@@ -194,7 +210,7 @@ describe("RequestInquiryRunUseCase", () => {
 
   test("a permanently failed question can be asked again, because it never answered", async () => {
     const { store, runs } = inMemoryInquiryRunStore([run({ status: "failed_permanent" })]);
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
     const result = await useCase.execute({
       emailVerified: true,
@@ -217,7 +233,7 @@ describe("RequestInquiryRunUseCase", () => {
     });
     const retried = run({ id: makeInquiryRunId("run-new"), status: "queued" });
     const { store } = inMemoryInquiryRunStore([failed, retried]);
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
     const result = await useCase.execute({
       emailVerified: true,
@@ -233,7 +249,7 @@ describe("RequestInquiryRunUseCase", () => {
 
   test("a differently typed repeat of the same question is the same question", async () => {
     const { store, runs } = inMemoryInquiryRunStore([run()]);
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
     const result = await useCase.execute({
       emailVerified: true,
@@ -250,7 +266,7 @@ describe("RequestInquiryRunUseCase", () => {
   test("yesterday's answer does not satisfy today's question", async () => {
     const stale = run({ day: "2020-01-01" });
     const { store, runs } = inMemoryInquiryRunStore([stale]);
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
     const result = await useCase.execute({
       emailVerified: true,
@@ -269,7 +285,7 @@ describe("RequestInquiryRunUseCase", () => {
       run({ id: makeInquiryRunId(`run-${index}`), questionKey: `question ${index}` }),
     );
     const { store, runs } = inMemoryInquiryRunStore(seed);
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
     const request = useCase.execute({
       emailVerified: true,
@@ -288,7 +304,7 @@ describe("RequestInquiryRunUseCase", () => {
       run({ id: makeInquiryRunId(`run-${index}`), questionKey: `question ${index}` }),
     );
     const { store } = inMemoryInquiryRunStore([...seed, run({ id: makeInquiryRunId("run-4") })]);
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
     const result = await useCase.execute({
       emailVerified: true,
@@ -302,6 +318,7 @@ describe("RequestInquiryRunUseCase", () => {
       runId: makeInquiryRunId("run-4"),
       status: "succeeded",
       deduped: true,
+      dispatched: true,
     });
   });
 
@@ -314,7 +331,7 @@ describe("RequestInquiryRunUseCase", () => {
       }),
     );
     const { store } = inMemoryInquiryRunStore(seed);
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
     const result = await useCase.execute({
       emailVerified: true,
@@ -330,7 +347,7 @@ describe("RequestInquiryRunUseCase", () => {
   test("a refresh re-asks today's answered question rather than replaying it", async () => {
     const answered = run();
     const { store, runs } = inMemoryInquiryRunStore([answered]);
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
     const result = await useCase.execute({
       emailVerified: true,
@@ -355,7 +372,7 @@ describe("RequestInquiryRunUseCase", () => {
   for (const { name, status } of inFlight) {
     test(name, async () => {
       const { store, runs } = inMemoryInquiryRunStore([run({ status })]);
-      const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+      const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
       const result = await useCase.execute({
         emailVerified: true,
@@ -365,7 +382,12 @@ describe("RequestInquiryRunUseCase", () => {
         refresh: true,
       });
 
-      expect(result).toEqual({ runId: makeInquiryRunId("run-1"), status, deduped: true });
+      expect(result).toEqual({
+        runId: makeInquiryRunId("run-1"),
+        status,
+        deduped: true,
+        dispatched: true,
+      });
       expect(runs()).toHaveLength(1);
     });
   }
@@ -378,7 +400,7 @@ describe("RequestInquiryRunUseCase", () => {
       ...seed,
       run({ id: makeInquiryRunId("run-4") }),
     ]);
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
     const result = await useCase.execute({
       emailVerified: true,
@@ -402,7 +424,7 @@ describe("RequestInquiryRunUseCase", () => {
       }),
     );
     const { store } = inMemoryInquiryRunStore(seed);
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
     const result = await useCase.execute({
       emailVerified: true,
@@ -424,7 +446,7 @@ describe("RequestInquiryRunUseCase", () => {
       }),
     );
     const { store } = inMemoryInquiryRunStore(seed);
-    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
     const result = await useCase.execute({
       emailVerified: true,
@@ -448,7 +470,7 @@ describe("RequestInquiryRunUseCase", () => {
         run({ id: makeInquiryRunId(`run-${index}`), questionKey: `question ${index}` }),
       );
       const { store } = inMemoryInquiryRunStore(seed);
-      const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+      const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
       const result = await useCase.execute({
         emailVerified: true,
@@ -473,7 +495,7 @@ describe("RequestInquiryRunUseCase", () => {
   for (const { name, question } of rejected) {
     test(name, async () => {
       const { store, runs } = inMemoryInquiryRunStore();
-      const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP);
+      const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
       const request = useCase.execute({
         emailVerified: true,
@@ -487,4 +509,48 @@ describe("RequestInquiryRunUseCase", () => {
       expect(runs()).toHaveLength(0);
     });
   }
+
+  test("an accepted run is reservable by a worker without waiting for the poll interval", async () => {
+    const { store } = inMemoryInquiryRunStore();
+    const queue = new InMemoryInquiryJobQueue();
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, queue);
+
+    const result = await useCase.execute({
+      emailVerified: true,
+      ownerId: OWNER,
+      role: "user",
+      question: QUESTION,
+      refresh: false,
+    });
+    const [job] = await queue.reserve(1);
+
+    expect(result.dispatched).toBe(true);
+    expect(job?.runId).toBe(result.runId);
+  });
+
+  test("a queue outage still accepts the run and leaves it claimable by the recovery scan", async () => {
+    const { store, runs } = inMemoryInquiryRunStore();
+    const queue = new InMemoryInquiryJobQueue();
+    queue.failPublish();
+    const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, queue);
+
+    const result = await useCase.execute({
+      emailVerified: true,
+      ownerId: OWNER,
+      role: "user",
+      question: QUESTION,
+      refresh: false,
+    });
+    const recovered = await store.claimNextInquiryRun({
+      now: new Date(),
+      completedBefore: new Date(),
+      startedBefore: new Date(),
+    });
+
+    expect(result.dispatched).toBe(false);
+    expect(result.dispatchError).toBe("redis unavailable");
+    expect(result.status).toBe("queued");
+    expect(runs()).toHaveLength(1);
+    expect(recovered?.id).toBe(result.runId);
+  });
 });

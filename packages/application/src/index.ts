@@ -9,6 +9,11 @@ export type {
 } from "./inquiry/outbound/inquiry-run-store.ts";
 export { INQUIRY_MAX_ATTEMPTS } from "./inquiry/outbound/inquiry-run-store.ts";
 export type {
+  InquiryJob,
+  InquiryJobPublisherPort,
+  InquiryJobQueuePort,
+} from "./inquiry/outbound/inquiry-job-queue.ts";
+export type {
   InquiryAttachmentStorePort,
   SaveInquiryAttachmentInput,
 } from "./inquiry/outbound/inquiry-attachment-store.ts";
@@ -41,7 +46,10 @@ export type {
   ExecuteInquiryRun,
   ExecuteInquiryRunOutput,
 } from "./inquiry/inbound/execute-inquiry-run.ts";
-export { ExecuteInquiryRunUseCase } from "./inquiry/inbound/execute-inquiry-run.ts";
+export {
+  ExecuteInquiryRunUseCase,
+  STALE_TIMEOUT_MULTIPLE,
+} from "./inquiry/inbound/execute-inquiry-run.ts";
 export type {
   RequestInquiryRun,
   RequestInquiryRunInput,

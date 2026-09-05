@@ -8,6 +8,7 @@ import type {
 } from "@atlas/domain";
 import { hasAtLeastRole, makeInquiryRunId } from "@atlas/domain";
 import type { InquiryAttachmentStorePort } from "../outbound/inquiry-attachment-store.ts";
+import type { InquiryJobPublisherPort } from "../outbound/inquiry-job-queue.ts";
 import type { InquiryRunStorePort } from "../outbound/inquiry-run-store.ts";
 
 const INQUIRY_WINDOW = "1w";
@@ -47,6 +48,8 @@ export interface RequestInquiryRunOutput {
   runId: InquiryRunId;
   status: InquiryRunStatus;
   deduped: boolean;
+  dispatched: boolean;
+  dispatchError?: string;
 }
 
 export interface RequestInquiryRun {
@@ -103,6 +106,7 @@ export class RequestInquiryRunUseCase implements RequestInquiryRun {
   constructor(
     private readonly store: InquiryRunStorePort,
     private readonly dailyCap: number,
+    private readonly queue: InquiryJobPublisherPort,
     private readonly attachments?: InquiryAttachmentStorePort,
   ) {}
 
@@ -142,7 +146,7 @@ export class RequestInquiryRunUseCase implements RequestInquiryRun {
     const reusable = pickReusable(stored, input.refresh);
     if (reusable) {
       if (input.attachmentId) await this.attachments?.deleteInquiryAttachment(input.attachmentId);
-      return { runId: reusable.id, status: reusable.status, deduped: true };
+      return { runId: reusable.id, status: reusable.status, deduped: true, dispatched: true };
     }
 
     if (countsAgainstBudget(input, stored)) {
@@ -155,7 +159,26 @@ export class RequestInquiryRunUseCase implements RequestInquiryRun {
     if (input.attachmentId) {
       await this.attachments?.attachInquiryAttachment(input.attachmentId, run.id);
     }
-    return { runId: run.id, status: run.status, deduped: false };
+    return {
+      runId: run.id,
+      status: run.status,
+      deduped: false,
+      ...(await this.dispatch(run.id)),
+    };
+  }
+
+  private async dispatch(
+    runId: InquiryRunId,
+  ): Promise<{ dispatched: boolean; dispatchError?: string }> {
+    try {
+      await this.queue.publish(runId);
+      return { dispatched: true };
+    } catch (error) {
+      return {
+        dispatched: false,
+        dispatchError: error instanceof Error ? error.message : String(error),
+      };
+    }
   }
 }
 

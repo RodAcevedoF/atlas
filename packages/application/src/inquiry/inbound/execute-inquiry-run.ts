@@ -20,7 +20,7 @@ import { INQUIRY_MAX_ATTEMPTS } from "../outbound/inquiry-run-store.ts";
 
 const GRAPH_NAME = "inquiry";
 const ERROR_SAMPLE_CHARS = 2000;
-const STALE_TIMEOUT_MULTIPLE = 2;
+export const STALE_TIMEOUT_MULTIPLE = 2;
 const IN_FLIGHT_STATUSES = ["queued", "running"] as const satisfies readonly InquiryRunStatus[];
 
 export interface ExecuteInquiryRunOutput {
@@ -29,7 +29,7 @@ export interface ExecuteInquiryRunOutput {
 }
 
 export interface ExecuteInquiryRun {
-  execute(): Promise<ExecuteInquiryRunOutput>;
+  execute(runId?: InquiryRunId): Promise<ExecuteInquiryRunOutput>;
 }
 
 type RunOutcome = Omit<CompleteInquiryRunInput, "id" | "completedAt">;
@@ -294,13 +294,16 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
     private readonly runTimeoutMs: number,
   ) {}
 
-  async execute(): Promise<ExecuteInquiryRunOutput> {
+  async execute(runId?: InquiryRunId): Promise<ExecuteInquiryRunOutput> {
     const now = new Date();
-    const run = await this.store.claimNextInquiryRun({
+    const claim = {
       now,
       completedBefore: new Date(now.getTime() - this.retryAfterMs),
       startedBefore: new Date(now.getTime() - this.runTimeoutMs * STALE_TIMEOUT_MULTIPLE),
-    });
+    };
+    const run = runId
+      ? await this.store.claimInquiryRunById(runId, claim)
+      : await this.store.claimNextInquiryRun(claim);
     if (!run) return { runId: null, status: null };
 
     const outcome = await this.outcomeFor(run, now);

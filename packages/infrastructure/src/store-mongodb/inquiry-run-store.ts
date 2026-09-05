@@ -16,10 +16,37 @@ import type {
   UserId,
 } from "@atlas/domain";
 import { makeInquiryRunId, makeUserId } from "@atlas/domain";
-import type { Db } from "mongodb";
+import type { Db, Filter, UpdateFilter } from "mongodb";
 import type { InquiryRunDoc } from "./collections.ts";
 
 const COLLECTION = "inquiry_runs";
+
+function claimablePredicate(input: ClaimInquiryRunInput): Filter<InquiryRunDoc> {
+  return {
+    $or: [
+      { status: "queued" },
+      {
+        status: "failed_retryable",
+        attempts: { $lt: INQUIRY_MAX_ATTEMPTS },
+        completedAt: { $lt: input.completedBefore },
+      },
+      { status: "running", startedAt: { $lt: input.startedBefore } },
+    ],
+  };
+}
+
+function claimUpdate(input: ClaimInquiryRunInput): UpdateFilter<InquiryRunDoc> {
+  return {
+    $set: {
+      status: "running",
+      startedAt: input.now,
+      completedAt: null,
+      failure: null,
+      error: null,
+    },
+    $inc: { attempts: 1 },
+  };
+}
 
 const LIST_PROJECTION = {
   ownerId: 1,
@@ -177,30 +204,24 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
   }
 
   async claimNextInquiryRun(input: ClaimInquiryRunInput): Promise<InquiryRun | null> {
-    const doc = await this.db.collection<InquiryRunDoc>(COLLECTION).findOneAndUpdate(
-      {
-        $or: [
-          { status: "queued" },
-          {
-            status: "failed_retryable",
-            attempts: { $lt: INQUIRY_MAX_ATTEMPTS },
-            completedAt: { $lt: input.completedBefore },
-          },
-          { status: "running", startedAt: { $lt: input.startedBefore } },
-        ],
-      },
-      {
-        $set: {
-          status: "running",
-          startedAt: input.now,
-          completedAt: null,
-          failure: null,
-          error: null,
-        },
-        $inc: { attempts: 1 },
-      },
-      { sort: { createdAt: -1 }, returnDocument: "after" },
-    );
+    const doc = await this.db
+      .collection<InquiryRunDoc>(COLLECTION)
+      .findOneAndUpdate(claimablePredicate(input), claimUpdate(input), {
+        sort: { createdAt: -1 },
+        returnDocument: "after",
+      });
+    return doc ? docToInquiryRun(doc) : null;
+  }
+
+  async claimInquiryRunById(
+    id: InquiryRunId,
+    input: ClaimInquiryRunInput,
+  ): Promise<InquiryRun | null> {
+    const doc = await this.db
+      .collection<InquiryRunDoc>(COLLECTION)
+      .findOneAndUpdate({ _id: id, ...claimablePredicate(input) }, claimUpdate(input), {
+        returnDocument: "after",
+      });
     return doc ? docToInquiryRun(doc) : null;
   }
 
