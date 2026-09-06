@@ -5,6 +5,7 @@ export type {
   CompleteInquiryRunInput,
   InquiryRunCheckpoint,
   InquiryRunPage,
+  UnnotifiedInquiryRunQuery,
   InquiryRunSummaryCounts,
   InquiryRunStorePort,
 } from "./inquiry/outbound/inquiry-run-store.ts";
@@ -14,6 +15,10 @@ export type {
   InquiryJobPublisherPort,
   InquiryJobQueuePort,
 } from "./inquiry/outbound/inquiry-job-queue.ts";
+export type {
+  InquiryRunNotification,
+  InquiryRunNotifierPort,
+} from "./inquiry/outbound/inquiry-run-notifier.ts";
 export type {
   InquiryAttachmentStorePort,
   SaveInquiryAttachmentInput,
@@ -64,6 +69,11 @@ export {
   ExecuteInquiryRunUseCase,
   STALE_TIMEOUT_MULTIPLE,
 } from "./inquiry/inbound/execute-inquiry-run.ts";
+export type {
+  InquiryNotificationReconciliation,
+  ReconcileInquiryNotifications,
+} from "./inquiry/inbound/inquiry-run-notification.ts";
+export { ReconcileInquiryNotificationsUseCase } from "./inquiry/inbound/inquiry-run-notification.ts";
 export type {
   RequestInquiryRun,
   RequestInquiryRunInput,

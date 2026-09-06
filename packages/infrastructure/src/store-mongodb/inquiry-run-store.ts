@@ -2,9 +2,11 @@ import type {
   ClaimInquiryRunInput,
   CompleteInquiryRunInput,
   InquiryRunCheckpoint,
+  InquiryRunNotification,
   InquiryRunPage,
   InquiryRunStorePort,
   InquiryRunSummaryCounts,
+  UnnotifiedInquiryRunQuery,
 } from "@atlas/application";
 import { INQUIRY_MAX_ATTEMPTS } from "@atlas/application";
 import type {
@@ -339,30 +341,66 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
     return result.deletedCount === 1;
   }
 
-  async completeInquiryRun(input: CompleteInquiryRunInput): Promise<void> {
-    await this.db.collection<InquiryRunDoc>(COLLECTION).updateOne({ _id: input.id }, [
-      {
-        $set: {
-          status: input.status,
-          places: input.places,
-          documents: input.documents,
-          claimCount: input.claimCount,
-          unplacedClaims: input.unplacedClaims,
-          costUsd: input.costUsd,
-          synthesis: input.synthesis,
-          failure: input.failure,
-          error: input.error,
-          completion: input.completion,
-          degradations: input.degradations,
-          completedAt: input.completedAt,
-          progress: {
-            stage: "terminal",
-            revision: { $add: [{ $ifNull: ["$progress.revision", 0] }, 1] },
-            updatedAt: input.completedAt,
+  async completeInquiryRun(input: CompleteInquiryRunInput): Promise<number | null> {
+    const doc = await this.db.collection<InquiryRunDoc>(COLLECTION).findOneAndUpdate(
+      { _id: input.id },
+      [
+        {
+          $set: {
+            status: input.status,
+            places: input.places,
+            documents: input.documents,
+            claimCount: input.claimCount,
+            unplacedClaims: input.unplacedClaims,
+            costUsd: input.costUsd,
+            synthesis: input.synthesis,
+            failure: input.failure,
+            error: input.error,
+            completion: input.completion,
+            degradations: input.degradations,
+            completedAt: input.completedAt,
+            progress: {
+              stage: "terminal",
+              revision: { $add: [{ $ifNull: ["$progress.revision", 0] }, 1] },
+              updatedAt: input.completedAt,
+            },
           },
         },
-      },
-    ]);
+      ],
+      { returnDocument: "after", projection: { progress: 1 } },
+    );
+    return doc?.progress?.revision ?? null;
+  }
+
+  async confirmInquiryRunNotification(notification: InquiryRunNotification): Promise<void> {
+    await this.db
+      .collection<InquiryRunDoc>(COLLECTION)
+      .updateOne(
+        { _id: notification.runId },
+        { $max: { notifiedRevision: notification.revision } },
+      );
+  }
+
+  async findUnnotifiedInquiryRuns(
+    query: UnnotifiedInquiryRunQuery,
+  ): Promise<InquiryRunNotification[]> {
+    const docs = await this.db
+      .collection<InquiryRunDoc>(COLLECTION)
+      .find<Pick<InquiryRunDoc, "_id" | "progress">>(
+        {
+          "progress.updatedAt": { $gt: query.updatedAfter },
+          $expr: {
+            $gt: [{ $ifNull: ["$progress.revision", 0] }, { $ifNull: ["$notifiedRevision", 0] }],
+          },
+        },
+        { projection: { progress: 1 } },
+      )
+      .limit(query.limit)
+      .toArray();
+    return docs.map((doc) => ({
+      runId: makeInquiryRunId(doc._id),
+      revision: doc.progress.revision,
+    }));
   }
 
   async applyInquiryRunCheckpoint(checkpoint: InquiryRunCheckpoint): Promise<number | null> {

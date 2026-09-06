@@ -3,6 +3,7 @@ import { makeInquiryRunId, makeUserId, queuedInquiryProgress } from "@atlas/doma
 
 export const RETRY_AFTER_MS = 11 * 60 * 1000;
 export const RUN_TIMEOUT_MS = 60 * 1000;
+export const NOTIFICATION_WINDOW_MS = 60 * 60 * 1000;
 export const CREATED_AT = new Date();
 export const LONG_AGO = new Date(CREATED_AT.getTime() - 48 * 60 * 60 * 1000);
 

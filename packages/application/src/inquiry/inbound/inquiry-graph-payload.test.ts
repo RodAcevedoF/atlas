@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { stubNotifier } from "../../testing/inquiry-run-notifier.fake.ts";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import {
   RETRY_AFTER_MS,
@@ -17,6 +18,7 @@ describe("a graph payload the run cannot trust", () => {
       answering({ status: "kinda_worked" }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -34,6 +36,7 @@ describe("a graph payload the run cannot trust", () => {
       answering({ status: "running" }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -54,6 +57,7 @@ describe("a graph payload the run cannot trust", () => {
       answering(body),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -72,6 +76,7 @@ describe("a graph payload the run cannot trust", () => {
       answering({ ...SUCCESS_BODY, places: [place] }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -97,6 +102,7 @@ describe("a graph payload the run cannot trust", () => {
       }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -119,6 +125,7 @@ describe("a graph payload the run cannot trust", () => {
       }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -137,6 +144,7 @@ describe("a graph payload the run cannot trust", () => {
       answering({ ...SUCCESS_BODY, places: [historicalPlace] }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -162,6 +170,7 @@ describe("a graph payload the run cannot trust", () => {
       }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -180,6 +189,7 @@ describe("a graph payload the run cannot trust", () => {
       answering(historicalBody),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -199,6 +209,7 @@ describe("a graph payload the run cannot trust", () => {
       }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -234,6 +245,7 @@ describe("a graph payload the run cannot trust", () => {
         }),
         RETRY_AFTER_MS,
         RUN_TIMEOUT_MS,
+        stubNotifier,
       );
 
       await useCase.execute();
@@ -251,6 +263,7 @@ describe("a graph payload the run cannot trust", () => {
       answering({ ...SUCCESS_BODY, unplacedClaims: "two" }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -269,6 +282,7 @@ describe("a graph payload the run cannot trust", () => {
       answering(withoutCounts),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();

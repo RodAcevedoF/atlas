@@ -15,6 +15,8 @@ export interface WorkerConfig {
   reclaimIdleMs: number;
   reconcileIntervalMs: number;
   reclaimBatchSize: number;
+  notificationBatchSize: number;
+  notificationWindowMs: number;
   consumerName: string;
 }
 
@@ -23,6 +25,8 @@ const DEFAULTS = {
   ownershipRefreshMs: 30_000,
   reconcileIntervalMs: 30_000,
   reclaimBatchSize: 10,
+  notificationBatchSize: 50,
+  notificationWindowMs: 60 * 60 * 1000,
 } as const;
 
 export const RECLAIM_IDLE_MULTIPLE = 5;
@@ -64,6 +68,8 @@ export function readWorkerConfig(env: Record<string, string | undefined>): Worke
       DEFAULTS.reconcileIntervalMs,
     ),
     reclaimBatchSize: DEFAULTS.reclaimBatchSize,
+    notificationBatchSize: DEFAULTS.notificationBatchSize,
+    notificationWindowMs: DEFAULTS.notificationWindowMs,
     consumerName: env.INQUIRY_WORKER_NAME ?? `worker-${process.pid}`,
   };
 }

@@ -1,9 +1,15 @@
-import type { ExecuteInquiryRun, InquiryJob, InquiryJobQueuePort } from "@atlas/application";
+import type {
+  ExecuteInquiryRun,
+  InquiryJob,
+  InquiryJobQueuePort,
+  ReconcileInquiryNotifications,
+} from "@atlas/application";
 import type { Logger } from "@atlas/infra/logger";
 
 export interface ConsumerDeps {
   queue: InquiryJobQueuePort;
   executeInquiryRun: ExecuteInquiryRun;
+  reconcileNotifications: ReconcileInquiryNotifications;
   ownershipRefreshMs: number;
   reclaimIdleMs: number;
   reclaimBatchSize: number;
@@ -50,6 +56,31 @@ async function reclaimAbandoned(deps: ConsumerDeps): Promise<void> {
   }
 }
 
+async function republishStrandedNotifications(deps: ConsumerDeps): Promise<void> {
+  const { stranded, republished } = await deps.reconcileNotifications.reconcile();
+  if (stranded === 0) return;
+  if (republished < stranded) {
+    deps.log.error(
+      { stranded, republished },
+      "inquiry notifications are still stranded after a reconcile pass",
+    );
+    return;
+  }
+  deps.log.warn({ republished }, "republished stranded inquiry notifications");
+}
+
+async function guarded(
+  deps: ConsumerDeps,
+  message: string,
+  pass: () => Promise<void>,
+): Promise<void> {
+  try {
+    await pass();
+  } catch (error) {
+    deps.log.error({ err: error }, message);
+  }
+}
+
 async function settle(deps: ConsumerDeps, job: InquiryJob): Promise<void> {
   try {
     await runJob(deps, job);
@@ -71,16 +102,11 @@ export function createConsumer(deps: ConsumerDeps): {
       for (const job of jobs) await settle(deps, job);
     },
     async recoverOnce() {
-      try {
-        await drainStranded(deps);
-      } catch (error) {
-        deps.log.error({ err: error }, "inquiry stranded drain failed");
-      }
-      try {
-        await reclaimAbandoned(deps);
-      } catch (error) {
-        deps.log.error({ err: error }, "inquiry reclaim pass failed");
-      }
+      await guarded(deps, "inquiry stranded drain failed", () => drainStranded(deps));
+      await guarded(deps, "inquiry reclaim pass failed", () => reclaimAbandoned(deps));
+      await guarded(deps, "inquiry notification reconcile failed", () =>
+        republishStrandedNotifications(deps),
+      );
     },
   };
 }

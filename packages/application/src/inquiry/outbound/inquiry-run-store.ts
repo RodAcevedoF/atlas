@@ -8,8 +8,14 @@ import type {
   InquirySourceDocument,
   UserId,
 } from "@atlas/domain";
+import type { InquiryRunNotification } from "./inquiry-run-notifier.ts";
 
 export const INQUIRY_MAX_ATTEMPTS = 2;
+
+export interface UnnotifiedInquiryRunQuery {
+  limit: number;
+  updatedAfter: Date;
+}
 
 export interface ClaimInquiryRunInput {
   now: Date;
@@ -88,8 +94,10 @@ export interface InquiryRunStorePort {
   claimNextInquiryRun(input: ClaimInquiryRunInput): Promise<InquiryRun | null>;
   claimInquiryRunById(id: InquiryRunId, input: ClaimInquiryRunInput): Promise<InquiryRun | null>;
   deleteInquiryRunById(id: InquiryRunId): Promise<boolean>;
-  completeInquiryRun(input: CompleteInquiryRunInput): Promise<void>;
+  completeInquiryRun(input: CompleteInquiryRunInput): Promise<number | null>;
   applyInquiryRunCheckpoint(checkpoint: InquiryRunCheckpoint): Promise<number | null>;
+  confirmInquiryRunNotification(notification: InquiryRunNotification): Promise<void>;
+  findUnnotifiedInquiryRuns(query: UnnotifiedInquiryRunQuery): Promise<InquiryRunNotification[]>;
   listInquiryRuns(page: InquiryRunPage): Promise<InquiryRunListRow[]>;
   summarizeInquiryRuns(day: string): Promise<InquiryRunSummaryCounts>;
 }

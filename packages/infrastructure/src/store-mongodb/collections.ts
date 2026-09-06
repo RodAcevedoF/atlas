@@ -32,6 +32,7 @@ export interface InquiryRunDoc {
   attempts: number;
   progress: InquiryRunProgress;
   checkpoint?: { attempt: number; sequence: number };
+  notifiedRevision?: number;
   completion: InquiryCompletion | null;
   degradations: InquiryDegradation[];
   createdAt: Date;

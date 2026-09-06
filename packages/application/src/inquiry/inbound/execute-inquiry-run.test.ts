@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { makeInquiryRunId } from "@atlas/domain";
+import { stubNotifier } from "../../testing/inquiry-run-notifier.fake.ts";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import {
   CREATED_AT,
@@ -22,6 +23,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     const result = await useCase.execute();
@@ -36,6 +38,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     const result = await useCase.execute();
@@ -63,6 +66,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering(body),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -88,6 +92,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering(body),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -112,6 +117,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering({ status: "failed_retryable", error: "Exa unavailable" }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -133,6 +139,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     const result = await useCase.execute();
@@ -147,6 +154,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       failing(new GraphUnavailableError("POST /graphs/inquiry/run unreachable: fetch failed")),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -166,6 +174,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       failing(new GraphUnavailableError("POST /graphs/inquiry/run 500 Internal Server Error")),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -181,6 +190,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       failing(new Error("POST /graphs/inquiry/run 422 Unprocessable Entity")),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -202,6 +212,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -220,6 +231,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -237,6 +249,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     const result = await useCase.execute();
@@ -257,6 +270,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       failing(new Error("the graph must not be called for an abandoned run")),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -282,6 +296,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       failing(new Error("the graph must not be called for a run this old")),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -300,6 +315,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -323,6 +339,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     const result = await useCase.execute();
@@ -332,7 +349,7 @@ describe("ExecuteInquiryRunUseCase", () => {
 
   test("a graph that never answers gives up and stays retryable, freeing the worker", async () => {
     const { store, runs } = inMemoryInquiryRunStore([inquiryRun()]);
-    const useCase = new ExecuteInquiryRunUseCase(store, hanging(), RETRY_AFTER_MS, 5);
+    const useCase = new ExecuteInquiryRunUseCase(store, hanging(), RETRY_AFTER_MS, 5, stubNotifier);
 
     const result = await useCase.execute();
 
@@ -353,6 +370,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       ),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -369,6 +387,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering({ ...SUCCESS_BODY, status: "no_coverage", places: [] }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -392,6 +411,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering(SUCCESS_BODY),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -413,6 +433,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering({ status: "no_coverage" }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     const result = await useCase.execute(target.id);
@@ -429,6 +450,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering({ status: "no_coverage" }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     const result = await useCase.execute(held.id);
@@ -445,6 +467,7 @@ describe("ExecuteInquiryRunUseCase", () => {
       answering({ status: "no_coverage" }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     const first = await useCase.execute(queued.id);

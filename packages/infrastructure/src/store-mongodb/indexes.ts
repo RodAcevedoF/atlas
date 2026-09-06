@@ -8,5 +8,6 @@ export async function ensureIndexes(db: Db): Promise<void> {
       { key: { status: 1, createdAt: 1 } },
       { key: { day: 1 } },
       { key: { ownerId: 1, day: 1, questionKey: 1 } },
+      { key: { "progress.updatedAt": 1 } },
     ]);
 }

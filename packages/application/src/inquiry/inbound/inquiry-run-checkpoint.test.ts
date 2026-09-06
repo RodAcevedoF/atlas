@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryRun } from "@atlas/domain";
 import { makeInquiryRunId } from "@atlas/domain";
+import { stubNotifier } from "../../testing/inquiry-run-notifier.fake.ts";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import {
   CREATED_AT,
@@ -11,42 +12,25 @@ import {
 } from "../../testing/inquiry-run.builder.ts";
 import {
   failing,
+  milestoneEnvelope,
   progressing,
   stalling,
   streaming,
   terminalEnvelope,
 } from "../../testing/orchestration.fake.ts";
 import { GraphUnavailableError } from "../../world/outbound/orchestration.ts";
-import type { InquiryRunEnvelope } from "../../world/outbound/run-envelope.ts";
 import { ExecuteInquiryRunUseCase } from "./execute-inquiry-run.ts";
 
 describe("a durable milestone outlives the attempt that produced it", () => {
   const CLAIMED_REVISION = 1;
 
-  function milestone(
-    type: InquiryRunEnvelope["type"],
-    sequence: number,
-    data: Record<string, unknown>,
-  ): InquiryRunEnvelope {
-    return {
-      schemaVersion: 1,
-      runId: "run-1",
-      attempt: 1,
-      sequence,
-      type,
-      occurredAt: CREATED_AT,
-      durationMs: 0,
-      data,
-    };
-  }
-
-  const RETRIEVED = milestone("retrieval_complete", 1, {
+  const RETRIEVED = milestoneEnvelope("retrieval_complete", 1, {
     documents: SUCCESS_BODY.documents,
     claimCount: 2,
     costUsd: 0.047,
   });
 
-  const MAPPED = milestone("map_ready", 2, {
+  const MAPPED = milestoneEnvelope("map_ready", 2, {
     places: SUCCESS_BODY.places,
     claimCount: 2,
     unplacedClaims: 0,
@@ -65,6 +49,7 @@ describe("a durable milestone outlives the attempt that produced it", () => {
       }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -82,6 +67,7 @@ describe("a durable milestone outlives the attempt that produced it", () => {
       stalling([RETRIEVED, MAPPED]),
       RETRY_AFTER_MS,
       5,
+      stubNotifier,
     );
 
     const result = await useCase.execute();
@@ -95,7 +81,13 @@ describe("a durable milestone outlives the attempt that produced it", () => {
 
   test("a stall before the map still fails retryably, since no product artifact exists yet", async () => {
     const { store, runs } = inMemoryInquiryRunStore([inquiryRun()]);
-    const useCase = new ExecuteInquiryRunUseCase(store, stalling([RETRIEVED]), RETRY_AFTER_MS, 5);
+    const useCase = new ExecuteInquiryRunUseCase(
+      store,
+      stalling([RETRIEVED]),
+      RETRY_AFTER_MS,
+      5,
+      stubNotifier,
+    );
 
     const result = await useCase.execute();
 
@@ -119,6 +111,7 @@ describe("a durable milestone outlives the attempt that produced it", () => {
       failing(new GraphUnavailableError("intelligence unreachable")),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -135,6 +128,7 @@ describe("a durable milestone outlives the attempt that produced it", () => {
       progressing([MAPPED], { ...SUCCESS_BODY, synthesis: null }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -151,12 +145,13 @@ describe("a durable milestone outlives the attempt that produced it", () => {
     const useCase = new ExecuteInquiryRunUseCase(
       store,
       streaming(async function* () {
-        yield milestone("map_ready", 1, { places: "not a map" });
+        yield milestoneEnvelope("map_ready", 1, { places: "not a map" });
         observed.push(await store.findInquiryRunById(makeInquiryRunId("run-1")));
         yield terminalEnvelope(SUCCESS_BODY, 2);
       }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     const result = await useCase.execute();
@@ -174,11 +169,14 @@ describe("a durable milestone outlives the attempt that produced it", () => {
         yield RETRIEVED;
         yield MAPPED;
         await new Promise((resolve) => setTimeout(resolve, 20));
-        yield milestone("synthesis_ready", 3, { synthesis: "a draft nobody is waiting for" });
+        yield milestoneEnvelope("synthesis_ready", 3, {
+          synthesis: "a draft nobody is waiting for",
+        });
         await new Promise<never>(() => {});
       }),
       RETRY_AFTER_MS,
       5,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -196,11 +194,12 @@ describe("a durable milestone outlives the attempt that produced it", () => {
       store,
       streaming(async function* () {
         yield MAPPED;
-        yield milestone("map_ready", 1, { places: [], claimCount: 0, unplacedClaims: 0 });
+        yield milestoneEnvelope("map_ready", 1, { places: [], claimCount: 0, unplacedClaims: 0 });
         await new Promise<never>(() => {});
       }),
       RETRY_AFTER_MS,
       5,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -217,6 +216,7 @@ describe("a durable milestone outlives the attempt that produced it", () => {
       stalling([RETRIEVED, MAPPED]),
       RETRY_AFTER_MS,
       5,
+      stubNotifier,
     );
 
     await useCase.execute();
@@ -232,6 +232,7 @@ describe("a durable milestone outlives the attempt that produced it", () => {
       progressing([RETRIEVED], { ...SUCCESS_BODY, documents: [] }),
       RETRY_AFTER_MS,
       RUN_TIMEOUT_MS,
+      stubNotifier,
     );
 
     await useCase.execute();

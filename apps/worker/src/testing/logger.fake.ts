@@ -5,3 +5,20 @@ export const silentLogger: Logger = {
   warn: () => {},
   error: () => {},
 };
+
+export interface RecordingLogger {
+  log: Logger;
+  errors(): string[];
+}
+
+export function recordingLogger(): RecordingLogger {
+  const errors: string[] = [];
+  return {
+    log: {
+      info: () => {},
+      warn: () => {},
+      error: (_details, message) => errors.push(message),
+    },
+    errors: () => [...errors],
+  };
+}

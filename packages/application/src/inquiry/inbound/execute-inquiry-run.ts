@@ -11,6 +11,7 @@ import type { OrchestrationPort } from "../../world/outbound/orchestration.ts";
 import { GraphUnavailableError, GraphUnreadableError } from "../../world/outbound/orchestration.ts";
 import type { InquiryRunEnvelope } from "../../world/outbound/run-envelope.ts";
 import { isRunEnvelope, isTerminalRunEnvelope } from "../../world/outbound/run-envelope.ts";
+import type { InquiryRunNotifierPort } from "../outbound/inquiry-run-notifier.ts";
 import type {
   CompleteInquiryRunInput,
   InquiryRunStorePort,
@@ -25,6 +26,7 @@ import {
 } from "./inquiry-graph-payload.ts";
 import type { PreservedArtifacts } from "./inquiry-run-checkpoint.ts";
 import { toCheckpoint, withCheckpoint } from "./inquiry-run-checkpoint.ts";
+import { notifyInquiryRun } from "./inquiry-run-notification.ts";
 
 const GRAPH_NAME = "inquiry";
 const ERROR_SAMPLE_CHARS = 2000;
@@ -226,6 +228,7 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
     private readonly orchestration: OrchestrationPort,
     private readonly retryAfterMs: number,
     private readonly runTimeoutMs: number,
+    private readonly notifier: InquiryRunNotifierPort,
   ) {}
 
   async execute(runId?: InquiryRunId): Promise<ExecuteInquiryRunOutput> {
@@ -239,10 +242,20 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
       ? await this.store.claimInquiryRunById(runId, claim)
       : await this.store.claimNextInquiryRun(claim);
     if (!run) return { runId: null, status: null };
+    await this.notify(run.id, run.progress.revision);
 
     const outcome = await this.outcomeFor(run, now);
-    await this.store.completeInquiryRun({ ...outcome, id: run.id, completedAt: new Date() });
+    const revision = await this.store.completeInquiryRun({
+      ...outcome,
+      id: run.id,
+      completedAt: new Date(),
+    });
+    if (revision !== null) await this.notify(run.id, revision);
     return { runId: run.id, status: outcome.status };
+  }
+
+  private async notify(runId: InquiryRunId, revision: number): Promise<void> {
+    await notifyInquiryRun(this.notifier, this.store, { runId, revision });
   }
 
   private async outcomeFor(run: InquiryRun, now: Date): Promise<RunOutcome> {
@@ -352,5 +365,6 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
 
     attempt.preserved = withCheckpoint(attempt.preserved, checkpoint);
     attempt.mapReady = attempt.mapReady || checkpoint.stage === "map_ready";
+    await this.notify(run.id, revision);
   }
 }

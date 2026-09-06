@@ -1,10 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import type { ExecuteInquiryRun, ExecuteInquiryRunOutput } from "@atlas/application";
+import type {
+  ExecuteInquiryRun,
+  ExecuteInquiryRunOutput,
+  ReconcileInquiryNotifications,
+} from "@atlas/application";
 import type { InquiryRunId } from "@atlas/domain";
 import { makeInquiryRunId } from "@atlas/domain";
 import { createConsumer } from "./consumer.ts";
 import { InMemoryInquiryJobQueue } from "./testing/inquiry-job-queue.fake.ts";
-import { silentLogger } from "./testing/logger.fake.ts";
+import { recordingLogger, silentLogger } from "./testing/logger.fake.ts";
 
 const RUN_ID = makeInquiryRunId("run-1");
 
@@ -14,14 +18,31 @@ function executing(
   return { execute: run };
 }
 
-function consumerFor(queue: InMemoryInquiryJobQueue, executeInquiryRun: ExecuteInquiryRun) {
+function reconciling(stranded: number, republished = stranded) {
+  const passes = { count: 0 };
+  const reconciler: ReconcileInquiryNotifications = {
+    reconcile: () => {
+      passes.count += 1;
+      return Promise.resolve({ stranded, republished });
+    },
+  };
+  return { reconciler, passes };
+}
+
+function consumerFor(
+  queue: InMemoryInquiryJobQueue,
+  executeInquiryRun: ExecuteInquiryRun,
+  reconcileNotifications = reconciling(0).reconciler,
+  log = silentLogger,
+) {
   return createConsumer({
     queue,
     executeInquiryRun,
+    reconcileNotifications,
     ownershipRefreshMs: 60_000,
     reclaimIdleMs: 150_000,
     reclaimBatchSize: 10,
-    log: silentLogger,
+    log,
   });
 }
 
@@ -114,5 +135,46 @@ describe("inquiry job consumer", () => {
     await consumer.recoverOnce();
 
     expect(recovered).toEqual([RUN_ID]);
+  });
+
+  test("a checkpoint that never reached Redis is republished even when the reclaim fails", async () => {
+    const queue = new InMemoryInquiryJobQueue();
+    queue.failReclaim();
+    const { reconciler, passes } = reconciling(1);
+    const consumer = consumerFor(
+      queue,
+      executing(() => Promise.resolve({ runId: null, status: null })),
+      reconciler,
+    );
+
+    await consumer.recoverOnce();
+
+    expect(passes.count).toBe(1);
+  });
+
+  test("a gap reconciliation could not close is reported, not counted as a republish", async () => {
+    const queue = new InMemoryInquiryJobQueue();
+    const { log, errors } = recordingLogger();
+    const consumer = consumerFor(
+      queue,
+      executing(() => Promise.resolve({ runId: null, status: null })),
+      reconciling(3, 0).reconciler,
+      log,
+    );
+
+    await consumer.recoverOnce();
+
+    expect(errors()).toEqual(["inquiry notifications are still stranded after a reconcile pass"]);
+  });
+
+  test("an unreachable Redis during reconciliation leaves the recovery pass alive", async () => {
+    const queue = new InMemoryInquiryJobQueue();
+    const consumer = consumerFor(
+      queue,
+      executing(() => Promise.resolve({ runId: null, status: null })),
+      { reconcile: () => Promise.reject(new Error("redis is down")) },
+    );
+
+    await expect(consumer.recoverOnce()).resolves.toBeUndefined();
   });
 });

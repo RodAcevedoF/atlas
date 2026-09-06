@@ -22,6 +22,23 @@ export function terminalEnvelope(
   };
 }
 
+export function milestoneEnvelope(
+  type: InquiryRunEnvelope["type"],
+  sequence: number,
+  data: Record<string, unknown>,
+): InquiryRunEnvelope {
+  return {
+    schemaVersion: 1,
+    runId: "run-1",
+    attempt: 1,
+    sequence,
+    type,
+    occurredAt: CREATED_AT,
+    durationMs: 0,
+    data,
+  };
+}
+
 export function streaming(frames: (input: GraphStreamInput) => AsyncIterable<InquiryRunEnvelope>) {
   return {
     run: () => Promise.reject(new Error("run is no longer the worker path")),

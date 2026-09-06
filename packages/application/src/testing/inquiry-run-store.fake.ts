@@ -89,6 +89,7 @@ function checkpointed(run: InquiryRun, checkpoint: InquiryRunCheckpoint): Partia
 export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquiryRunStore {
   const held = new Map<InquiryRunId, InquiryRun>(seed.map((run) => [run.id, run]));
   const cursors = new Map<InquiryRunId, { attempt: number; sequence: number }>();
+  const notified = new Map<InquiryRunId, number>();
 
   function claim(run: InquiryRun, input: ClaimInquiryRunInput): InquiryRun {
     const claimed: InquiryRun = {
@@ -147,16 +148,13 @@ export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquir
     completeInquiryRun(input) {
       const run = held.get(input.id);
       if (!run) return Promise.reject(new Error(`unknown inquiry run ${input.id}`));
+      const revision = run.progress.revision + 1;
       held.set(input.id, {
         ...run,
         ...input,
-        progress: {
-          stage: "terminal",
-          revision: run.progress.revision + 1,
-          updatedAt: input.completedAt,
-        },
+        progress: { stage: "terminal", revision, updatedAt: input.completedAt },
       });
-      return Promise.resolve();
+      return Promise.resolve(revision);
     },
     applyInquiryRunCheckpoint(checkpoint) {
       const run = held.get(checkpoint.id);
@@ -176,6 +174,19 @@ export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquir
         progress: { stage: reached, revision, updatedAt: checkpoint.occurredAt },
       });
       return Promise.resolve(revision);
+    },
+    confirmInquiryRunNotification(notification) {
+      const confirmed = notified.get(notification.runId) ?? 0;
+      notified.set(notification.runId, Math.max(confirmed, notification.revision));
+      return Promise.resolve();
+    },
+    findUnnotifiedInquiryRuns(query) {
+      const stranded = [...held.values()]
+        .filter((run) => run.progress.updatedAt > query.updatedAfter)
+        .filter((run) => run.progress.revision > (notified.get(run.id) ?? 0))
+        .slice(0, query.limit)
+        .map((run) => ({ runId: run.id, revision: run.progress.revision }));
+      return Promise.resolve(stranded);
     },
     listInquiryRuns(page) {
       return Promise.resolve(

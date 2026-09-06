@@ -1,5 +1,6 @@
-import { ExecuteInquiryRunUseCase } from "@atlas/application";
+import { ExecuteInquiryRunUseCase, ReconcileInquiryNotificationsUseCase } from "@atlas/application";
 import { RedisInquiryJobQueue, isCommandTimeout } from "@atlas/infra/inquiry-job-queue-redis";
+import { RedisInquiryRunNotifier } from "@atlas/infra/inquiry-updates-redis";
 import { createLogger } from "@atlas/infra/logger";
 import { HttpOrchestration } from "@atlas/infra/orchestration-http";
 import { createWatchedRedisClient } from "@atlas/infra/redis-client";
@@ -44,16 +45,25 @@ async function main(): Promise<void> {
   });
   await queue.ensureGroup();
 
+  const notifier = new RedisInquiryRunNotifier(redis, logger);
   const executeInquiryRun = new ExecuteInquiryRunUseCase(
     store,
     new HttpOrchestration(config.intelligenceUrl),
     config.retryAfterMs,
     config.runTimeoutMs,
+    notifier,
+  );
+  const reconcileNotifications = new ReconcileInquiryNotificationsUseCase(
+    store,
+    notifier,
+    config.notificationBatchSize,
+    config.notificationWindowMs,
   );
 
   const consumer = createConsumer({
     queue,
     executeInquiryRun,
+    reconcileNotifications,
     ownershipRefreshMs: config.ownershipRefreshMs,
     reclaimIdleMs: config.reclaimIdleMs,
     reclaimBatchSize: config.reclaimBatchSize,
