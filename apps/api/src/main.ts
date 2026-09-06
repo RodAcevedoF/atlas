@@ -4,8 +4,9 @@ import {
   PROFILE_IMAGE_MEDIA_TYPES,
 } from "@atlas/application";
 import { INQUIRY_ATTACHMENT_MEDIA_TYPES } from "@atlas/domain";
+import { createLogger } from "@atlas/infra/logger";
 import cookie from "@fastify/cookie";
-import Fastify from "fastify";
+import Fastify, { type FastifyBaseLogger } from "fastify";
 import { registerAuthGate } from "./core/auth-hook.ts";
 import { bootstrap } from "./core/bootstrap.ts";
 import { registerErrorHandler } from "./core/error-handler.ts";
@@ -17,7 +18,8 @@ import { registerInquiryRoutes } from "./routes/inquiry.ts";
 import { registerProfileRoutes } from "./routes/profile.ts";
 import { registerUserRoutes } from "./routes/users.ts";
 
-const app = Fastify({ logger: { redact: loggerRedactPaths } });
+const logger: FastifyBaseLogger = createLogger({ redact: loggerRedactPaths });
+const app = Fastify({ loggerInstance: logger });
 await app.register(cookie);
 app.addContentTypeParser(
   [...new Set([...PROFILE_IMAGE_MEDIA_TYPES, ...INQUIRY_ATTACHMENT_MEDIA_TYPES])],
@@ -29,7 +31,7 @@ app.get("/health", async () => {
   return { status: "ok", service: "atlas-api", timestamp: new Date().toISOString() };
 });
 
-const deps = await bootstrap();
+const deps = await bootstrap(logger);
 const oauthConfigs = readOAuthConfigs();
 await registerSecurity(app, deps.redis);
 registerErrorHandler(app);

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { runConsumeLoop } from "./loop.ts";
+import { silentLogger } from "./testing/logger.fake.ts";
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -23,7 +24,7 @@ describe("inquiry consume loop", () => {
       stopRequested: NEVER_STOPPED,
       shutdownGraceMs: 20,
       errorBackoffMs: 10,
-      log: () => {},
+      log: silentLogger,
     });
 
     expect(Date.now() - startedAt).toBeGreaterThanOrEqual(25);
@@ -45,7 +46,7 @@ describe("inquiry consume loop", () => {
       stopRequested: NEVER_STOPPED,
       shutdownGraceMs: 50,
       errorBackoffMs: 10,
-      log: () => {},
+      log: silentLogger,
     });
 
     expect(settled).toBe(true);
@@ -66,7 +67,7 @@ describe("inquiry consume loop", () => {
       stopRequested,
       shutdownGraceMs: 20,
       errorBackoffMs: 10,
-      log: () => {},
+      log: silentLogger,
     });
     running = false;
     requestStop();

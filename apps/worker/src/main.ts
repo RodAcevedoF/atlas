@@ -1,5 +1,6 @@
 import { ExecuteInquiryRunUseCase } from "@atlas/application";
 import { RedisInquiryJobQueue, isCommandTimeout } from "@atlas/infra/inquiry-job-queue-redis";
+import { createLogger } from "@atlas/infra/logger";
 import { HttpOrchestration } from "@atlas/infra/orchestration-http";
 import { createWatchedRedisClient } from "@atlas/infra/redis-client";
 import { MongoInquiryRunStore, createMongoClient } from "@atlas/infra/store-mongodb";
@@ -9,15 +10,13 @@ import { runConsumeLoop } from "./loop.ts";
 
 type RedisConnection = ReturnType<typeof createWatchedRedisClient>;
 
-function log(fields: Record<string, unknown>, message: string): void {
-  console.log(JSON.stringify({ ...fields, message, at: new Date().toISOString() }));
-}
+const logger = createLogger();
 
 async function closeConnection(connection: RedisConnection, name: string): Promise<void> {
   try {
     await connection.quit();
   } catch (error) {
-    log({ connection: name, err: error }, "redis quit failed, forcing disconnect");
+    logger.warn({ connection: name, err: error }, "redis quit failed, forcing disconnect");
     connection.disconnect();
   }
 }
@@ -32,12 +31,12 @@ async function main(): Promise<void> {
   const redis = createWatchedRedisClient(config.redisUrl, {
     name: "commands",
     timeoutMs: config.commandTimeoutMs,
-    log,
+    log: logger,
   });
   const blockingRedis = createWatchedRedisClient(config.redisUrl, {
     name: "blocking-read",
     timeoutMs: config.blockingCommandTimeoutMs,
-    log,
+    log: logger,
   });
   const queue = new RedisInquiryJobQueue(redis, blockingRedis, {
     consumerName: config.consumerName,
@@ -58,7 +57,7 @@ async function main(): Promise<void> {
     ownershipRefreshMs: config.ownershipRefreshMs,
     reclaimIdleMs: config.reclaimIdleMs,
     reclaimBatchSize: config.reclaimBatchSize,
-    log,
+    log: logger,
   });
 
   let running = true;
@@ -70,12 +69,12 @@ async function main(): Promise<void> {
     if (!running) return;
     running = false;
     signalStop();
-    log({ consumer: config.consumerName }, "inquiry worker stopping");
+    logger.info({ consumer: config.consumerName }, "inquiry worker stopping");
   };
 
   const reconnectOnTimeout = (error: unknown): void => {
     if (!isCommandTimeout(error)) return;
-    log({ consumer: config.consumerName }, "redis command timed out, forcing reconnect");
+    logger.warn({ consumer: config.consumerName }, "redis command timed out, forcing reconnect");
     redis.disconnect(true);
     blockingRedis.disconnect(true);
   };
@@ -87,7 +86,7 @@ async function main(): Promise<void> {
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
 
-  log({ consumer: config.consumerName }, "inquiry worker ready");
+  logger.info({ consumer: config.consumerName }, "inquiry worker ready");
   await consumer.recoverOnce();
 
   await runConsumeLoop({
@@ -103,7 +102,7 @@ async function main(): Promise<void> {
     stopRequested,
     shutdownGraceMs: config.queueBlockMs,
     errorBackoffMs: config.queueBlockMs,
-    log,
+    log: logger,
   });
 
   clearInterval(recovery);
@@ -112,7 +111,7 @@ async function main(): Promise<void> {
     closeConnection(blockingRedis, "blocking-read"),
   ]);
   await mongo.close();
-  log({ consumer: config.consumerName }, "inquiry worker stopped");
+  logger.info({ consumer: config.consumerName }, "inquiry worker stopped");
 }
 
 await main();

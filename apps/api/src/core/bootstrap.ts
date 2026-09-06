@@ -6,6 +6,7 @@ import {
   ensureInquiryAttachmentIndexes,
 } from "@atlas/infra/inquiry-attachment-mongodb";
 import { RedisInquiryJobPublisher } from "@atlas/infra/inquiry-job-queue-redis";
+import type { Logger } from "@atlas/infra/logger";
 import { HttpOrchestration } from "@atlas/infra/orchestration-http";
 import { BunPasswordHasher } from "@atlas/infra/password-bun";
 import { MongoProfileImageStore } from "@atlas/infra/profile-image-mongodb";
@@ -47,7 +48,7 @@ function readPositiveInt(name: string, fallback: number): number {
   return parsed;
 }
 
-export async function bootstrap(): Promise<AppDeps> {
+export async function bootstrap(logger: Logger): Promise<AppDeps> {
   const uri = process.env.MONGODB_URI;
   if (!uri) throw new Error("MONGODB_URI is required");
   const dbName = process.env.MONGODB_DB_NAME ?? RUN_EXECUTION_DEFAULTS.mongoDbName;
@@ -61,6 +62,7 @@ export async function bootstrap(): Promise<AppDeps> {
 
   const redis = createWatchedRedisClient(process.env.REDIS_URL ?? DEFAULT_REDIS_URL, {
     name: "api",
+    log: logger,
   });
 
   const userStore = new MongoUserStore(db);

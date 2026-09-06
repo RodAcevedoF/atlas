@@ -1,10 +1,12 @@
+import type { Logger } from "@atlas/infra/logger";
+
 export interface ConsumeLoopDeps {
   drainOnce: () => Promise<void>;
   isRunning: () => boolean;
   stopRequested: Promise<void>;
   shutdownGraceMs: number;
   errorBackoffMs: number;
-  log: (fields: Record<string, unknown>, message: string) => void;
+  log: Logger;
 }
 
 function delay(ms: number): Promise<void> {
@@ -15,12 +17,12 @@ async function settleWithinGrace(drain: Promise<void>, deps: ConsumeLoopDeps): P
   const settled = drain.then(
     () => true,
     (error: unknown) => {
-      deps.log({ err: error }, "inquiry consume loop failed");
+      deps.log.error({ err: error }, "inquiry consume loop failed");
       return true;
     },
   );
   const graceful = await Promise.race([settled, delay(deps.shutdownGraceMs).then(() => false)]);
-  if (!graceful) deps.log({}, "inquiry drain did not settle before shutdown, abandoning it");
+  if (!graceful) deps.log.warn({}, "inquiry drain did not settle before shutdown, abandoning it");
 }
 
 export async function runConsumeLoop(deps: ConsumeLoopDeps): Promise<void> {
@@ -31,7 +33,7 @@ export async function runConsumeLoop(deps: ConsumeLoopDeps): Promise<void> {
       const winner = await Promise.race([drain.then(() => "drained" as const), stopping]);
       if (winner === "stop") return settleWithinGrace(drain, deps);
     } catch (error) {
-      deps.log({ err: error }, "inquiry consume loop failed");
+      deps.log.error({ err: error }, "inquiry consume loop failed");
       await delay(deps.errorBackoffMs);
     }
   }

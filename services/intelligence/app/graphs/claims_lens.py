@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import logging
 import time
 from collections.abc import AsyncIterator
+from dataclasses import dataclass
 from typing import Any, TypedDict, cast
 
 from langgraph.graph import END, START, StateGraph
@@ -35,8 +37,22 @@ CLAIMS_PER_PLACE_IN_SUMMARY = 3
 PLACE_READ_LIMIT = 5
 PLACE_READ_MIN_CLAIMS = 2
 
-PlaceCoordinates = tuple[float, float]
-PlaceReads = dict[PlaceCoordinates, PlaceRead]
+logger = logging.getLogger(__name__)
+
+
+@dataclass(slots=True, frozen=True)
+class PlacedRead:
+    latitude: float
+    longitude: float
+    read: PlaceRead
+
+
+PlaceReads = dict[str, PlacedRead]
+
+
+def place_key(latitude: float, longitude: float) -> str:
+    """a graph state has to stay JSON-serialisable, so coordinates key it as text"""
+    return f"{latitude},{longitude}"
 
 
 class ClaimsState(TypedDict):
@@ -116,14 +132,18 @@ def _validated_place_reads(places: list[PlaceGroup], proposed: list[PlaceRead]) 
         if len(matching) != 1:
             continue
         group = matching[0]
-        coordinates = (group.latitude, group.longitude)
-        if coordinates in accepted:
+        key = place_key(group.latitude, group.longitude)
+        if key in accepted:
             continue
-        accepted[coordinates] = PlaceRead(
-            place=place_read.place,
-            country=place_read.country,
-            text=place_read.text.strip(),
-            source_urls=list(dict.fromkeys(place_read.source_urls)),
+        accepted[key] = PlacedRead(
+            latitude=group.latitude,
+            longitude=group.longitude,
+            read=PlaceRead(
+                place=place_read.place,
+                country=place_read.country,
+                text=place_read.text.strip(),
+                source_urls=list(dict.fromkeys(place_read.source_urls)),
+            ),
         )
     return accepted
 
@@ -258,6 +278,7 @@ class ClaimsLensGraph:
         if not window:
             raise GraphInputError("an inquiry run needs a window")
 
+        logger.info("run %s attempt %s started: %r", run_id, attempt, question)
         state: dict[str, Any] = {"question": question, "limit": self._limit, "window": window}
         started = time.monotonic()
         stage_started = started
@@ -281,6 +302,8 @@ class ClaimsLensGraph:
             for node, delta in update.items():
                 state |= delta
                 milestones = _milestones(node, delta, cast(ClaimsState, state))
+                if milestones:
+                    logger.info("run %s %s after %sms", run_id, milestones[0][0], stage_ms)
                 for index, (kind, checkpoint) in enumerate(milestones):
                     yield sealed(kind, stage_ms if index == 0 else 0, checkpoint)
 
@@ -290,8 +313,10 @@ class ClaimsLensGraph:
         result = _result(cast(ClaimsState, state))
         total_ms = int((time.monotonic() - started) * 1000)
         if status in ("failed_retryable", "failed_permanent"):
+            logger.warning("run %s %s after %sms: %r", run_id, status, total_ms, state.get("error"))
             yield sealed("run_failed", total_ms, {"failureClass": "transport", "result": result})
             return
+        logger.info("run %s %s after %sms", run_id, status, total_ms)
         yield sealed("run_complete", total_ms, {"result": result})
 
 
@@ -306,8 +331,8 @@ def _milestones(
         return [("map_ready", _map_checkpoint(state))]
     if node == "synthesize":
         reads: list[tuple[RunEnvelopeType, dict[str, Any]]] = [
-            ("place_read_ready", _place_read_checkpoint(coordinates, read))
-            for coordinates, read in state["place_reads"].items()
+            ("place_read_ready", _place_read_checkpoint(placed))
+            for placed in state["place_reads"].values()
         ]
         return [("synthesis_ready", {"synthesis": state["synthesis"]}), *reads]
     return []
@@ -354,15 +379,19 @@ def _map_checkpoint(state: ClaimsState) -> dict[str, Any]:
     }
 
 
-def _place_read_checkpoint(coordinates: PlaceCoordinates, read: PlaceRead) -> dict[str, Any]:
-    latitude, longitude = coordinates
+def _place_read_checkpoint(placed: PlacedRead) -> dict[str, Any]:
     return {
-        "place": read.place,
-        "country": read.country,
-        "latitude": latitude,
-        "longitude": longitude,
-        "read": _read_record(read),
+        "place": placed.read.place,
+        "country": placed.read.country,
+        "latitude": placed.latitude,
+        "longitude": placed.longitude,
+        "read": _read_record(placed.read),
     }
+
+
+def _read_for(place_reads: PlaceReads, group: PlaceGroup) -> PlaceRead | None:
+    placed = place_reads.get(place_key(group.latitude, group.longitude))
+    return placed.read if placed else None
 
 
 def _result(state: ClaimsState) -> dict[str, Any]:
@@ -372,7 +401,7 @@ def _result(state: ClaimsState) -> dict[str, Any]:
         "status": state["status"],
         "error": state.get("error"),
         "places": [
-            to_place_record(group, place_reads.get((group.latitude, group.longitude)))
+            to_place_record(group, _read_for(place_reads, group))
             for group in state.get("places") or []
         ],
         "documents": [to_document_record(document) for document in retrieval.documents]

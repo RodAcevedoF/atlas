@@ -3,11 +3,13 @@ from fastapi import FastAPI
 from app.api.graphs import router as graphs_router
 from app.api.health import router as health_router
 from app.core.config import settings
+from app.core.logging import configure_logging
 from app.core.tracing import install_tracing
 from app.graphs.register import register_graphs
 
 
 def create_app() -> FastAPI:
+    configure_logging(settings)
     instance = FastAPI(title="atlas-intelligence", version="0.0.0")
     instance.include_router(health_router)
     instance.include_router(graphs_router)

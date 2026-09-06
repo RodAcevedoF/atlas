@@ -1,6 +1,7 @@
 import uvicorn
 
 from app.core.config import settings
+from app.core.logging import logging_config
 
 
 def main() -> None:
@@ -9,6 +10,7 @@ def main() -> None:
         host=settings.host,
         port=settings.port,
         reload=settings.reload,
+        log_config=logging_config(settings),
     )
 
 

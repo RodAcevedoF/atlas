@@ -1,4 +1,5 @@
 import type { ExecuteInquiryRun, InquiryJob, InquiryJobQueuePort } from "@atlas/application";
+import type { Logger } from "@atlas/infra/logger";
 
 export interface ConsumerDeps {
   queue: InquiryJobQueuePort;
@@ -6,13 +7,13 @@ export interface ConsumerDeps {
   ownershipRefreshMs: number;
   reclaimIdleMs: number;
   reclaimBatchSize: number;
-  log: (fields: Record<string, unknown>, message: string) => void;
+  log: Logger;
 }
 
 function heartbeat(deps: ConsumerDeps, job: InquiryJob): () => void {
   const timer = setInterval(() => {
     deps.queue.refreshOwnership(job.deliveryId).catch((error: unknown) => {
-      deps.log({ runId: job.runId, err: error }, "inquiry ownership refresh failed");
+      deps.log.warn({ runId: job.runId, err: error }, "inquiry ownership refresh failed");
     });
   }, deps.ownershipRefreshMs);
 
@@ -24,10 +25,10 @@ async function runJob(deps: ConsumerDeps, job: InquiryJob): Promise<void> {
   try {
     const { runId, status } = await deps.executeInquiryRun.execute(job.runId);
     if (!runId) {
-      deps.log({ runId: job.runId }, "inquiry run was not claimable, another worker holds it");
+      deps.log.info({ runId: job.runId }, "inquiry run was already claimed");
       return;
     }
-    deps.log({ runId, status }, "inquiry run finished");
+    deps.log.info({ runId, status }, "inquiry run finished");
   } finally {
     stopHeartbeat();
   }
@@ -37,14 +38,14 @@ async function drainStranded(deps: ConsumerDeps): Promise<void> {
   for (let recovered = 0; recovered < deps.reclaimBatchSize; recovered += 1) {
     const { runId, status } = await deps.executeInquiryRun.execute();
     if (!runId) return;
-    deps.log({ runId, status }, "recovered a stranded inquiry run");
+    deps.log.info({ runId, status }, "recovered a stranded inquiry run");
   }
 }
 
 async function reclaimAbandoned(deps: ConsumerDeps): Promise<void> {
   const jobs = await deps.queue.reclaimStale(deps.reclaimIdleMs, deps.reclaimBatchSize);
   for (const job of jobs) {
-    deps.log({ runId: job.runId }, "reclaimed an abandoned inquiry job");
+    deps.log.warn({ runId: job.runId }, "reclaimed an abandoned inquiry job");
     await settle(deps, job);
   }
 }
@@ -53,7 +54,7 @@ async function settle(deps: ConsumerDeps, job: InquiryJob): Promise<void> {
   try {
     await runJob(deps, job);
   } catch (error) {
-    deps.log({ runId: job.runId, err: error }, "inquiry job failed");
+    deps.log.error({ runId: job.runId, err: error }, "inquiry job failed");
     await deps.queue.deadLetter(job, String(error));
     return;
   }
@@ -73,12 +74,12 @@ export function createConsumer(deps: ConsumerDeps): {
       try {
         await drainStranded(deps);
       } catch (error) {
-        deps.log({ err: error }, "inquiry stranded drain failed");
+        deps.log.error({ err: error }, "inquiry stranded drain failed");
       }
       try {
         await reclaimAbandoned(deps);
       } catch (error) {
-        deps.log({ err: error }, "inquiry reclaim pass failed");
+        deps.log.error({ err: error }, "inquiry reclaim pass failed");
       }
     },
   };

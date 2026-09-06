@@ -4,6 +4,7 @@ import type { InquiryRunId } from "@atlas/domain";
 import { makeInquiryRunId } from "@atlas/domain";
 import { createConsumer } from "./consumer.ts";
 import { InMemoryInquiryJobQueue } from "./testing/inquiry-job-queue.fake.ts";
+import { silentLogger } from "./testing/logger.fake.ts";
 
 const RUN_ID = makeInquiryRunId("run-1");
 
@@ -20,7 +21,7 @@ function consumerFor(queue: InMemoryInquiryJobQueue, executeInquiryRun: ExecuteI
     ownershipRefreshMs: 60_000,
     reclaimIdleMs: 150_000,
     reclaimBatchSize: 10,
-    log: () => {},
+    log: silentLogger,
   });
 }
 

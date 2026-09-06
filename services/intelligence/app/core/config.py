@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8000
     reload: bool = True
+    log_level: str = "INFO"
+    log_colors: bool = True
 
     llm_provider: str = "openai"
     llm_model: str = "gpt-4o-mini"
