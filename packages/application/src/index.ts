@@ -50,6 +50,7 @@ export {
   INQUIRY_RUN_ENVELOPE_TYPES,
   INQUIRY_RUN_FAILURE_CLASSES,
   asRunEnvelope,
+  isRunEnvelope,
   isTerminalRunEnvelope,
 } from "./world/outbound/run-envelope.ts";
 export type { UserPage, UserPageInput, UserStorePort } from "./auth/outbound/user-store.ts";
@@ -71,6 +72,7 @@ export type {
 } from "./inquiry/inbound/execute-inquiry-run.ts";
 export {
   ExecuteInquiryRunUseCase,
+  GRAPH_NAME as INQUIRY_GRAPH_NAME,
   STALE_TIMEOUT_MULTIPLE,
 } from "./inquiry/inbound/execute-inquiry-run.ts";
 export type {
@@ -85,6 +87,7 @@ export type {
 } from "./inquiry/inbound/request-inquiry-run.ts";
 export {
   InquiryEmailVerificationRequiredError,
+  INQUIRY_WINDOW,
   InvalidInquiryQuestionError,
   RequestInquiryRunUseCase,
   InquiryDailyCapReachedError,

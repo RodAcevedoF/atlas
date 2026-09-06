@@ -28,7 +28,7 @@ import type { PreservedArtifacts } from "./inquiry-run-checkpoint.ts";
 import { toCheckpoint, withCheckpoint } from "./inquiry-run-checkpoint.ts";
 import { notifyInquiryRun } from "./inquiry-run-notification.ts";
 
-const GRAPH_NAME = "inquiry";
+export const GRAPH_NAME = "inquiry";
 const ERROR_SAMPLE_CHARS = 2000;
 export const STALE_TIMEOUT_MULTIPLE = 2;
 

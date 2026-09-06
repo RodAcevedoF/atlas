@@ -11,7 +11,7 @@ import type { InquiryAttachmentStorePort } from "../outbound/inquiry-attachment-
 import type { InquiryJobPublisherPort } from "../outbound/inquiry-job-queue.ts";
 import type { InquiryRunStorePort } from "../outbound/inquiry-run-store.ts";
 
-const INQUIRY_WINDOW = "1w";
+export const INQUIRY_WINDOW = "1w";
 const MAX_QUESTION_CHARS = 500;
 
 export class InvalidInquiryQuestionError extends Error {
