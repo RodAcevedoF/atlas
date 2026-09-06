@@ -10,6 +10,7 @@ import {
   parseInquiryRunId,
   parseInquiryRunsQuery,
 } from "../modules/inquiry/request.ts";
+import { writeInquiryRunStream } from "../modules/inquiry/run-events.ts";
 
 export async function registerInquiryRoutes(
   app: FastifyInstance,
@@ -77,6 +78,14 @@ export async function registerInquiryRoutes(
     const run = await deps.getInquiryRun.execute(parseInquiryRunId(params.id), user);
     if (!run) return reply.code(404).send({ error: "Inquiry run not found" });
     return reply.send(run);
+  });
+
+  app.get("/inquiry/runs/:id/events", async (req, reply) => {
+    const user = requireUser(req);
+    const params = req.params as { id?: string };
+    const stream = await deps.streamInquiryRun.execute(parseInquiryRunId(params.id), user);
+    if (!stream) return reply.code(404).send({ error: "Inquiry run not found" });
+    return writeInquiryRunStream(reply, stream);
   });
 
   app.delete("/inquiry/runs/:id", async (req, reply) => {

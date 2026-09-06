@@ -6,6 +6,7 @@ import {
   ensureInquiryAttachmentIndexes,
 } from "@atlas/infra/inquiry-attachment-mongodb";
 import { RedisInquiryJobPublisher } from "@atlas/infra/inquiry-job-queue-redis";
+import { RedisInquiryRunSubscriptions } from "@atlas/infra/inquiry-updates-redis";
 import type { Logger } from "@atlas/infra/logger";
 import { HttpOrchestration } from "@atlas/infra/orchestration-http";
 import { BunPasswordHasher } from "@atlas/infra/password-bun";
@@ -60,8 +61,10 @@ export async function bootstrap(logger: Logger): Promise<AppDeps> {
   await ensureUserIndexes(db);
   await ensureInquiryAttachmentIndexes(db);
 
-  const redis = createWatchedRedisClient(process.env.REDIS_URL ?? DEFAULT_REDIS_URL, {
-    name: "api",
+  const redisUrl = process.env.REDIS_URL ?? DEFAULT_REDIS_URL;
+  const redis = createWatchedRedisClient(redisUrl, { name: "api", log: logger });
+  const inquiryUpdates = createWatchedRedisClient(redisUrl, {
+    name: "api-inquiry-updates",
     log: logger,
   });
 
@@ -100,6 +103,7 @@ export async function bootstrap(logger: Logger): Promise<AppDeps> {
   const inquiryQueue = new RedisInquiryJobPublisher(redis);
   const inquiry = makeInquiryDependencies({
     store: inquiryStore,
+    subscriptions: new RedisInquiryRunSubscriptions(inquiryUpdates, logger),
     attachmentStore: inquiryAttachmentStore,
     tabularParser,
     orchestration,

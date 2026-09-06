@@ -6,10 +6,12 @@ import type {
   InquiryAttachmentStorePort,
   InquiryJobPublisherPort,
   InquiryRunStorePort,
+  InquiryRunSubscriptionsPort,
   InterpretInquiryAttachment,
   ListInquiryRuns,
   OrchestrationPort,
   RequestInquiryRun,
+  StreamInquiryRun,
   TabularParserPort,
   UploadInquiryAttachment,
 } from "@atlas/application";
@@ -21,6 +23,7 @@ import {
   InterpretInquiryAttachmentUseCase,
   ListInquiryRunsUseCase,
   RequestInquiryRunUseCase,
+  StreamInquiryRunUseCase,
   UploadInquiryAttachmentUseCase,
 } from "@atlas/application";
 import type { InquiryRunId } from "@atlas/domain";
@@ -29,6 +32,7 @@ export interface InquiryDeps {
   requestInquiryRun: RequestInquiryRun;
   getInquiryBudget: GetInquiryBudget;
   getInquiryRun: GetInquiryRun;
+  streamInquiryRun: StreamInquiryRun;
   listInquiryRuns: ListInquiryRuns;
   deleteInquiryRun: DeleteInquiryRun;
   uploadInquiryAttachment: UploadInquiryAttachment;
@@ -38,6 +42,7 @@ export interface InquiryDeps {
 
 export function makeInquiryDependencies(deps: {
   store: InquiryRunStorePort;
+  subscriptions: InquiryRunSubscriptionsPort;
   attachmentStore: InquiryAttachmentStorePort;
   tabularParser: TabularParserPort;
   orchestration: OrchestrationPort;
@@ -54,6 +59,7 @@ export function makeInquiryDependencies(deps: {
     ),
     getInquiryBudget: new GetInquiryBudgetUseCase(deps.store, deps.dailyCap),
     getInquiryRun: new GetInquiryRunUseCase(deps.store),
+    streamInquiryRun: new StreamInquiryRunUseCase(deps.store, deps.subscriptions),
     listInquiryRuns: new ListInquiryRunsUseCase(deps.store, deps.pinnedRunId),
     deleteInquiryRun: new DeleteInquiryRunUseCase(
       deps.store,

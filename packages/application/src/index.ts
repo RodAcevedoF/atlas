@@ -20,6 +20,10 @@ export type {
   InquiryRunNotifierPort,
 } from "./inquiry/outbound/inquiry-run-notifier.ts";
 export type {
+  InquiryRunSubscription,
+  InquiryRunSubscriptionsPort,
+} from "./inquiry/outbound/inquiry-run-subscriptions.ts";
+export type {
   InquiryAttachmentStorePort,
   SaveInquiryAttachmentInput,
 } from "./inquiry/outbound/inquiry-attachment-store.ts";
@@ -93,6 +97,8 @@ export type {
 export { GetInquiryBudgetUseCase } from "./inquiry/inbound/get-inquiry-budget.ts";
 export type { GetInquiryRun } from "./inquiry/inbound/get-inquiry-run.ts";
 export { GetInquiryRunUseCase } from "./inquiry/inbound/get-inquiry-run.ts";
+export type { InquiryRunStream, StreamInquiryRun } from "./inquiry/inbound/stream-inquiry-run.ts";
+export { StreamInquiryRunUseCase } from "./inquiry/inbound/stream-inquiry-run.ts";
 export type {
   DeleteInquiryRun,
   DeleteInquiryRunOutcome,
