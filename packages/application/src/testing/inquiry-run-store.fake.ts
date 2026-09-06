@@ -37,6 +37,7 @@ function toListRow(run: InquiryRun): InquiryRunListRow {
     window: run.window,
     placeCount: run.places.length,
     status: run.status,
+    revision: run.progress.revision,
     createdAt: run.createdAt,
     startedAt: run.startedAt,
     completedAt: run.completedAt,

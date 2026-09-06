@@ -24,6 +24,24 @@ test("the asked run is in the list before its id is announced — announced firs
   expect(listedWhenAnnounced[0]).toEqual(["run-asked"]);
 });
 
+test("asking a question already answered today settles immediately from the accepted run", async () => {
+  const existing = buildInquiryRunSummary({ id: "run-dup", status: "succeeded" });
+  const store = makeStore({
+    inquiryRepository: inMemoryAskInquiryRepository({
+      runs: [existing],
+      requested: existing,
+      deduped: true,
+    }),
+  });
+
+  await store.dispatch(askInquiryQuestion({ question: existing.question, refresh: false }));
+
+  const { ask } = store.getState().inquiry;
+  expect(ask.isAsking).toBe(false);
+  expect(ask.wasDeduped).toBe(true);
+  expect(ask.completion).toEqual({ runId: "run-dup", status: "succeeded" });
+});
+
 test("a deleted run leaves the list, and the selection can fall back to the survivor", async () => {
   const kept = buildInquiryRunSummary({ id: "run-kept" });
   const doomed = buildInquiryRunSummary({ id: "run-doomed" });

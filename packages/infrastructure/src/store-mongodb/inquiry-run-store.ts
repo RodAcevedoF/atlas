@@ -142,6 +142,7 @@ const LIST_PROJECTION = {
   window: 1,
   places: { $size: { $ifNull: ["$places", []] } },
   status: 1,
+  revision: { $ifNull: ["$progress.revision", 0] },
   createdAt: 1,
   startedAt: 1,
   completedAt: 1,
@@ -158,7 +159,7 @@ type InquiryRunListDoc = Pick<
   | "createdAt"
   | "startedAt"
   | "completedAt"
-> & { places: number };
+> & { places: number; revision: number };
 
 function docToOwnerId(doc: Pick<InquiryRunDoc, "ownerId">): UserId | null {
   return doc.ownerId ? makeUserId(doc.ownerId) : null;
@@ -173,6 +174,7 @@ function docToListRow(doc: InquiryRunListDoc): InquiryRunListRow {
     window: doc.window,
     placeCount: doc.places,
     status: doc.status,
+    revision: doc.revision,
     createdAt: doc.createdAt,
     startedAt: doc.startedAt,
     completedAt: doc.completedAt,

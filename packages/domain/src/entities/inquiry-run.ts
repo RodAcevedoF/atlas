@@ -155,6 +155,7 @@ export interface InquiryRunSummary {
   window: string;
   placeCount: number;
   status: InquiryRunStatus;
+  revision: number;
   createdAt: Date;
   startedAt: Date | null;
   completedAt: Date | null;
@@ -176,7 +177,7 @@ export type InquiryRunListRow = Pick<
   | "createdAt"
   | "startedAt"
   | "completedAt"
-> & { placeCount: number };
+> & { placeCount: number; revision: number };
 
 export function toInquiryRunSummary(run: InquiryRunListRow): InquiryRunSummary {
   return {
@@ -187,6 +188,7 @@ export function toInquiryRunSummary(run: InquiryRunListRow): InquiryRunSummary {
     window: run.window,
     placeCount: run.placeCount,
     status: run.status,
+    revision: run.revision,
     createdAt: run.createdAt,
     startedAt: run.startedAt,
     completedAt: run.completedAt,

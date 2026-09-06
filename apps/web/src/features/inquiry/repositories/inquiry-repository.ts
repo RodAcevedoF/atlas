@@ -1,4 +1,4 @@
-import type { InquiryFailureKind, InquiryRunStatus } from "@atlas/domain";
+import type { InquiryFailureKind, InquiryProgressStage, InquiryRunStatus } from "@atlas/domain";
 
 export interface InquiryClaimRecord {
   text: string;
@@ -24,6 +24,12 @@ export interface InquiryPlaceReadRecord {
   sourceUrls: string[];
 }
 
+export interface InquiryRunProgressRecord {
+  stage: InquiryProgressStage;
+  revision: number;
+  updatedAt: string;
+}
+
 export interface InquiryRunRecord {
   id: string;
   ownerId: string | null;
@@ -38,6 +44,7 @@ export interface InquiryRunRecord {
   status: InquiryRunStatus;
   failure: InquiryFailureKind | null;
   attempts: number;
+  progress: InquiryRunProgressRecord;
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
@@ -51,6 +58,7 @@ export interface InquiryRunSummaryRecord {
   window: string;
   placeCount: number;
   status: InquiryRunStatus;
+  revision: number;
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;

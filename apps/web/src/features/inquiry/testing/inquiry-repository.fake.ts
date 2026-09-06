@@ -1,41 +1,13 @@
-import type { InquiryRunStatus } from "@atlas/domain";
 import type {
   InquiryRepository,
   InquiryRunSummaryRecord,
 } from "../repositories/inquiry-repository.ts";
 import { buildInquiryRun } from "./inquiry-builder.ts";
 
-export interface InquiryRepositorySeed {
-  statuses: InquiryRunStatus[];
-}
-
-function outsideWatchPath(method: string): never {
-  throw new Error(`inquiry-repository.fake: ${method} is outside the run watch path`);
-}
-
-export function inMemoryInquiryRepository({ statuses }: InquiryRepositorySeed): InquiryRepository {
-  let reads = 0;
-
-  return {
-    runById(runId) {
-      if (statuses.length === 0) outsideWatchPath("runById");
-      const status = statuses[Math.min(reads, statuses.length - 1)];
-      reads += 1;
-      return Promise.resolve(buildInquiryRun({ id: runId, status }));
-    },
-    recentRuns: () => outsideWatchPath("recentRuns"),
-    requestRun: () => outsideWatchPath("requestRun"),
-    deleteRun: () => outsideWatchPath("deleteRun"),
-    budget: () => outsideWatchPath("budget"),
-    uploadAttachment: () => outsideWatchPath("uploadAttachment"),
-    interpretAttachment: () => outsideWatchPath("interpretAttachment"),
-    deleteAttachment: () => outsideWatchPath("deleteAttachment"),
-  };
-}
-
 export interface AskInquiryRepositorySeed {
   runs: InquiryRunSummaryRecord[];
   requested?: InquiryRunSummaryRecord;
+  deduped?: boolean;
 }
 
 function outsideAskPath(method: string): never {
@@ -45,6 +17,7 @@ function outsideAskPath(method: string): never {
 export function inMemoryAskInquiryRepository({
   runs,
   requested,
+  deduped = false,
 }: AskInquiryRepositorySeed): InquiryRepository {
   const listed = [...runs];
 
@@ -58,8 +31,8 @@ export function inMemoryAskInquiryRepository({
     },
     requestRun: () => {
       if (!requested) return outsideAskPath("requestRun");
-      listed.unshift(requested);
-      return Promise.resolve({ runId: requested.id, status: requested.status, deduped: false });
+      if (!listed.some((run) => run.id === requested.id)) listed.unshift(requested);
+      return Promise.resolve({ runId: requested.id, status: requested.status, deduped });
     },
     deleteRun: () => outsideAskPath("deleteRun"),
     budget: () => Promise.resolve({ used: 0, cap: 5, remaining: 5 }),

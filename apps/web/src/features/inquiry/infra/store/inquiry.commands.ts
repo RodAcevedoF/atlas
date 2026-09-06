@@ -18,26 +18,23 @@ import {
 import { makeLoadInquiryBudget } from "../../use-cases/load-inquiry-budget.ts";
 import { makeLoadInquiryRun } from "../../use-cases/load-inquiry-run.ts";
 import { makeLoadRecentInquiryRuns } from "../../use-cases/load-recent-inquiry-runs.ts";
-import { INQUIRY_POLL_SCHEDULE, makePollInquiryRun } from "../../use-cases/poll-inquiry-run.ts";
 import { makeRequestInquiryRun } from "../../use-cases/request-inquiry-run.ts";
-import type { WatchInquiryRunOutcome } from "../../use-cases/watch-inquiry-run.ts";
+import { isInquiryRunSettled } from "../../use-cases/watch-inquiry-run.ts";
 
-export const inquiryRunProgressed = createAction<InquiryRunStatus>("inquiry/progressed");
+export const inquiryRunSnapshotReceived = createAction<InquiryRunRecord>("inquiry/snapshot");
+export const inquiryRunWatchLost = createAction<string>("inquiry/watchLost");
 export const inquiryRunRequested = createAction<string>("inquiry/requested");
 export const inquiryAttachmentSubmitted = createAction("inquiry/attachmentSubmitted");
 
-export interface AskInquiryQuestionOutcome extends WatchInquiryRunOutcome {
+export interface AskInquiryQuestionOutcome {
   deduped: boolean;
-  watchError: string | null;
+  status: InquiryRunStatus;
+  settled: boolean;
 }
 
 interface CommandConfig {
   state: RootState;
   extra: AppThunkExtra;
-}
-
-function reasonFor(cause: unknown): string {
-  return cause instanceof Error ? cause.message : String(cause);
 }
 
 export const loadRecentInquiryRuns = createAsyncThunk<InquiryRunListRecord, void, CommandConfig>(
@@ -89,24 +86,13 @@ export const askInquiryQuestion = createAsyncThunk<
 >("inquiry/ask", async (request, { extra, dispatch }) => {
   const requested = await makeRequestInquiryRun(extra)(request);
   if (request.attachmentId) dispatch(inquiryAttachmentSubmitted());
+  const budgetLoaded = dispatch(loadInquiryBudget());
   await dispatch(loadRecentInquiryRuns());
   dispatch(inquiryRunRequested(requested.runId));
-  const watchInquiryRun = makePollInquiryRun(extra, INQUIRY_POLL_SCHEDULE);
-
-  try {
-    const outcome = await watchInquiryRun(requested, (status) =>
-      dispatch(inquiryRunProgressed(status)),
-    );
-    return { ...outcome, deduped: requested.deduped, watchError: null };
-  } catch (cause) {
-    return {
-      status: requested.status,
-      isStillRunning: true,
-      deduped: requested.deduped,
-      watchError: reasonFor(cause),
-    };
-  } finally {
-    await dispatch(loadRecentInquiryRuns());
-    await dispatch(loadInquiryBudget());
-  }
+  await budgetLoaded;
+  return {
+    deduped: requested.deduped,
+    status: requested.status,
+    settled: isInquiryRunSettled(requested.status),
+  };
 });

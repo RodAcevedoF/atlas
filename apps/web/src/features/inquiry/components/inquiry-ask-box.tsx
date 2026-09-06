@@ -1,6 +1,6 @@
 import { useAuth } from "@/features/auth/auth-provider.tsx";
 import { CTA_PRIMARY, PANEL_GLASS } from "@/shared/ui";
-import type { InquiryRunStatus } from "@atlas/domain";
+import type { InquiryProgressStage, InquiryRunStatus } from "@atlas/domain";
 import { Button, cn } from "@atlas/ui";
 import { Bookmark, LoaderCircle, Paperclip, Plus, RefreshCw, Sparkles, X } from "lucide-react";
 import { type ChangeEvent, type FormEvent, useMemo, useRef } from "react";
@@ -26,11 +26,16 @@ const STILL_RUNNING: AskMessage = {
   text: "Still running. It keeps going in the background — reload to pick it up when it lands.",
   tone: "working",
 };
-const LOST_WATCH =
-  "Lost track of your run — it keeps going in the background. Reload to pick it up.";
 const DEDUPED: AskMessage = {
   text: "You already asked this today — showing the run you already have.",
   tone: "info",
+};
+
+const RUNNING_STAGE: Partial<Record<InquiryProgressStage, AskMessage>> = {
+  retrieval_complete: { text: "Sources read — placing claims on the map.", tone: "working" },
+  map_ready: { text: "Map ready — writing the global read.", tone: "working" },
+  synthesis_ready: { text: "Global read ready — adding place reads.", tone: "working" },
+  place_read_ready: { text: "Adding place reads.", tone: "working" },
 };
 
 const WATCHED_STATUS: Record<InquiryRunStatus, AskMessage> = {
@@ -82,11 +87,13 @@ const PLACEHOLDER = {
 
 function askMessage(state: InquiryAskState): AskMessage | null {
   if (state.isRefresh) return null;
-  if (state.isStillRunning && state.error) {
-    return { text: `${LOST_WATCH} ${state.error}`, tone: "error" };
-  }
   if (state.isStillRunning) return STILL_RUNNING;
   if (state.error) return { text: state.error, tone: "error" };
+  const stageMessage =
+    state.watchedStatus === "running" && state.watchedStage
+      ? RUNNING_STAGE[state.watchedStage]
+      : null;
+  if (stageMessage) return stageMessage;
   if (state.watchedStatus) return WATCHED_STATUS[state.watchedStatus];
   if (state.isAsking) return SENDING;
   if (state.wasDeduped) return DEDUPED;

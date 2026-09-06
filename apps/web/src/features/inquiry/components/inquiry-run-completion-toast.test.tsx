@@ -3,7 +3,12 @@ import { makeStore } from "@/store/index.ts";
 import { ToastProvider } from "@atlas/ui";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { Provider } from "react-redux";
-import { askInquiryQuestion, inquiryRunRequested } from "../infra/store/inquiry.commands.ts";
+import {
+  askInquiryQuestion,
+  inquiryRunRequested,
+  inquiryRunSnapshotReceived,
+} from "../infra/store/inquiry.commands.ts";
+import { buildInquiryRun } from "../testing/inquiry-builder.ts";
 import { inMemoryAskInquiryRepository } from "../testing/inquiry-repository.fake.ts";
 import { InquiryRunCompletionToast } from "./inquiry-run-completion-toast.tsx";
 
@@ -25,16 +30,7 @@ test("a finished run announces completion through the shared toast surface", asy
     store.dispatch(askInquiryQuestion.pending(requestId, request));
     store.dispatch(inquiryRunRequested("run-1"));
     store.dispatch(
-      askInquiryQuestion.fulfilled(
-        {
-          status: "succeeded",
-          isStillRunning: false,
-          deduped: false,
-          watchError: null,
-        },
-        requestId,
-        request,
-      ),
+      inquiryRunSnapshotReceived(buildInquiryRun({ id: "run-1", status: "succeeded" })),
     );
   });
 

@@ -96,6 +96,7 @@ describe("ListInquiryRunsUseCase", () => {
       window: "1w",
       placeCount: 2,
       status: "succeeded",
+      revision: measured.progress.revision,
       createdAt: measured.createdAt,
       startedAt: null,
       completedAt: null,

@@ -45,6 +45,7 @@ export function buildInquiryRun(overrides: Partial<InquiryRunRecord> = {}): Inqu
     status: "succeeded",
     failure: null,
     attempts: 1,
+    progress: { stage: "terminal", revision: 4, updatedAt: "2026-08-18T09:00:30.000Z" },
     createdAt: "2026-08-18T09:00:00.000Z",
     startedAt: "2026-08-18T09:00:01.000Z",
     completedAt: "2026-08-18T09:00:30.000Z",
@@ -55,8 +56,19 @@ export function buildInquiryRun(overrides: Partial<InquiryRunRecord> = {}): Inqu
 export function buildInquiryRunSummary(
   overrides: Partial<InquiryRunSummaryRecord> = {},
 ): InquiryRunSummaryRecord {
-  const { id, ownerId, question, day, window, places, status, createdAt, startedAt, completedAt } =
-    buildInquiryRun();
+  const {
+    id,
+    ownerId,
+    question,
+    day,
+    window,
+    places,
+    status,
+    progress,
+    createdAt,
+    startedAt,
+    completedAt,
+  } = buildInquiryRun();
   return {
     id,
     ownerId,
@@ -65,6 +77,7 @@ export function buildInquiryRunSummary(
     window,
     placeCount: places.length,
     status,
+    revision: progress.revision,
     createdAt,
     startedAt,
     completedAt,
