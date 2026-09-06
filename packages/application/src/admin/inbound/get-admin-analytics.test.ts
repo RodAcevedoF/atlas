@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryRun, InquiryRunStatus, User, UserRole } from "@atlas/domain";
-import { emptyProfile, makeInquiryRunId, makeUserId, queuedInquiryProgress } from "@atlas/domain";
+import { emptyProfile, makeInquiryRunId, makeUserId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
+import { inquiryRun } from "../../testing/inquiry-run.builder.ts";
 import { inMemoryUserStore } from "../../testing/user-store.fake.ts";
 import { GetAdminAnalyticsUseCase } from "./get-admin-analytics.ts";
 
@@ -22,31 +23,17 @@ function user(id: string, role: UserRole): User {
 }
 
 function run(id: string, overrides: Partial<InquiryRun> = {}): InquiryRun {
-  return {
+  return inquiryRun({
     id: makeInquiryRunId(id),
     ownerId: makeUserId("user-1"),
     question: `question ${id}`,
     questionKey: `question ${id}`,
     day: today(),
-    window: "1w",
-    places: [],
-    documents: [],
-    claimCount: 0,
-    unplacedClaims: 0,
-    costUsd: 0,
-    synthesis: null,
     status: "succeeded",
-    failure: null,
-    error: null,
     attempts: 1,
-    progress: queuedInquiryProgress(new Date()),
-    completion: null,
-    degradations: [],
     createdAt: new Date(),
-    startedAt: null,
-    completedAt: null,
     ...overrides,
-  };
+  });
 }
 
 describe("GetAdminAnalyticsUseCase", () => {

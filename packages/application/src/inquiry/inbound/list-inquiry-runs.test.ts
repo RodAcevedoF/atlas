@@ -6,8 +6,9 @@ import type {
   InquiryRunId,
   UserId,
 } from "@atlas/domain";
-import { makeInquiryRunId, makeUserId, queuedInquiryProgress } from "@atlas/domain";
+import { makeInquiryRunId, makeUserId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
+import { inquiryRun } from "../../testing/inquiry-run.builder.ts";
 import { ListInquiryRunsUseCase } from "./list-inquiry-runs.ts";
 
 const SEEDED = 130;
@@ -18,31 +19,16 @@ const adminOwner: InquiryRunActor = { id: OWNER_ID, role: "admin" };
 const superAdmin: InquiryRunActor = { id: makeUserId("user-super"), role: "super_admin" };
 
 function run(index: number, ownerId: UserId | null = OWNER_ID): InquiryRun {
-  return {
+  return inquiryRun({
     id: makeInquiryRunId(`run-${index}`),
     ownerId,
     question: `question ${index}`,
     questionKey: `question ${index}`,
     day: "2026-08-17",
-
-    window: "1w",
-    places: [],
-    documents: [],
-    claimCount: 0,
-    unplacedClaims: 0,
-    costUsd: 0,
-    synthesis: null,
     status: "succeeded",
-    failure: null,
-    error: null,
     attempts: 1,
-    progress: queuedInquiryProgress(new Date(2026, 7, 17, 0, 0, index)),
-    completion: null,
-    degradations: [],
     createdAt: new Date(2026, 7, 17, 0, 0, index),
-    startedAt: null,
-    completedAt: null,
-  };
+  });
 }
 
 function place(name: string): InquiryPlace {

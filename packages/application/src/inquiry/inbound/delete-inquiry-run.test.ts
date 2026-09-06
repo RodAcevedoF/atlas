@@ -1,13 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryAttachment, InquiryRun, UserId } from "@atlas/domain";
-import {
-  makeInquiryAttachmentId,
-  makeInquiryRunId,
-  makeUserId,
-  queuedInquiryProgress,
-} from "@atlas/domain";
+import { makeInquiryAttachmentId, makeInquiryRunId, makeUserId } from "@atlas/domain";
 import { InMemoryInquiryAttachmentStore } from "../../testing/inquiry-attachment-store.fake.ts";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
+import { inquiryRun } from "../../testing/inquiry-run.builder.ts";
 import type { DeleteInquiryRunOutcome, InquiryActor } from "./delete-inquiry-run.ts";
 import { DeleteInquiryRunUseCase } from "./delete-inquiry-run.ts";
 
@@ -22,30 +18,18 @@ const admin: InquiryActor = { id: makeUserId("user-admin"), role: "admin" };
 const superAdmin: InquiryActor = { id: makeUserId("user-super"), role: "super_admin" };
 
 function heldRun(id: InquiryRun["id"], ownerId: UserId | null = OWNER_ID): InquiryRun {
-  return {
+  return inquiryRun({
     id,
     ownerId,
     question: "where are wildfires burning right now",
     questionKey: "where are wildfires burning right now",
     day: "2026-08-25",
-    window: "1w",
-    places: [],
-    documents: [],
-    claimCount: 0,
-    unplacedClaims: 0,
-    costUsd: 0,
-    synthesis: null,
     status: "succeeded",
-    failure: null,
-    error: null,
     attempts: 1,
-    progress: queuedInquiryProgress(new Date(2026, 7, 25, 9, 0, 0)),
-    completion: null,
-    degradations: [],
     createdAt: new Date(2026, 7, 25, 9, 0, 0),
     startedAt: new Date(2026, 7, 25, 9, 0, 1),
     completedAt: new Date(2026, 7, 25, 9, 0, 30),
-  };
+  });
 }
 
 describe("who may delete a run", () => {

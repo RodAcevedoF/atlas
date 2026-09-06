@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryFailureKind, InquiryRun, InquiryRunActor } from "@atlas/domain";
-import { makeInquiryRunId, makeUserId, queuedInquiryProgress } from "@atlas/domain";
+import { makeInquiryRunId, makeUserId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
+import { inquiryRun } from "../../testing/inquiry-run.builder.ts";
 import { GetInquiryRunUseCase } from "./get-inquiry-run.ts";
 
 const FAILED_ID = makeInquiryRunId("run-failed");
@@ -12,31 +13,19 @@ const admin: InquiryRunActor = { id: makeUserId("user-admin"), role: "admin" };
 const superAdmin: InquiryRunActor = { id: makeUserId("user-super"), role: "super_admin" };
 
 function failedRun(overrides: Partial<InquiryRun> = {}): InquiryRun {
-  return {
+  return inquiryRun({
     id: FAILED_ID,
     ownerId: OWNER_ID,
     question: "where are wildfires burning right now",
     questionKey: "where are wildfires burning right now",
     day: "2026-08-23",
-    window: "1w",
-    places: [],
-    documents: [],
-    claimCount: 0,
-    unplacedClaims: 0,
-    costUsd: 0,
-    synthesis: null,
     status: "failed_permanent",
-    failure: null,
-    error: null,
     attempts: 1,
-    progress: queuedInquiryProgress(new Date(2026, 7, 23, 9, 0, 0)),
-    completion: null,
-    degradations: [],
     createdAt: new Date(2026, 7, 23, 9, 0, 0),
     startedAt: new Date(2026, 7, 23, 9, 0, 1),
     completedAt: new Date(2026, 7, 23, 9, 0, 30),
     ...overrides,
-  };
+  });
 }
 
 function useCaseOver(seed: InquiryRun[]): GetInquiryRunUseCase {

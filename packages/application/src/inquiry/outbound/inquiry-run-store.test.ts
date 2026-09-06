@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryPlace, InquiryRun } from "@atlas/domain";
-import { makeInquiryRunId, makeUserId, queuedInquiryProgress } from "@atlas/domain";
+import { makeInquiryRunId } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
+import { inquiryRun } from "../../testing/inquiry-run.builder.ts";
 import type { InquiryRunCheckpoint } from "./inquiry-run-store.ts";
 
 const RUN_ID = makeInquiryRunId("run-1");
@@ -22,31 +23,16 @@ function place(overrides: Partial<InquiryPlace> = {}): InquiryPlace {
 }
 
 function queuedRun(overrides: Partial<InquiryRun> = {}): InquiryRun {
-  return {
+  return inquiryRun({
     id: RUN_ID,
-    ownerId: makeUserId("user-1"),
     question: "who is covering the sudan famine",
-    questionKey: "who-is-covering-the-sudan-famine",
     day: "2026-09-06",
-    window: "1w",
-    places: [],
-    documents: [],
-    claimCount: 0,
-    unplacedClaims: 0,
-    costUsd: 0,
-    synthesis: null,
     status: "running",
-    failure: null,
-    error: null,
     attempts: 1,
-    progress: queuedInquiryProgress(CREATED_AT),
-    completion: null,
-    degradations: [],
     createdAt: CREATED_AT,
     startedAt: CREATED_AT,
-    completedAt: null,
     ...overrides,
-  };
+  });
 }
 
 function mapReady(overrides: Partial<Extract<InquiryRunCheckpoint, { stage: "map_ready" }>> = {}) {

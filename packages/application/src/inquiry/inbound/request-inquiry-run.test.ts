@@ -1,14 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryAttachment, InquiryRun, InquiryRunStatus } from "@atlas/domain";
-import {
-  makeInquiryAttachmentId,
-  makeInquiryRunId,
-  makeUserId,
-  queuedInquiryProgress,
-} from "@atlas/domain";
+import { makeInquiryAttachmentId, makeInquiryRunId, makeUserId } from "@atlas/domain";
 import { InMemoryInquiryAttachmentStore } from "../../testing/inquiry-attachment-store.fake.ts";
 import { InMemoryInquiryJobQueue } from "../../testing/inquiry-job-queue.fake.ts";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
+import { inquiryRun } from "../../testing/inquiry-run.builder.ts";
 import {
   InquiryDailyCapReachedError,
   InquiryEmailVerificationRequiredError,
@@ -48,32 +44,16 @@ function today(): string {
 }
 
 function run(overrides: Partial<InquiryRun> = {}): InquiryRun {
-  return {
-    id: makeInquiryRunId("run-1"),
+  return inquiryRun({
     ownerId: OWNER,
     question: QUESTION,
     questionKey: QUESTION_KEY,
     day: today(),
-
-    window: "1w",
-    places: [],
-    documents: [],
-    claimCount: 0,
-    unplacedClaims: 0,
-    costUsd: 0,
-    synthesis: null,
     status: "succeeded",
-    failure: null,
-    error: null,
     attempts: 1,
-    progress: queuedInquiryProgress(new Date()),
-    completion: null,
-    degradations: [],
     createdAt: new Date(),
-    startedAt: null,
-    completedAt: null,
     ...overrides,
-  };
+  });
 }
 
 describe("RequestInquiryRunUseCase", () => {
