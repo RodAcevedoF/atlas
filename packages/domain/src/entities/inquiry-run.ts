@@ -29,6 +29,39 @@ export function isFailedInquiryStatus(status: InquiryRunStatus): boolean {
 
 export type InquiryFailureKind = "transport" | "unusable_result" | "abandoned" | "internal";
 
+export const INQUIRY_PROGRESS_STAGES = [
+  "queued",
+  "retrieval_complete",
+  "map_ready",
+  "synthesis_ready",
+  "place_read_ready",
+  "terminal",
+] as const;
+export type InquiryProgressStage = (typeof INQUIRY_PROGRESS_STAGES)[number];
+
+export function inquiryProgressRank(stage: InquiryProgressStage): number {
+  return INQUIRY_PROGRESS_STAGES.indexOf(stage);
+}
+
+export const INQUIRY_DEGRADATIONS = [
+  "synthesis_unavailable",
+  "place_read_unavailable",
+  "enrichment_timeout",
+] as const;
+export type InquiryDegradation = (typeof INQUIRY_DEGRADATIONS)[number];
+
+export type InquiryCompletion = "complete" | "degraded";
+
+export interface InquiryRunProgress {
+  stage: InquiryProgressStage;
+  revision: number;
+  updatedAt: Date;
+}
+
+export function queuedInquiryProgress(createdAt: Date): InquiryRunProgress {
+  return { stage: "queued", revision: 0, updatedAt: createdAt };
+}
+
 export interface InquiryClaim {
   text: string;
   confidence: number;
@@ -84,6 +117,9 @@ export interface InquiryRun {
   failure: InquiryFailureKind | null;
   error: string | null;
   attempts: number;
+  progress: InquiryRunProgress;
+  completion: InquiryCompletion | null;
+  degradations: InquiryDegradation[];
   createdAt: Date;
   startedAt: Date | null;
   completedAt: Date | null;
@@ -103,6 +139,9 @@ export interface PublicInquiryRun {
   status: InquiryRunStatus;
   failure: InquiryFailureKind | null;
   attempts: number;
+  progress: InquiryRunProgress;
+  completion: InquiryCompletion | null;
+  degradations: InquiryDegradation[];
   createdAt: Date;
   startedAt: Date | null;
   completedAt: Date | null;
@@ -182,6 +221,9 @@ export function toPublicInquiryRun(run: InquiryRun): PublicInquiryRun {
     status: run.status,
     failure: run.failure,
     attempts: run.attempts,
+    progress: run.progress,
+    completion: run.completion,
+    degradations: run.degradations,
     createdAt: run.createdAt,
     startedAt: run.startedAt,
     completedAt: run.completedAt,

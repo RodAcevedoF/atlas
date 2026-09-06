@@ -3,6 +3,10 @@ export type {
   InquiryRunStatus,
   FailedInquiryStatus,
   InquiryFailureKind,
+  InquiryProgressStage,
+  InquiryDegradation,
+  InquiryCompletion,
+  InquiryRunProgress,
   InquiryClaim,
   InquiryPlaceRead,
   InquiryPlace,
@@ -21,8 +25,14 @@ export {
   isLowConfidenceClaim,
   toPublicInquiryRun,
   toInquiryRunSummary,
+  inquiryProgressRank,
+  queuedInquiryProgress,
 } from "./entities/inquiry-run.ts";
-export { INQUIRY_RUN_STATUSES } from "./entities/inquiry-run.ts";
+export {
+  INQUIRY_RUN_STATUSES,
+  INQUIRY_PROGRESS_STAGES,
+  INQUIRY_DEGRADATIONS,
+} from "./entities/inquiry-run.ts";
 
 export type {
   AttachmentInterpretation,

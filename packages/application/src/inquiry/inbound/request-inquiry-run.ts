@@ -6,7 +6,7 @@ import type {
   UserId,
   UserRole,
 } from "@atlas/domain";
-import { hasAtLeastRole, makeInquiryRunId } from "@atlas/domain";
+import { hasAtLeastRole, makeInquiryRunId, queuedInquiryProgress } from "@atlas/domain";
 import type { InquiryAttachmentStorePort } from "../outbound/inquiry-attachment-store.ts";
 import type { InquiryJobPublisherPort } from "../outbound/inquiry-job-queue.ts";
 import type { InquiryRunStorePort } from "../outbound/inquiry-run-store.ts";
@@ -96,6 +96,9 @@ function queuedRun(input: {
     failure: null,
     error: null,
     attempts: 0,
+    progress: queuedInquiryProgress(input.now),
+    completion: null,
+    degradations: [],
     createdAt: input.now,
     startedAt: null,
     completedAt: null,

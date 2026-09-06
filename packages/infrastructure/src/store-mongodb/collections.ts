@@ -1,6 +1,9 @@
 import type {
+  InquiryCompletion,
+  InquiryDegradation,
   InquiryFailureKind,
   InquiryPlace,
+  InquiryRunProgress,
   InquiryRunStatus,
   InquirySourceDocument,
 } from "@atlas/domain";
@@ -27,6 +30,10 @@ export interface InquiryRunDoc {
   failure?: InquiryFailureKind | null;
   error: string | null;
   attempts: number;
+  progress: InquiryRunProgress;
+  checkpoint?: { attempt: number; sequence: number };
+  completion: InquiryCompletion | null;
+  degradations: InquiryDegradation[];
   createdAt: Date;
   startedAt: Date | null;
   completedAt: Date | null;

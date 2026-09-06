@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryFailureKind, InquiryRun, InquiryRunActor } from "@atlas/domain";
-import { makeInquiryRunId, makeUserId } from "@atlas/domain";
+import { makeInquiryRunId, makeUserId, queuedInquiryProgress } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import { GetInquiryRunUseCase } from "./get-inquiry-run.ts";
 
@@ -29,6 +29,9 @@ function failedRun(overrides: Partial<InquiryRun> = {}): InquiryRun {
     failure: null,
     error: null,
     attempts: 1,
+    progress: queuedInquiryProgress(new Date(2026, 7, 23, 9, 0, 0)),
+    completion: null,
+    degradations: [],
     createdAt: new Date(2026, 7, 23, 9, 0, 0),
     startedAt: new Date(2026, 7, 23, 9, 0, 1),
     completedAt: new Date(2026, 7, 23, 9, 0, 30),

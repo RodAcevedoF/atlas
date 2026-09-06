@@ -6,7 +6,7 @@ import type {
   InquiryRunId,
   UserId,
 } from "@atlas/domain";
-import { makeInquiryRunId, makeUserId } from "@atlas/domain";
+import { makeInquiryRunId, makeUserId, queuedInquiryProgress } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import { ListInquiryRunsUseCase } from "./list-inquiry-runs.ts";
 
@@ -36,6 +36,9 @@ function run(index: number, ownerId: UserId | null = OWNER_ID): InquiryRun {
     failure: null,
     error: null,
     attempts: 1,
+    progress: queuedInquiryProgress(new Date(2026, 7, 17, 0, 0, index)),
+    completion: null,
+    degradations: [],
     createdAt: new Date(2026, 7, 17, 0, 0, index),
     startedAt: null,
     completedAt: null,

@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryAttachment, InquiryRun, UserId } from "@atlas/domain";
-import { makeInquiryAttachmentId, makeInquiryRunId, makeUserId } from "@atlas/domain";
+import {
+  makeInquiryAttachmentId,
+  makeInquiryRunId,
+  makeUserId,
+  queuedInquiryProgress,
+} from "@atlas/domain";
 import { InMemoryInquiryAttachmentStore } from "../../testing/inquiry-attachment-store.fake.ts";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import type { DeleteInquiryRunOutcome, InquiryActor } from "./delete-inquiry-run.ts";
@@ -34,6 +39,9 @@ function heldRun(id: InquiryRun["id"], ownerId: UserId | null = OWNER_ID): Inqui
     failure: null,
     error: null,
     attempts: 1,
+    progress: queuedInquiryProgress(new Date(2026, 7, 25, 9, 0, 0)),
+    completion: null,
+    degradations: [],
     createdAt: new Date(2026, 7, 25, 9, 0, 0),
     startedAt: new Date(2026, 7, 25, 9, 0, 1),
     completedAt: new Date(2026, 7, 25, 9, 0, 30),

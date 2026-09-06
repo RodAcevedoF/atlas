@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryRun, InquiryRunStatus, User, UserRole } from "@atlas/domain";
-import { emptyProfile, makeInquiryRunId, makeUserId } from "@atlas/domain";
+import { emptyProfile, makeInquiryRunId, makeUserId, queuedInquiryProgress } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
 import { inMemoryUserStore } from "../../testing/user-store.fake.ts";
 import { GetAdminAnalyticsUseCase } from "./get-admin-analytics.ts";
@@ -39,6 +39,9 @@ function run(id: string, overrides: Partial<InquiryRun> = {}): InquiryRun {
     failure: null,
     error: null,
     attempts: 1,
+    progress: queuedInquiryProgress(new Date()),
+    completion: null,
+    degradations: [],
     createdAt: new Date(),
     startedAt: null,
     completedAt: null,

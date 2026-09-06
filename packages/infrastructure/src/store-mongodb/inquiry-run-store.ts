@@ -1,6 +1,7 @@
 import type {
   ClaimInquiryRunInput,
   CompleteInquiryRunInput,
+  InquiryRunCheckpoint,
   InquiryRunPage,
   InquiryRunStorePort,
   InquiryRunSummaryCounts,
@@ -12,14 +13,90 @@ import type {
   InquiryRun,
   InquiryRunId,
   InquiryRunListRow,
+  InquiryRunProgress,
   InquiryRunStatus,
   UserId,
 } from "@atlas/domain";
-import { makeInquiryRunId, makeUserId } from "@atlas/domain";
-import type { Db, Filter, UpdateFilter } from "mongodb";
+import { INQUIRY_PROGRESS_STAGES, makeInquiryRunId, makeUserId } from "@atlas/domain";
+import type { Db, Document, Filter } from "mongodb";
 import type { InquiryRunDoc } from "./collections.ts";
 
 const COLLECTION = "inquiry_runs";
+
+function freshCheckpointPredicate(checkpoint: InquiryRunCheckpoint): Filter<InquiryRunDoc> {
+  return {
+    _id: checkpoint.id,
+    completedAt: null,
+    $or: [
+      { "checkpoint.attempt": { $exists: false } },
+      { "checkpoint.attempt": { $lt: checkpoint.attempt } },
+      {
+        "checkpoint.attempt": checkpoint.attempt,
+        "checkpoint.sequence": { $lt: checkpoint.sequence },
+      },
+    ],
+  };
+}
+
+function reachedStage(stage: InquiryRunCheckpoint["stage"]): Document {
+  const held = { $ifNull: ["$progress.stage", "queued"] };
+  return {
+    $cond: [
+      {
+        $gt: [
+          INQUIRY_PROGRESS_STAGES.indexOf(stage),
+          { $indexOfArray: [[...INQUIRY_PROGRESS_STAGES], held] },
+        ],
+      },
+      stage,
+      held,
+    ],
+  };
+}
+
+function mergedPlaceRead(
+  checkpoint: Extract<InquiryRunCheckpoint, { stage: "place_read_ready" }>,
+): Document {
+  return {
+    $map: {
+      input: { $ifNull: ["$places", []] },
+      as: "place",
+      in: {
+        $cond: [
+          {
+            $and: [
+              { $eq: ["$$place.latitude", checkpoint.latitude] },
+              { $eq: ["$$place.longitude", checkpoint.longitude] },
+            ],
+          },
+          { $mergeObjects: ["$$place", { read: checkpoint.read }] },
+          "$$place",
+        ],
+      },
+    },
+  };
+}
+
+function checkpointArtifacts(checkpoint: InquiryRunCheckpoint): Document {
+  if (checkpoint.stage === "retrieval_complete") {
+    return {
+      documents: checkpoint.documents,
+      claimCount: checkpoint.claimCount,
+      costUsd: checkpoint.costUsd,
+    };
+  }
+  if (checkpoint.stage === "map_ready") {
+    return {
+      places: checkpoint.places,
+      claimCount: checkpoint.claimCount,
+      unplacedClaims: checkpoint.unplacedClaims,
+    };
+  }
+  if (checkpoint.stage === "synthesis_ready") {
+    return { synthesis: checkpoint.synthesis };
+  }
+  return { places: mergedPlaceRead(checkpoint) };
+}
 
 function claimablePredicate(input: ClaimInquiryRunInput): Filter<InquiryRunDoc> {
   return {
@@ -35,17 +112,25 @@ function claimablePredicate(input: ClaimInquiryRunInput): Filter<InquiryRunDoc> 
   };
 }
 
-function claimUpdate(input: ClaimInquiryRunInput): UpdateFilter<InquiryRunDoc> {
-  return {
-    $set: {
-      status: "running",
-      startedAt: input.now,
-      completedAt: null,
-      failure: null,
-      error: null,
+/** a re-claimed run is in flight again, so its terminal stage must not outlive the attempt that set it */
+function claimUpdate(input: ClaimInquiryRunInput): Document[] {
+  return [
+    {
+      $set: {
+        status: "running",
+        startedAt: input.now,
+        completedAt: null,
+        failure: null,
+        error: null,
+        attempts: { $add: [{ $ifNull: ["$attempts", 0] }, 1] },
+        progress: {
+          stage: "queued",
+          revision: { $add: [{ $ifNull: ["$progress.revision", 0] }, 1] },
+          updatedAt: input.now,
+        },
+      },
     },
-    $inc: { attempts: 1 },
-  };
+  ];
 }
 
 const LIST_PROJECTION = {
@@ -102,11 +187,29 @@ type StoredInquiryPlace = Omit<InquiryPlace, "claims" | "read"> & {
   read?: InquiryPlace["read"];
 };
 
-type StoredInquiryRunDoc = Omit<InquiryRunDoc, ClaimShapeField | "documents"> &
-  Partial<Omit<Pick<InquiryRunDoc, ClaimShapeField>, "places">> & {
+type ProgressShapeField = "progress" | "completion" | "degradations";
+
+type StoredInquiryRunDoc = Omit<InquiryRunDoc, ClaimShapeField | "documents" | ProgressShapeField> &
+  Partial<Omit<Pick<InquiryRunDoc, ClaimShapeField>, "places">> &
+  Partial<Pick<InquiryRunDoc, ProgressShapeField>> & {
     places?: StoredInquiryPlace[];
     documents?: InquiryRunDoc["documents"];
   };
+
+type StoredProgressSource = Pick<
+  StoredInquiryRunDoc,
+  "progress" | "status" | "createdAt" | "startedAt" | "completedAt"
+>;
+
+export function normalizeStoredProgress(doc: StoredProgressSource): InquiryRunProgress {
+  if (doc.progress) return doc.progress;
+  const reached = doc.status === "queued" || doc.status === "running" ? "queued" : "terminal";
+  return {
+    stage: reached,
+    revision: 0,
+    updatedAt: doc.completedAt ?? doc.startedAt ?? doc.createdAt,
+  };
+}
 
 export function normalizeStoredPlaces(places: StoredInquiryPlace[] | undefined): InquiryPlace[] {
   return (places ?? []).map((place) => ({
@@ -137,6 +240,9 @@ function docToInquiryRun(doc: StoredInquiryRunDoc): InquiryRun {
     failure: doc.failure ?? null,
     error: doc.error,
     attempts: doc.attempts,
+    progress: normalizeStoredProgress(doc),
+    completion: doc.completion ?? null,
+    degradations: doc.degradations ?? [],
     createdAt: doc.createdAt,
     startedAt: doc.startedAt,
     completedAt: doc.completedAt,
@@ -164,6 +270,9 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
       failure: run.failure,
       error: run.error,
       attempts: run.attempts,
+      progress: run.progress,
+      completion: run.completion,
+      degradations: run.degradations,
       createdAt: run.createdAt,
       startedAt: run.startedAt,
       completedAt: run.completedAt,
@@ -231,8 +340,7 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
   }
 
   async completeInquiryRun(input: CompleteInquiryRunInput): Promise<void> {
-    await this.db.collection<InquiryRunDoc>(COLLECTION).updateOne(
-      { _id: input.id },
+    await this.db.collection<InquiryRunDoc>(COLLECTION).updateOne({ _id: input.id }, [
       {
         $set: {
           status: input.status,
@@ -244,10 +352,38 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
           synthesis: input.synthesis,
           failure: input.failure,
           error: input.error,
+          completion: input.completion,
+          degradations: input.degradations,
           completedAt: input.completedAt,
+          progress: {
+            stage: "terminal",
+            revision: { $add: [{ $ifNull: ["$progress.revision", 0] }, 1] },
+            updatedAt: input.completedAt,
+          },
         },
       },
+    ]);
+  }
+
+  async applyInquiryRunCheckpoint(checkpoint: InquiryRunCheckpoint): Promise<number | null> {
+    const doc = await this.db.collection<InquiryRunDoc>(COLLECTION).findOneAndUpdate(
+      freshCheckpointPredicate(checkpoint),
+      [
+        {
+          $set: {
+            ...checkpointArtifacts(checkpoint),
+            checkpoint: { attempt: checkpoint.attempt, sequence: checkpoint.sequence },
+            progress: {
+              stage: reachedStage(checkpoint.stage),
+              revision: { $add: [{ $ifNull: ["$progress.revision", 0] }, 1] },
+              updatedAt: checkpoint.occurredAt,
+            },
+          },
+        },
+      ],
+      { returnDocument: "after", projection: { progress: 1 } },
     );
+    return doc?.progress?.revision ?? null;
   }
 
   async listInquiryRuns(page: InquiryRunPage): Promise<InquiryRunListRow[]> {

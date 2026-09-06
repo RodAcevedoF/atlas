@@ -1,8 +1,11 @@
 import type {
+  InquiryPlace,
+  InquiryPlaceRead,
   InquiryRun,
   InquiryRunId,
   InquiryRunListRow,
   InquiryRunStatus,
+  InquirySourceDocument,
   UserId,
 } from "@atlas/domain";
 
@@ -26,7 +29,39 @@ export type CompleteInquiryRunInput = Pick<
   | "synthesis"
   | "failure"
   | "error"
+  | "completion"
+  | "degradations"
 > & { completedAt: Date };
+
+interface InquiryRunCheckpointOrigin {
+  id: InquiryRunId;
+  attempt: number;
+  sequence: number;
+  occurredAt: Date;
+}
+
+export type InquiryRunCheckpoint = InquiryRunCheckpointOrigin &
+  (
+    | {
+        stage: "retrieval_complete";
+        documents: InquirySourceDocument[];
+        claimCount: number;
+        costUsd: number;
+      }
+    | {
+        stage: "map_ready";
+        places: InquiryPlace[];
+        claimCount: number;
+        unplacedClaims: number;
+      }
+    | { stage: "synthesis_ready"; synthesis: string }
+    | {
+        stage: "place_read_ready";
+        latitude: number;
+        longitude: number;
+        read: InquiryPlaceRead;
+      }
+  );
 
 export interface InquiryRunPage {
   limit: number;
@@ -54,6 +89,7 @@ export interface InquiryRunStorePort {
   claimInquiryRunById(id: InquiryRunId, input: ClaimInquiryRunInput): Promise<InquiryRun | null>;
   deleteInquiryRunById(id: InquiryRunId): Promise<boolean>;
   completeInquiryRun(input: CompleteInquiryRunInput): Promise<void>;
+  applyInquiryRunCheckpoint(checkpoint: InquiryRunCheckpoint): Promise<number | null>;
   listInquiryRuns(page: InquiryRunPage): Promise<InquiryRunListRow[]>;
   summarizeInquiryRuns(day: string): Promise<InquiryRunSummaryCounts>;
 }

@@ -1,6 +1,14 @@
-import type { InquiryRun, InquiryRunId, InquiryRunListRow, InquiryRunStatus } from "@atlas/domain";
+import type {
+  InquiryPlace,
+  InquiryRun,
+  InquiryRunId,
+  InquiryRunListRow,
+  InquiryRunStatus,
+} from "@atlas/domain";
+import { inquiryProgressRank } from "@atlas/domain";
 import type {
   ClaimInquiryRunInput,
+  InquiryRunCheckpoint,
   InquiryRunStorePort,
 } from "../inquiry/outbound/inquiry-run-store.ts";
 import { INQUIRY_MAX_ATTEMPTS } from "../inquiry/outbound/inquiry-run-store.ts";
@@ -39,8 +47,48 @@ function newestFirst(left: InquiryRun, right: InquiryRun): number {
   return right.createdAt.getTime() - left.createdAt.getTime();
 }
 
+function isFreshCheckpoint(
+  held: { attempt: number; sequence: number } | undefined,
+  checkpoint: InquiryRunCheckpoint,
+): boolean {
+  if (!held) return true;
+  if (held.attempt !== checkpoint.attempt) return held.attempt < checkpoint.attempt;
+  return held.sequence < checkpoint.sequence;
+}
+
+function withPlaceRead(
+  places: InquiryPlace[],
+  checkpoint: Extract<InquiryRunCheckpoint, { stage: "place_read_ready" }>,
+): InquiryPlace[] {
+  return places.map((place) =>
+    place.latitude === checkpoint.latitude && place.longitude === checkpoint.longitude
+      ? { ...place, read: checkpoint.read }
+      : place,
+  );
+}
+
+function checkpointed(run: InquiryRun, checkpoint: InquiryRunCheckpoint): Partial<InquiryRun> {
+  if (checkpoint.stage === "retrieval_complete") {
+    return {
+      documents: checkpoint.documents,
+      claimCount: checkpoint.claimCount,
+      costUsd: checkpoint.costUsd,
+    };
+  }
+  if (checkpoint.stage === "map_ready") {
+    return {
+      places: checkpoint.places,
+      claimCount: checkpoint.claimCount,
+      unplacedClaims: checkpoint.unplacedClaims,
+    };
+  }
+  if (checkpoint.stage === "synthesis_ready") return { synthesis: checkpoint.synthesis };
+  return { places: withPlaceRead(run.places, checkpoint) };
+}
+
 export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquiryRunStore {
   const held = new Map<InquiryRunId, InquiryRun>(seed.map((run) => [run.id, run]));
+  const cursors = new Map<InquiryRunId, { attempt: number; sequence: number }>();
 
   function claim(run: InquiryRun, input: ClaimInquiryRunInput): InquiryRun {
     const claimed: InquiryRun = {
@@ -51,6 +99,7 @@ export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquir
       failure: null,
       error: null,
       attempts: run.attempts + 1,
+      progress: { stage: "queued", revision: run.progress.revision + 1, updatedAt: input.now },
     };
     held.set(claimed.id, claimed);
     return claimed;
@@ -98,8 +147,35 @@ export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquir
     completeInquiryRun(input) {
       const run = held.get(input.id);
       if (!run) return Promise.reject(new Error(`unknown inquiry run ${input.id}`));
-      held.set(input.id, { ...run, ...input });
+      held.set(input.id, {
+        ...run,
+        ...input,
+        progress: {
+          stage: "terminal",
+          revision: run.progress.revision + 1,
+          updatedAt: input.completedAt,
+        },
+      });
       return Promise.resolve();
+    },
+    applyInquiryRunCheckpoint(checkpoint) {
+      const run = held.get(checkpoint.id);
+      if (!run) return Promise.reject(new Error(`unknown inquiry run ${checkpoint.id}`));
+      if (run.completedAt !== null) return Promise.resolve(null);
+      if (!isFreshCheckpoint(cursors.get(checkpoint.id), checkpoint)) return Promise.resolve(null);
+
+      const reached =
+        inquiryProgressRank(checkpoint.stage) > inquiryProgressRank(run.progress.stage)
+          ? checkpoint.stage
+          : run.progress.stage;
+      const revision = run.progress.revision + 1;
+      cursors.set(checkpoint.id, { attempt: checkpoint.attempt, sequence: checkpoint.sequence });
+      held.set(checkpoint.id, {
+        ...run,
+        ...checkpointed(run, checkpoint),
+        progress: { stage: reached, revision, updatedAt: checkpoint.occurredAt },
+      });
+      return Promise.resolve(revision);
     },
     listInquiryRuns(page) {
       return Promise.resolve(

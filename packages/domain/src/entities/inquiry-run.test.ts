@@ -1,11 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import type { InquiryRun } from "./inquiry-run.ts";
-import type { InquiryRunStatus } from "./inquiry-run.ts";
+import type { InquiryProgressStage, InquiryRun, InquiryRunStatus } from "./inquiry-run.ts";
 import {
   INQUIRY_RUN_STATUSES,
+  inquiryProgressRank,
   isFailedInquiryStatus,
   isLowConfidenceClaim,
   makeInquiryRunId,
+  queuedInquiryProgress,
   toPublicInquiryRun,
 } from "./inquiry-run.ts";
 import { makeUserId } from "./user.ts";
@@ -28,6 +29,9 @@ function succeededRun(overrides: Partial<InquiryRun> = {}): InquiryRun {
     failure: null,
     error: null,
     attempts: 1,
+    progress: queuedInquiryProgress(new Date("2026-08-23T12:00:00Z")),
+    completion: null,
+    degradations: [],
     createdAt: new Date("2026-08-23T12:00:00Z"),
     startedAt: new Date("2026-08-23T12:00:01Z"),
     completedAt: new Date("2026-08-23T12:01:11Z"),
@@ -66,6 +70,28 @@ describe("the public run carries what a reader is charged for", () => {
 
     expect(publicRun.failure).toBe("transport");
     expect(publicRun).not.toHaveProperty("error");
+  });
+
+  test("progress reaches the reader, so a browser can tell a mid-run map from a finished one", () => {
+    const publicRun = toPublicInquiryRun(
+      succeededRun({
+        progress: {
+          stage: "map_ready",
+          revision: 3,
+          updatedAt: new Date("2026-08-23T12:00:41Z"),
+        },
+        completion: "degraded",
+        degradations: ["synthesis_unavailable"],
+      }),
+    );
+
+    expect(publicRun.progress).toEqual({
+      stage: "map_ready",
+      revision: 3,
+      updatedAt: new Date("2026-08-23T12:00:41Z"),
+    });
+    expect(publicRun.completion).toBe("degraded");
+    expect(publicRun.degradations).toEqual(["synthesis_unavailable"]);
   });
 
   test("questionKey stays server-side — it is a dedupe key, not something a reader asked for", () => {
@@ -157,4 +183,31 @@ describe("a failed status is named in one place, because two readers judge it", 
       expect(isFailedInquiryStatus(status)).toBe(failed.includes(status));
     });
   }
+});
+
+describe("the product stage order is the rule that stops a run walking backwards", () => {
+  test("the stages ascend in the order the product contract declares them", () => {
+    const declared: InquiryProgressStage[] = [
+      "queued",
+      "retrieval_complete",
+      "map_ready",
+      "synthesis_ready",
+      "place_read_ready",
+      "terminal",
+    ];
+
+    const ranks = declared.map(inquiryProgressRank);
+
+    expect(ranks).toEqual([0, 1, 2, 3, 4, 5]);
+  });
+
+  test("a queued run starts at revision 0, so its first checkpoint is revision 1", () => {
+    const progress = queuedInquiryProgress(new Date("2026-09-06T10:00:00Z"));
+
+    expect(progress).toEqual({
+      stage: "queued",
+      revision: 0,
+      updatedAt: new Date("2026-09-06T10:00:00Z"),
+    });
+  });
 });

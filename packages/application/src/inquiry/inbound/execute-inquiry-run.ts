@@ -9,11 +9,15 @@ import type {
   InquiryRunStatus,
   InquirySourceDocument,
 } from "@atlas/domain";
+import type { InquiryDegradation } from "@atlas/domain";
 import { INQUIRY_RUN_STATUSES, isFailedInquiryStatus } from "@atlas/domain";
 import type { OrchestrationPort } from "../../world/outbound/orchestration.ts";
 import { GraphUnavailableError, GraphUnreadableError } from "../../world/outbound/orchestration.ts";
+import type { InquiryRunEnvelope } from "../../world/outbound/run-envelope.ts";
+import { isRunEnvelope, isTerminalRunEnvelope } from "../../world/outbound/run-envelope.ts";
 import type {
   CompleteInquiryRunInput,
+  InquiryRunCheckpoint,
   InquiryRunStorePort,
 } from "../outbound/inquiry-run-store.ts";
 import { INQUIRY_MAX_ATTEMPTS } from "../outbound/inquiry-run-store.ts";
@@ -205,6 +209,146 @@ function sample(value: unknown): string {
   return String(JSON.stringify(value)).slice(0, ERROR_SAMPLE_CHARS);
 }
 
+interface PreservedArtifacts {
+  places: InquiryPlace[];
+  documents: InquirySourceDocument[];
+  claimCount: number;
+  unplacedClaims: number;
+  costUsd: number;
+  synthesis: string | null;
+}
+
+interface AttemptState {
+  preserved: PreservedArtifacts;
+  mapReady: boolean;
+  closed: boolean;
+}
+
+function openAttempt(run: InquiryRun): AttemptState {
+  return {
+    preserved: {
+      places: run.places,
+      documents: run.documents,
+      claimCount: run.claimCount,
+      unplacedClaims: run.unplacedClaims,
+      costUsd: run.costUsd,
+      synthesis: run.synthesis,
+    },
+    mapReady: false,
+    closed: false,
+  };
+}
+
+type CheckpointOrigin = Pick<InquiryRunCheckpoint, "id" | "attempt" | "sequence" | "occurredAt">;
+
+function retrievalCheckpoint(
+  origin: CheckpointOrigin,
+  data: Record<string, unknown>,
+): InquiryRunCheckpoint | null {
+  const documents = asDocuments(data.documents);
+  const claimCount = asCount(data.claimCount);
+  const costUsd = asCount(data.costUsd);
+  if (documents === null || claimCount === null || costUsd === null) return null;
+  return { ...origin, stage: "retrieval_complete", documents, claimCount, costUsd };
+}
+
+function mapCheckpoint(
+  origin: CheckpointOrigin,
+  data: Record<string, unknown>,
+): InquiryRunCheckpoint | null {
+  const places = asPlaces(data.places);
+  const claimCount = asCount(data.claimCount);
+  const unplacedClaims = asCount(data.unplacedClaims);
+  if (places === null || claimCount === null || unplacedClaims === null) return null;
+  return { ...origin, stage: "map_ready", places, claimCount, unplacedClaims };
+}
+
+function synthesisCheckpoint(
+  origin: CheckpointOrigin,
+  data: Record<string, unknown>,
+): InquiryRunCheckpoint | null {
+  const synthesis = asText(data.synthesis);
+  if (synthesis === null) return null;
+  return { ...origin, stage: "synthesis_ready", synthesis };
+}
+
+function placeReadCheckpoint(
+  origin: CheckpointOrigin,
+  data: Record<string, unknown>,
+  places: InquiryPlace[],
+): InquiryRunCheckpoint | null {
+  const { latitude, longitude } = data;
+  if (typeof latitude !== "number" || typeof longitude !== "number") return null;
+  const mapped = places.find(
+    (place) => place.latitude === latitude && place.longitude === longitude,
+  );
+  if (!mapped) return null;
+  const read = asPlaceRead(data.read, mapped.claims);
+  if (read === null) return null;
+  return { ...origin, stage: "place_read_ready", latitude, longitude, read };
+}
+
+function toCheckpoint(
+  runId: InquiryRunId,
+  envelope: InquiryRunEnvelope,
+  places: InquiryPlace[],
+): InquiryRunCheckpoint | null {
+  const origin = {
+    id: runId,
+    attempt: envelope.attempt,
+    sequence: envelope.sequence,
+    occurredAt: envelope.occurredAt,
+  };
+  if (envelope.type === "retrieval_complete") return retrievalCheckpoint(origin, envelope.data);
+  if (envelope.type === "map_ready") return mapCheckpoint(origin, envelope.data);
+  if (envelope.type === "synthesis_ready") return synthesisCheckpoint(origin, envelope.data);
+  if (envelope.type === "place_read_ready") {
+    return placeReadCheckpoint(origin, envelope.data, places);
+  }
+  return null;
+}
+
+function withCheckpoint(
+  preserved: PreservedArtifacts,
+  checkpoint: InquiryRunCheckpoint,
+): PreservedArtifacts {
+  if (checkpoint.stage === "retrieval_complete") {
+    return {
+      ...preserved,
+      documents: checkpoint.documents,
+      claimCount: checkpoint.claimCount,
+      costUsd: checkpoint.costUsd,
+    };
+  }
+  if (checkpoint.stage === "map_ready") {
+    return {
+      ...preserved,
+      places: checkpoint.places,
+      claimCount: checkpoint.claimCount,
+      unplacedClaims: checkpoint.unplacedClaims,
+    };
+  }
+  if (checkpoint.stage === "synthesis_ready") {
+    return { ...preserved, synthesis: checkpoint.synthesis };
+  }
+  return {
+    ...preserved,
+    places: preserved.places.map((place) =>
+      place.latitude === checkpoint.latitude && place.longitude === checkpoint.longitude
+        ? { ...place, read: checkpoint.read }
+        : place,
+    ),
+  };
+}
+
+function terminalBody(envelope: InquiryRunEnvelope): Record<string, unknown> {
+  const result = envelope.data.result;
+  if (typeof result !== "object" || result === null || Array.isArray(result)) {
+    throw new Error(`the inquiry stream ended with an unusable ${envelope.type} result`);
+  }
+  return result as Record<string, unknown>;
+}
+
 function isExhausted(status: InquiryRunStatus, attempts: number): boolean {
   return status === "failed_retryable" && attempts >= INQUIRY_MAX_ATTEMPTS;
 }
@@ -213,27 +357,65 @@ function failure(
   status: FailedInquiryStatus,
   detail: FailureDetail,
   attempts: number,
-  documents: InquirySourceDocument[] = [],
+  preserved: PreservedArtifacts,
 ): RunOutcome {
   return {
+    ...preserved,
     status: isExhausted(status, attempts) ? "failed_permanent" : status,
     failure: detail.kind,
     error: detail.error,
-    places: [],
-    documents,
-    claimCount: 0,
-    unplacedClaims: 0,
-    costUsd: 0,
-    synthesis: null,
+    completion: null,
+    degradations: [],
   };
 }
 
-function toOutcome(body: Record<string, unknown>, attempts: number): RunOutcome {
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function degradedSuccess(
+  preserved: PreservedArtifacts,
+  degradations: InquiryDegradation[],
+  error: string,
+): RunOutcome {
+  return {
+    ...preserved,
+    status: "succeeded",
+    failure: null,
+    error,
+    completion: "degraded",
+    degradations,
+  };
+}
+
+function enrichmentLost(error: unknown, preserved: PreservedArtifacts): InquiryDegradation[] {
+  if (error instanceof GraphTimeoutError) return ["enrichment_timeout"];
+  if (preserved.synthesis === null) return ["synthesis_unavailable"];
+  return ["place_read_unavailable"];
+}
+
+function completionFor(
+  status: InquiryRunStatus,
+  synthesis: string | null,
+): Pick<RunOutcome, "completion" | "degradations"> {
+  if (status !== "succeeded") return { completion: null, degradations: [] };
+  if (synthesis === null) {
+    return { completion: "degraded", degradations: ["synthesis_unavailable"] };
+  }
+  return { completion: "complete", degradations: [] };
+}
+
+function toOutcome(
+  body: Record<string, unknown>,
+  attempts: number,
+  preserved: PreservedArtifacts,
+): RunOutcome {
   if (!isTerminalStatus(body.status)) {
     return failure(
       "failed_permanent",
       { kind: "unusable_result", error: `unusable graph status: ${String(body.status)}` },
       attempts,
+      preserved,
     );
   }
 
@@ -243,6 +425,7 @@ function toOutcome(body: Record<string, unknown>, attempts: number): RunOutcome 
       "failed_permanent",
       { kind: "unusable_result", error: `unusable graph documents: ${sample(body.documents)}` },
       attempts,
+      preserved,
     );
   }
 
@@ -252,7 +435,7 @@ function toOutcome(body: Record<string, unknown>, attempts: number): RunOutcome 
       "failed_permanent",
       { kind: "unusable_result", error: `unusable graph places: ${sample(body.places)}` },
       attempts,
-      documents,
+      { ...preserved, documents },
     );
   }
 
@@ -269,7 +452,7 @@ function toOutcome(body: Record<string, unknown>, attempts: number): RunOutcome 
       "failed_permanent",
       { kind: "unusable_result", error: `unusable graph counts: ${sample(counts)}` },
       attempts,
-      documents,
+      { ...preserved, documents },
     );
   }
 
@@ -283,6 +466,7 @@ function toOutcome(body: Record<string, unknown>, attempts: number): RunOutcome 
     unplacedClaims,
     costUsd,
     synthesis: asText(body.synthesis),
+    ...completionFor(body.status, asText(body.synthesis)),
   };
 }
 
@@ -320,7 +504,7 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
           error: `abandoned after ${INQUIRY_MAX_ATTEMPTS} interrupted attempts`,
         },
         run.attempts,
-        run.documents,
+        openAttempt(run).preserved,
       );
     }
     if (run.attempts > 1 && this.outlivedRetryBudget(run, now)) {
@@ -328,7 +512,7 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
         "failed_permanent",
         { kind: "abandoned", error: "abandoned: outlived its retry budget" },
         run.attempts,
-        run.documents,
+        openAttempt(run).preserved,
       );
     }
     return this.measure(run);
@@ -341,40 +525,82 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
   }
 
   private async measure(run: InquiryRun): Promise<RunOutcome> {
+    const attempt = openAttempt(run);
     try {
-      const body = await withTimeout(
-        this.orchestration.run({
-          graphName: GRAPH_NAME,
-          input: { question: run.question, window: run.window },
-        }),
-        this.runTimeoutMs,
-      );
-      const outcome = toOutcome(body, run.attempts);
-      if (outcome.documents.length > 0 || run.documents.length === 0) return outcome;
-      return { ...outcome, documents: run.documents };
+      const body = await withTimeout(this.consume(run, attempt), this.runTimeoutMs);
+      const outcome = toOutcome(body, run.attempts, attempt.preserved);
+      const preserved = attempt.preserved.documents;
+      if (outcome.documents.length > 0 || preserved.length === 0) return outcome;
+      return { ...outcome, documents: preserved };
     } catch (error) {
-      if (error instanceof GraphTimeoutError || error instanceof GraphUnavailableError) {
-        return failure(
-          "failed_retryable",
-          { kind: "transport", error: error.message },
-          run.attempts,
-          run.documents,
-        );
-      }
-      if (error instanceof GraphUnreadableError) {
-        return failure(
-          "failed_permanent",
-          { kind: "unusable_result", error: error.message },
-          run.attempts,
-          run.documents,
-        );
-      }
-      return failure(
-        "failed_permanent",
-        { kind: "internal", error: error instanceof Error ? error.message : String(error) },
-        run.attempts,
-        run.documents,
+      attempt.closed = true;
+      return this.recover(error, run, attempt);
+    }
+  }
+
+  /** a durable map outlives its enrichment, so losing the stream after it degrades rather than fails */
+  private recover(error: unknown, run: InquiryRun, attempt: AttemptState): RunOutcome {
+    if (attempt.mapReady) {
+      return degradedSuccess(
+        attempt.preserved,
+        enrichmentLost(error, attempt.preserved),
+        messageOf(error),
       );
     }
+    if (error instanceof GraphTimeoutError || error instanceof GraphUnavailableError) {
+      return failure(
+        "failed_retryable",
+        { kind: "transport", error: error.message },
+        run.attempts,
+        attempt.preserved,
+      );
+    }
+    if (error instanceof GraphUnreadableError) {
+      return failure(
+        "failed_permanent",
+        { kind: "unusable_result", error: error.message },
+        run.attempts,
+        attempt.preserved,
+      );
+    }
+    return failure(
+      "failed_permanent",
+      { kind: "internal", error: messageOf(error) },
+      run.attempts,
+      attempt.preserved,
+    );
+  }
+
+  private async consume(run: InquiryRun, attempt: AttemptState): Promise<Record<string, unknown>> {
+    const frames = this.orchestration.stream({
+      graphName: GRAPH_NAME,
+      runId: run.id,
+      input: { question: run.question, window: run.window },
+      attempt: run.attempts,
+    });
+
+    for await (const frame of frames) {
+      if (!isRunEnvelope(frame)) continue;
+      if (isTerminalRunEnvelope(frame)) return terminalBody(frame);
+      await this.persist(run, frame, attempt);
+    }
+    throw new GraphUnavailableError("the inquiry stream ended without a terminal result");
+  }
+
+  /** an unusable milestone is skipped, not fatal — the terminal result is validated on its own */
+  private async persist(
+    run: InquiryRun,
+    envelope: InquiryRunEnvelope,
+    attempt: AttemptState,
+  ): Promise<void> {
+    if (attempt.closed) return;
+    const checkpoint = toCheckpoint(run.id, envelope, attempt.preserved.places);
+    if (!checkpoint) return;
+
+    const revision = await this.store.applyInquiryRunCheckpoint(checkpoint);
+    if (revision === null) return;
+
+    attempt.preserved = withCheckpoint(attempt.preserved, checkpoint);
+    attempt.mapReady = attempt.mapReady || checkpoint.stage === "map_ready";
   }
 }

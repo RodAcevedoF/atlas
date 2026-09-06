@@ -32,6 +32,10 @@ export interface InquiryRunEnvelope {
   data: Record<string, unknown>;
 }
 
+export function isRunEnvelope(frame: object): frame is InquiryRunEnvelope {
+  return "schemaVersion" in frame;
+}
+
 export function isTerminalRunEnvelope(envelope: InquiryRunEnvelope): boolean {
   return envelope.type === "run_complete" || envelope.type === "run_failed";
 }

@@ -3,6 +3,7 @@ export type { MigrationLedgerPort } from "./migrations/outbound/migration-ledger
 export type {
   ClaimInquiryRunInput,
   CompleteInquiryRunInput,
+  InquiryRunCheckpoint,
   InquiryRunPage,
   InquiryRunSummaryCounts,
   InquiryRunStorePort,

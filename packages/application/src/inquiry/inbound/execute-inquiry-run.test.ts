@@ -1,9 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import type { InquiryRun } from "@atlas/domain";
-import { makeInquiryRunId, makeUserId } from "@atlas/domain";
+import { makeInquiryRunId, makeUserId, queuedInquiryProgress } from "@atlas/domain";
 import { inMemoryInquiryRunStore } from "../../testing/inquiry-run-store.fake.ts";
-import type { OrchestrationPort } from "../../world/outbound/orchestration.ts";
+import type {
+  GraphRunInput,
+  GraphStreamInput,
+  OrchestrationPort,
+} from "../../world/outbound/orchestration.ts";
 import { GraphUnavailableError, GraphUnreadableError } from "../../world/outbound/orchestration.ts";
+import type { InquiryRunEnvelope } from "../../world/outbound/run-envelope.ts";
 import { INQUIRY_MAX_ATTEMPTS } from "../outbound/inquiry-run-store.ts";
 import { ExecuteInquiryRunUseCase } from "./execute-inquiry-run.ts";
 
@@ -30,6 +35,9 @@ function run(overrides: Partial<InquiryRun> = {}): InquiryRun {
     failure: null,
     error: null,
     attempts: 0,
+    progress: queuedInquiryProgress(CREATED_AT),
+    completion: null,
+    degradations: [],
     createdAt: CREATED_AT,
     startedAt: null,
     completedAt: null,
@@ -37,20 +45,54 @@ function run(overrides: Partial<InquiryRun> = {}): InquiryRun {
   };
 }
 
-function orchestrating(run: OrchestrationPort["run"]): OrchestrationPort {
+function terminal(body: Record<string, unknown>, sequence: number): InquiryRunEnvelope {
   return {
-    run,
-    stream: () => {
-      throw new Error("stream is not part of the worker path");
-    },
+    schemaVersion: 1,
+    runId: "run-1",
+    attempt: 1,
+    sequence,
+    type: body.status === "succeeded" ? "run_complete" : "run_failed",
+    occurredAt: CREATED_AT,
+    durationMs: 0,
+    data: { result: body, failureClass: "transport" },
+  };
+}
+
+function streaming(frames: (input: GraphStreamInput) => AsyncIterable<InquiryRunEnvelope>) {
+  return {
+    run: () => Promise.reject(new Error("run is no longer the worker path")),
+    stream: frames,
     resume: () => {
       throw new Error("resume is not part of the worker path");
     },
-  };
+  } satisfies OrchestrationPort;
+}
+
+function orchestrating(answer: (input: GraphRunInput) => Promise<Record<string, unknown>>) {
+  return streaming(async function* (input) {
+    yield terminal(await answer(input), 1);
+  });
 }
 
 function answering(body: Record<string, unknown>): OrchestrationPort {
   return orchestrating(() => Promise.resolve(body));
+}
+
+function progressing(
+  milestones: InquiryRunEnvelope[],
+  body: Record<string, unknown>,
+): OrchestrationPort {
+  return streaming(async function* () {
+    yield* milestones;
+    yield terminal(body, milestones.length + 1);
+  });
+}
+
+function stalling(milestones: InquiryRunEnvelope[]): OrchestrationPort {
+  return streaming(async function* () {
+    yield* milestones;
+    await new Promise<never>(() => {});
+  });
 }
 
 function failing(error: Error): OrchestrationPort {
@@ -815,5 +857,226 @@ describe("ExecuteInquiryRunUseCase", () => {
 
     expect(first.runId).toBe(queued.id);
     expect(second.runId).toBeNull();
+  });
+
+  describe("a durable milestone outlives the attempt that produced it", () => {
+    const CLAIMED_REVISION = 1;
+
+    function milestone(
+      type: InquiryRunEnvelope["type"],
+      sequence: number,
+      data: Record<string, unknown>,
+    ): InquiryRunEnvelope {
+      return {
+        schemaVersion: 1,
+        runId: "run-1",
+        attempt: 1,
+        sequence,
+        type,
+        occurredAt: CREATED_AT,
+        durationMs: 0,
+        data,
+      };
+    }
+
+    const RETRIEVED = milestone("retrieval_complete", 1, {
+      documents: SUCCESS_BODY.documents,
+      claimCount: 2,
+      costUsd: 0.047,
+    });
+
+    const MAPPED = milestone("map_ready", 2, {
+      places: SUCCESS_BODY.places,
+      claimCount: 2,
+      unplacedClaims: 0,
+    });
+
+    test("the map is readable while the analyst is still working, not only once the run ends", async () => {
+      const { store } = inMemoryInquiryRunStore([run()]);
+      const observed: (InquiryRun | null)[] = [];
+      const useCase = new ExecuteInquiryRunUseCase(
+        store,
+        streaming(async function* () {
+          yield RETRIEVED;
+          yield MAPPED;
+          observed.push(await store.findInquiryRunById(makeInquiryRunId("run-1")));
+          yield terminal(SUCCESS_BODY, 3);
+        }),
+        RETRY_AFTER_MS,
+        RUN_TIMEOUT_MS,
+      );
+
+      await useCase.execute();
+
+      expect(observed[0]?.status).toBe("running");
+      expect(observed[0]?.progress.stage).toBe("map_ready");
+      expect(observed[0]?.places).toHaveLength(1);
+      expect(observed[0]?.costUsd).toBe(0.047);
+    });
+
+    test("an analyst that never answers leaves a degraded success, because the map was already paid for", async () => {
+      const { store, runs } = inMemoryInquiryRunStore([run()]);
+      const useCase = new ExecuteInquiryRunUseCase(
+        store,
+        stalling([RETRIEVED, MAPPED]),
+        RETRY_AFTER_MS,
+        5,
+      );
+
+      const result = await useCase.execute();
+
+      const [stored] = runs();
+      expect(result.status).toBe("succeeded");
+      expect(stored?.completion).toBe("degraded");
+      expect(stored?.degradations).toEqual(["enrichment_timeout"]);
+      expect(stored?.places).toHaveLength(1);
+    });
+
+    test("a stall before the map still fails retryably, since no product artifact exists yet", async () => {
+      const { store, runs } = inMemoryInquiryRunStore([run()]);
+      const useCase = new ExecuteInquiryRunUseCase(store, stalling([RETRIEVED]), RETRY_AFTER_MS, 5);
+
+      const result = await useCase.execute();
+
+      const [stored] = runs();
+      expect(result.status).toBe("failed_retryable");
+      expect(stored?.completion).toBeNull();
+      expect(stored?.documents).toEqual(SUCCESS_BODY.documents);
+    });
+
+    test("a retry that dies before its own map keeps the map an earlier attempt paid for", async () => {
+      const mapped = run({
+        status: "failed_retryable",
+        attempts: 1,
+        places: SUCCESS_BODY.places as InquiryRun["places"],
+        claimCount: 2,
+        completedAt: new Date(CREATED_AT.getTime() - RETRY_AFTER_MS - 1),
+      });
+      const { store, runs } = inMemoryInquiryRunStore([mapped]);
+      const useCase = new ExecuteInquiryRunUseCase(
+        store,
+        failing(new GraphUnavailableError("intelligence unreachable")),
+        RETRY_AFTER_MS,
+        RUN_TIMEOUT_MS,
+      );
+
+      await useCase.execute();
+
+      const [stored] = runs();
+      expect(stored?.status).toBe("failed_permanent");
+      expect(stored?.places).toHaveLength(1);
+    });
+
+    test("a success without a synthesis is degraded rather than quietly complete", async () => {
+      const { store, runs } = inMemoryInquiryRunStore([run()]);
+      const useCase = new ExecuteInquiryRunUseCase(
+        store,
+        progressing([MAPPED], { ...SUCCESS_BODY, synthesis: null }),
+        RETRY_AFTER_MS,
+        RUN_TIMEOUT_MS,
+      );
+
+      await useCase.execute();
+
+      const [stored] = runs();
+      expect(stored?.status).toBe("succeeded");
+      expect(stored?.completion).toBe("degraded");
+      expect(stored?.degradations).toEqual(["synthesis_unavailable"]);
+    });
+
+    test("an unusable milestone leaves no trace rather than persisting a broken map", async () => {
+      const { store } = inMemoryInquiryRunStore([run()]);
+      const observed: (InquiryRun | null)[] = [];
+      const useCase = new ExecuteInquiryRunUseCase(
+        store,
+        streaming(async function* () {
+          yield milestone("map_ready", 1, { places: "not a map" });
+          observed.push(await store.findInquiryRunById(makeInquiryRunId("run-1")));
+          yield terminal(SUCCESS_BODY, 2);
+        }),
+        RETRY_AFTER_MS,
+        RUN_TIMEOUT_MS,
+      );
+
+      const result = await useCase.execute();
+
+      expect(observed[0]?.progress.stage).toBe("queued");
+      expect(observed[0]?.progress.revision).toBe(CLAIMED_REVISION);
+      expect(result.status).toBe("succeeded");
+    });
+
+    test("a stream that outlives its deadline stops writing, so a late milestone never lands", async () => {
+      const { store, runs } = inMemoryInquiryRunStore([run()]);
+      const useCase = new ExecuteInquiryRunUseCase(
+        store,
+        streaming(async function* () {
+          yield RETRIEVED;
+          yield MAPPED;
+          await new Promise((resolve) => setTimeout(resolve, 20));
+          yield milestone("synthesis_ready", 3, { synthesis: "a draft nobody is waiting for" });
+          await new Promise<never>(() => {});
+        }),
+        RETRY_AFTER_MS,
+        5,
+      );
+
+      await useCase.execute();
+      await new Promise((resolve) => setTimeout(resolve, 40));
+
+      const [stored] = runs();
+      expect(stored?.status).toBe("succeeded");
+      expect(stored?.synthesis).toBeNull();
+      expect(stored?.progress.stage).toBe("terminal");
+    });
+
+    test("a replayed milestone the store refused cannot roll the run's map back", async () => {
+      const { store, runs } = inMemoryInquiryRunStore([run()]);
+      const useCase = new ExecuteInquiryRunUseCase(
+        store,
+        streaming(async function* () {
+          yield MAPPED;
+          yield milestone("map_ready", 1, { places: [], claimCount: 0, unplacedClaims: 0 });
+          await new Promise<never>(() => {});
+        }),
+        RETRY_AFTER_MS,
+        5,
+      );
+
+      await useCase.execute();
+
+      const [stored] = runs();
+      expect(stored?.places).toHaveLength(1);
+      expect(stored?.claimCount).toBe(2);
+    });
+
+    test("a lost enrichment keeps the reason it was lost, instead of a silent degraded success", async () => {
+      const { store, runs } = inMemoryInquiryRunStore([run()]);
+      const useCase = new ExecuteInquiryRunUseCase(
+        store,
+        stalling([RETRIEVED, MAPPED]),
+        RETRY_AFTER_MS,
+        5,
+      );
+
+      await useCase.execute();
+
+      const [stored] = runs();
+      expect(stored?.error).toBe("the inquiry graph did not answer within 5ms");
+    });
+
+    test("documents this attempt retrieved survive a terminal result that omits them", async () => {
+      const { store, runs } = inMemoryInquiryRunStore([run()]);
+      const useCase = new ExecuteInquiryRunUseCase(
+        store,
+        progressing([RETRIEVED], { ...SUCCESS_BODY, documents: [] }),
+        RETRY_AFTER_MS,
+        RUN_TIMEOUT_MS,
+      );
+
+      await useCase.execute();
+
+      const [stored] = runs();
+      expect(stored?.documents).toEqual(SUCCESS_BODY.documents as InquiryRun["documents"]);
+    });
   });
 });
