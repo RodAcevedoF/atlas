@@ -23,9 +23,7 @@ class RefusingRunner:
     async def run(self, run_id: str, input: dict[str, Any]) -> dict[str, Any]:
         raise GraphInputError("an inquiry run needs a window")
 
-    def stream(
-        self, run_id: str, input: dict[str, Any], attempt: int
-    ) -> AsyncIterator[GraphEvent]:
+    def stream(self, run_id: str, input: dict[str, Any], attempt: int) -> AsyncIterator[GraphEvent]:
         raise NotImplementedError("the stream path is not under test")
 
     async def resume(self, run_id: str, input: dict[str, Any]) -> dict[str, Any]:
@@ -113,9 +111,7 @@ class TestStreamWire:
     def test_an_attempt_below_one_is_refused_before_any_work_starts(
         self, client: TestClient
     ) -> None:
-        response = client.post(
-            f"/graphs/{ENVELOPE_GRAPH}/stream", json={"input": {}, "attempt": 0}
-        )
+        response = client.post(f"/graphs/{ENVELOPE_GRAPH}/stream", json={"input": {}, "attempt": 0})
 
         assert response.status_code == 422
 

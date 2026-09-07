@@ -13,9 +13,7 @@ class InMemoryAttachmentInterpreter:
     def __init__(self, result: AttachmentInterpretation) -> None:
         self.result = result
 
-    async def interpret(
-        self, profile: dict[str, Any], user_text: str
-    ) -> AttachmentInterpretation:
+    async def interpret(self, profile: dict[str, Any], user_text: str) -> AttachmentInterpretation:
         if not profile.get("sheets"):
             raise AssertionError("the bounded profile did not reach the interpreter")
         if user_text != "focus on supply disruptions":

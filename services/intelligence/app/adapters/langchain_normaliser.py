@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+import asyncio
+from collections.abc import Awaitable, Callable, Sequence
 from typing import cast
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -81,16 +82,61 @@ def collect(entries: Sequence[_NormalisedPlace], places: Sequence[str]) -> list[
     ]
 
 
+NormaliseBatch = Callable[[Sequence[str]], Awaitable[list[NormalisedPlace]]]
+
+
+def batched(places: Sequence[str], size: int) -> list[Sequence[str]]:
+    """Each batch is numbered from zero independently, so `collect` stays index-keyed per batch
+    and the batches concatenate back in input order.
+    """
+    return [places[start : start + size] for start in range(0, len(places), size)]
+
+
+async def normalise_batches(
+    places: Sequence[str],
+    normalise_batch: NormaliseBatch,
+    batch_size: int,
+    max_concurrency: int,
+) -> list[NormalisedPlace]:
+    """Normalisation is one structured-output call over every distinct place string and dominates
+    map-ready latency, so the batches run concurrently under a bound rather than one long call.
+    """
+    if not places:
+        return []
+
+    batches = batched(places, batch_size)
+    if len(batches) == 1:
+        return await normalise_batch(batches[0])
+
+    gate = asyncio.Semaphore(max_concurrency)
+
+    async def normalise_gated(batch: Sequence[str]) -> list[NormalisedPlace]:
+        async with gate:
+            return await normalise_batch(batch)
+
+    try:
+        async with asyncio.TaskGroup() as group:
+            tasks = [group.create_task(normalise_gated(batch)) for batch in batches]
+    except* PlaceNormaliserUnavailable as failures:
+        raise PlaceNormaliserUnavailable(str(failures.exceptions[0])) from None
+
+    return [place for task in tasks for place in task.result()]
+
+
 class LangChainPlaceNormaliser:
     def __init__(self, settings: Settings) -> None:
         self._chat_model = LazyChatModel(settings)
+        self._batch_size = settings.normalise_batch_size
+        self._max_concurrency = settings.normalise_max_concurrency
 
     async def normalise(self, places: Sequence[str]) -> list[NormalisedPlace]:
-        if not places:
-            return []
+        return await normalise_batches(
+            places, self._normalise_batch, self._batch_size, self._max_concurrency
+        )
 
-        structured = self._chat_model.get().with_structured_output(_NormalisedPlaces)
+    async def _normalise_batch(self, places: Sequence[str]) -> list[NormalisedPlace]:
         try:
+            structured = self._chat_model.get().with_structured_output(_NormalisedPlaces)
             result = await structured.ainvoke(
                 [
                     SystemMessage(content=NORMALISE_SYSTEM_PROMPT),

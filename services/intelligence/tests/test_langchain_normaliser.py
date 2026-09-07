@@ -1,11 +1,21 @@
+import asyncio
+from collections.abc import Sequence
 from typing import Any
 
+import pytest
+from pydantic import ValidationError
+
 from app.adapters.langchain_normaliser import (
+    LangChainPlaceNormaliser,
     _NormalisedPlace,
+    batched,
     collect,
+    normalise_batches,
     render_places,
     to_normalised,
 )
+from app.core.config import Settings
+from app.ports.places import NormalisedPlace, PlaceNormaliserUnavailable
 
 
 def entry(index: int, name: str, **overrides: Any) -> _NormalisedPlace:
@@ -93,3 +103,110 @@ class TestToNormalised:
         )
 
         assert place.is_plottable()
+
+
+class RecordingNormaliser:
+    """A batch normaliser that really canonicalises, and reports how many batches it ran at once."""
+
+    def __init__(self, delays: dict[str, float] | None = None, failing: str | None = None) -> None:
+        self._delays = delays or {}
+        self._failing = failing
+        self.live = 0
+        self.peak = 0
+
+    async def __call__(self, places: Sequence[str]) -> list[NormalisedPlace]:
+        self.live += 1
+        self.peak = max(self.peak, self.live)
+        try:
+            await asyncio.sleep(self._delays.get(places[0], 0))
+            if self._failing is not None and self._failing in places:
+                raise PlaceNormaliserUnavailable(f"normalisation failed: {self._failing}")
+            return [
+                NormalisedPlace(
+                    raw=raw,
+                    name=raw.title(),
+                    country=None,
+                    kind="specific",
+                    latitude=1.0,
+                    longitude=2.0,
+                )
+                for raw in places
+            ]
+        finally:
+            self.live -= 1
+
+
+def normalise(
+    places: Sequence[str],
+    normaliser: RecordingNormaliser,
+    batch_size: int = 2,
+    max_concurrency: int = 4,
+) -> list[NormalisedPlace]:
+    return asyncio.run(normalise_batches(places, normaliser, batch_size, max_concurrency))
+
+
+class TestBatched:
+    def test_places_are_split_in_order_with_a_short_final_batch(self) -> None:
+        assert batched(["a", "b", "c", "d", "e"], 2) == [["a", "b"], ["c", "d"], ["e"]]
+
+    def test_a_batch_size_at_or_above_the_input_leaves_one_call(self) -> None:
+        assert batched(["a", "b"], 8) == [["a", "b"]]
+
+
+class TestNormaliseBatches:
+    def test_no_places_asks_the_model_nothing(self) -> None:
+        normaliser = RecordingNormaliser()
+
+        assert normalise([], normaliser) == []
+        assert normaliser.peak == 0
+
+    def test_one_batch_answers_directly_without_a_group(self) -> None:
+        normaliser = RecordingNormaliser()
+
+        resolved = normalise(["khartoum", "darfur", "kassala"], normaliser, batch_size=8)
+
+        assert [place.name for place in resolved] == ["Khartoum", "Darfur", "Kassala"]
+        assert normaliser.peak == 1
+
+    def test_results_follow_input_order_even_when_an_early_batch_answers_last(self) -> None:
+        normaliser = RecordingNormaliser(delays={"khartoum": 0.05})
+
+        resolved = normalise(["khartoum", "darfur", "kassala", "nyala"], normaliser)
+
+        assert [place.raw for place in resolved] == ["khartoum", "darfur", "kassala", "nyala"]
+
+    def test_batches_run_concurrently_up_to_the_bound_and_no_further(self) -> None:
+        normaliser = RecordingNormaliser(delays=dict.fromkeys(["a", "c", "e", "g"], 0.02))
+
+        normalise(["a", "b", "c", "d", "e", "f", "g", "h"], normaliser, max_concurrency=2)
+
+        assert normaliser.peak == 2
+
+    def test_a_batch_that_fails_surfaces_as_the_port_error_not_an_exception_group(self) -> None:
+        normaliser = RecordingNormaliser(failing="nyala")
+
+        with pytest.raises(PlaceNormaliserUnavailable) as failure:
+            normalise(["khartoum", "darfur", "kassala", "nyala"], normaliser)
+
+        assert "nyala" in str(failure.value)
+
+
+class TestLangChainPlaceNormaliserFailures:
+    @pytest.mark.parametrize("places", [["khartoum", "darfur"], ["khartoum", "darfur", "nyala"]])
+    def test_an_unusable_chat_model_is_the_port_error_whatever_the_batch_count(
+        self, places: list[str]
+    ) -> None:
+        normaliser = LangChainPlaceNormaliser(Settings(llm_provider="nope", normalise_batch_size=2))
+
+        with pytest.raises(PlaceNormaliserUnavailable):
+            asyncio.run(normaliser.normalise(places))
+
+
+class TestNormaliseSettings:
+    def test_a_non_positive_batch_size_fails_at_startup(self) -> None:
+        with pytest.raises(ValidationError):
+            Settings(normalise_batch_size=0)
+
+    def test_a_non_positive_concurrency_fails_at_startup(self) -> None:
+        with pytest.raises(ValidationError):
+            Settings(normalise_max_concurrency=0)

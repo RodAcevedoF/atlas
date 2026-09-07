@@ -5,8 +5,7 @@ from app.core.config import Settings
 
 
 def make_chat_model(settings: Settings) -> BaseChatModel:
-    """Provider factory returns a LangChain chat model chosen by config.
-    """
+    """Provider factory returns a LangChain chat model chosen by config."""
     provider = settings.llm_provider.lower()
     if provider == "openai":
         from langchain_openai import ChatOpenAI

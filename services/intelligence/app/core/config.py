@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     log_colors: bool = True
 
+    normalise_batch_size: int = Field(default=48, ge=1)
+    normalise_max_concurrency: int = Field(default=4, ge=1)
+
     llm_provider: str = "openai"
     llm_model: str = "gpt-4o-mini"
     vision_model: str = "gpt-4o-mini"

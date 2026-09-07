@@ -2,7 +2,7 @@ import asyncio
 from typing import Any
 
 import pytest
-from test_claims_lens import StubAnalyst, StubNormaliser, StubSource, build, claim, retrieval
+from claims_lens_builders import StubAnalyst, StubNormaliser, StubSource, build, claim, retrieval
 
 from app.core.events import RunEnvelope
 from app.graphs.claims_lens import ClaimsLensGraph

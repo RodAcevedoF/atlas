@@ -1,0 +1,10 @@
+{
+  "lsp": {
+    "basedpyright": {
+      "settings": {
+        "python.pythonPath": "services/intelligence/.venv/bin/python",
+        "python.analysis.extraPaths": ["services/intelligence"]
+      }
+    }
+  }
+}

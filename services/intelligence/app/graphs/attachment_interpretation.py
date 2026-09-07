@@ -56,9 +56,7 @@ class AttachmentInterpretationGraph:
             raise GraphInputError("image attachment bytes are invalid") from None
         if not image or len(image) > MAX_IMAGE_BYTES:
             raise GraphInputError("image attachment size is invalid")
-        return await self._vision_interpreter.interpret_image(
-            image, media_type, user_text
-        )
+        return await self._vision_interpreter.interpret_image(image, media_type, user_text)
 
     async def stream(
         self, run_id: str, input: dict[str, Any], attempt: int

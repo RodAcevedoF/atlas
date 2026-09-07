@@ -35,9 +35,7 @@ class LangChainAttachmentInterpreter:
     def __init__(self, settings: Settings) -> None:
         self._chat_model = LazyChatModel(settings)
 
-    async def interpret(
-        self, profile: dict[str, Any], user_text: str
-    ) -> AttachmentInterpretation:
+    async def interpret(self, profile: dict[str, Any], user_text: str) -> AttachmentInterpretation:
         structured = self._chat_model.get().with_structured_output(
             StructuredAttachmentInterpretation
         )

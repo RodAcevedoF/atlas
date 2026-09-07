@@ -34,9 +34,7 @@ class LangChainVisionAttachmentInterpreter:
         self, image: bytes, media_type: ImageMediaType, user_text: str
     ) -> AttachmentInterpretation:
         encoded = base64.b64encode(image).decode("ascii")
-        structured = self._chat_model().with_structured_output(
-            StructuredAttachmentInterpretation
-        )
+        structured = self._chat_model().with_structured_output(StructuredAttachmentInterpretation)
         result = cast(
             StructuredAttachmentInterpretation,
             await structured.ainvoke(
