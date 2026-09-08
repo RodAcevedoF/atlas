@@ -1,5 +1,6 @@
 import type { InquiryRunStream } from "@atlas/application";
 import type { FastifyReply } from "fastify";
+import { writeStreamFrame } from "./stream-frame.ts";
 
 const HEARTBEAT_MS = 15_000;
 
@@ -11,7 +12,7 @@ const SSE_HEADERS = {
 };
 
 function frame(reply: FastifyReply, text: string): void {
-  if (reply.raw.writableEnded) return;
+  if (reply.raw.writableEnded || reply.raw.destroyed || reply.raw.writableNeedDrain) return;
   reply.raw.write(text);
 }
 
@@ -21,7 +22,6 @@ function release(reply: FastifyReply, stream: InquiryRunStream): Promise<void> {
   });
 }
 
-/** hijacking skips the reply's own send, so the headers CORS and helmet negotiated are carried over by hand */
 export async function writeInquiryRunStream(
   reply: FastifyReply,
   stream: InquiryRunStream,
@@ -40,13 +40,13 @@ export async function writeInquiryRunStream(
 
   try {
     for await (const snapshot of stream.snapshots) {
-      frame(reply, `data: ${JSON.stringify(snapshot)}\n\n`);
+      await writeStreamFrame(reply.raw, `data: ${JSON.stringify(snapshot)}\n\n`);
     }
   } catch (error) {
     reply.log.error({ err: error }, "inquiry run stream ended before the run did");
   } finally {
     clearInterval(heartbeat);
     await release(reply, stream);
-    if (!reply.raw.writableEnded) reply.raw.end();
+    if (!reply.raw.writableEnded && !reply.raw.destroyed) reply.raw.end();
   }
 }

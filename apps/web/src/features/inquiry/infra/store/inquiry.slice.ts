@@ -130,6 +130,8 @@ function toSummaryRecord(run: InquiryRunRecord): InquiryRunSummaryRecord {
 function applySnapshotToAsk(ask: InquiryAskState, run: InquiryRunRecord): void {
   if (ask.startedRunId !== run.id) return;
   if (run.progress.stage !== "terminal") {
+    ask.isAsking = true;
+    ask.isStillRunning = false;
     ask.watchedStatus = run.status;
     ask.watchedStage = run.progress.stage;
     return;
@@ -203,7 +205,13 @@ const inquirySlice = createSlice({
       })
       .addCase(inquiryRunSnapshotReceived, (state, action) => {
         const run = action.payload;
-        if (!isNewerSnapshot(state.detail.byId[run.id], run)) return;
+        const current = state.detail.byId[run.id];
+        if (!isNewerSnapshot(current, run)) {
+          if (current && current.progress.revision === run.progress.revision) {
+            applySnapshotToAsk(state.ask, current);
+          }
+          return;
+        }
         state.detail.byId[run.id] = run;
         const row = state.runs.findIndex((candidate) => candidate.id === run.id);
         const listed = state.runs[row];
@@ -214,12 +222,8 @@ const inquirySlice = createSlice({
       })
       .addCase(inquiryRunWatchLost, (state, action) => {
         if (state.ask.startedRunId !== action.payload || !state.ask.isAsking) return;
-        state.ask = {
-          ...idleAsk,
-          isRefresh: state.ask.isRefresh,
-          wasDeduped: state.ask.wasDeduped,
-          isStillRunning: true,
-        };
+        state.ask.isAsking = false;
+        state.ask.isStillRunning = true;
       })
       .addCase(loadInquiryRun.rejected, (state, action) => {
         state.detail.loadingId = null;

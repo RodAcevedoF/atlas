@@ -53,4 +53,8 @@ export class InMemoryInquiryJobQueue implements InquiryJobQueuePort {
   reclaimStale(): Promise<InquiryJob[]> {
     throw new NotImplementedError("reclaimStale");
   }
+
+  recordFailure(): Promise<void> {
+    throw new NotImplementedError("recordFailure");
+  }
 }

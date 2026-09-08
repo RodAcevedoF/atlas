@@ -10,12 +10,35 @@ import {
   SUCCESS_BODY,
   inquiryRun,
 } from "../../testing/inquiry-run.builder.ts";
-import { answering, failing, hanging, orchestrating } from "../../testing/orchestration.fake.ts";
+import {
+  answering,
+  cancellableStall,
+  failing,
+  hanging,
+  orchestrating,
+} from "../../testing/orchestration.fake.ts";
 import { GraphUnavailableError, GraphUnreadableError } from "../../world/outbound/orchestration.ts";
 import { INQUIRY_MAX_ATTEMPTS } from "../outbound/inquiry-run-store.ts";
 import { ExecuteInquiryRunUseCase } from "./execute-inquiry-run.ts";
 
 describe("ExecuteInquiryRunUseCase", () => {
+  test("a timed-out attempt releases its orchestration work before the next run", async () => {
+    const { store } = inMemoryInquiryRunStore([inquiryRun()]);
+    const stalled = cancellableStall();
+    const useCase = new ExecuteInquiryRunUseCase(
+      store,
+      stalled.orchestration,
+      RETRY_AFTER_MS,
+      5,
+      stubNotifier,
+    );
+
+    const result = await useCase.execute();
+
+    expect(result.status).toBe("failed_retryable");
+    expect(stalled.active()).toBe(false);
+  });
+
   test("an empty queue executes nothing", async () => {
     const { store } = inMemoryInquiryRunStore();
     const useCase = new ExecuteInquiryRunUseCase(

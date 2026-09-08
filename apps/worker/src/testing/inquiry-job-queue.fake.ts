@@ -7,8 +7,14 @@ export class InMemoryInquiryJobQueue implements InquiryJobQueuePort {
   private readonly inFlight = new Map<string, InquiryJob>();
   private readonly dead: { job: InquiryJob; reason: string }[] = [];
   private nextDeliveryId = 1;
+  private readonly failures: { runId: InquiryRunId; reason: string }[] = [];
   private acknowledgeFails = false;
   private reclaimFails = false;
+  private failureRecordsFail = false;
+
+  failRecordFailure(): void {
+    this.failureRecordsFail = true;
+  }
 
   failAcknowledge(): void {
     this.acknowledgeFails = true;
@@ -20,6 +26,16 @@ export class InMemoryInquiryJobQueue implements InquiryJobQueuePort {
 
   deadLettered(): { job: InquiryJob; reason: string }[] {
     return [...this.dead];
+  }
+
+  recordedFailures() {
+    return [...this.failures];
+  }
+
+  recordFailure(runId: InquiryRunId, reason: string): Promise<void> {
+    if (this.failureRecordsFail) return Promise.reject(new Error("redis unavailable"));
+    this.failures.push({ runId, reason });
+    return Promise.resolve();
   }
 
   publish(runId: InquiryRunId): Promise<void> {

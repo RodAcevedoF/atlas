@@ -148,6 +148,37 @@ test("a lost watch reports the run as still running instead of hanging the ask",
   expect(lost.ask.isStillRunning).toBe(true);
 });
 
+for (const status of ["running", "succeeded"] as const) {
+  test(`a stalled ask recovers when its stream returns ${status}`, () => {
+    const pending = inquiryReducer(undefined, askInquiryQuestion.pending(REQUEST_ID, ASK));
+    const requested = inquiryReducer(pending, inquiryRunRequested("run-1"));
+    const lost = inquiryReducer(requested, inquiryRunWatchLost("run-1"));
+    const snapshot = status === "running" ? runningSnapshot(2) : buildInquiryRun({ id: "run-1" });
+
+    const recovered = inquiryReducer(lost, inquiryRunSnapshotReceived(snapshot));
+
+    expect(recovered.ask.isStillRunning).toBe(false);
+    expect(recovered.ask.isAsking).toBe(status === "running");
+    expect(recovered.ask.completion).toEqual(
+      status === "running" ? null : { runId: "run-1", status: "succeeded" },
+    );
+  });
+}
+
+test("a reconnect with the current revision restores the stalled ask without replacing its map", () => {
+  const pending = inquiryReducer(undefined, askInquiryQuestion.pending(REQUEST_ID, ASK));
+  const requested = inquiryReducer(pending, inquiryRunRequested("run-1"));
+  const snapshot = runningSnapshot(2);
+  const painted = inquiryReducer(requested, inquiryRunSnapshotReceived(snapshot));
+  const lost = inquiryReducer(painted, inquiryRunWatchLost("run-1"));
+
+  const recovered = inquiryReducer(lost, inquiryRunSnapshotReceived(snapshot));
+
+  expect(recovered.ask.isStillRunning).toBe(false);
+  expect(recovered.ask.isAsking).toBe(true);
+  expect(recovered.detail.byId["run-1"]).toBe(lost.detail.byId["run-1"]);
+});
+
 test("a stale snapshot cannot regress a newer checkpoint", () => {
   const enriched = runningSnapshot(3, { synthesis: "the global read" });
   const withNewer = inquiryReducer(undefined, inquiryRunSnapshotReceived(enriched));

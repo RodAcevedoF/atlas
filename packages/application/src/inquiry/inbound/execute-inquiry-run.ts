@@ -289,8 +289,12 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
 
   private async measure(run: InquiryRun): Promise<RunOutcome> {
     const attempt = openAttempt(run);
+    const controller = new AbortController();
     try {
-      const body = await withTimeout(this.consume(run, attempt), this.runTimeoutMs);
+      const body = await withTimeout(
+        this.consume(run, attempt, controller.signal),
+        this.runTimeoutMs,
+      );
       const outcome = toOutcome(body, run.attempts, attempt.preserved);
       const preserved = attempt.preserved.documents;
       if (outcome.documents.length > 0 || preserved.length === 0) return outcome;
@@ -298,6 +302,8 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
     } catch (error) {
       attempt.closed = true;
       return this.recover(error, run, attempt);
+    } finally {
+      controller.abort();
     }
   }
 
@@ -334,12 +340,17 @@ export class ExecuteInquiryRunUseCase implements ExecuteInquiryRun {
     );
   }
 
-  private async consume(run: InquiryRun, attempt: AttemptState): Promise<Record<string, unknown>> {
+  private async consume(
+    run: InquiryRun,
+    attempt: AttemptState,
+    signal: AbortSignal,
+  ): Promise<Record<string, unknown>> {
     const frames = this.orchestration.stream({
       graphName: GRAPH_NAME,
       runId: run.id,
       input: { question: run.question, window: run.window },
       attempt: run.attempts,
+      signal,
     });
 
     for await (const frame of frames) {

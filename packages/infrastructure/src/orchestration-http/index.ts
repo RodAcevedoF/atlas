@@ -54,6 +54,7 @@ export class HttpOrchestration implements OrchestrationPort {
       `${this.baseUrl}/graphs/${encodeURIComponent(input.graphName)}/stream`,
       { "content-type": "application/json", accept: "text/event-stream" },
       { input: input.input, runId: input.runId, attempt: input.attempt },
+      input.signal,
     );
     if (!res.body) {
       throw new GraphUnavailableError(`${route} returned no body`);
@@ -84,6 +85,7 @@ export class HttpOrchestration implements OrchestrationPort {
     url: string,
     headers: Record<string, string>,
     body: Record<string, unknown>,
+    signal?: AbortSignal,
   ): Promise<Response> {
     let res: Response;
     try {
@@ -91,6 +93,7 @@ export class HttpOrchestration implements OrchestrationPort {
         method: "POST",
         headers,
         body: JSON.stringify(body),
+        signal,
       });
     } catch (error) {
       throw new GraphUnavailableError(`${route} unreachable: ${reasonOf(error)}`);

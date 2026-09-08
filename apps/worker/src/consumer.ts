@@ -1,5 +1,6 @@
 import type {
   ExecuteInquiryRun,
+  ExecuteInquiryRunOutput,
   InquiryJob,
   InquiryJobQueuePort,
   ReconcileInquiryNotifications,
@@ -16,6 +17,21 @@ export interface ConsumerDeps {
   log: Logger;
 }
 
+async function recordPermanentFailure(
+  deps: ConsumerDeps,
+  result: ExecuteInquiryRunOutput,
+): Promise<void> {
+  if (!result.runId || result.status !== "failed_permanent") return;
+  try {
+    await deps.queue.recordFailure(result.runId, result.status);
+  } catch (error) {
+    deps.log.error(
+      { runId: result.runId, err: error },
+      "permanent inquiry failure could not be recorded in Redis; Mongo retains the outcome",
+    );
+  }
+}
+
 function heartbeat(deps: ConsumerDeps, job: InquiryJob): () => void {
   const timer = setInterval(() => {
     deps.queue.refreshOwnership(job.deliveryId).catch((error: unknown) => {
@@ -29,11 +45,13 @@ function heartbeat(deps: ConsumerDeps, job: InquiryJob): () => void {
 async function runJob(deps: ConsumerDeps, job: InquiryJob): Promise<void> {
   const stopHeartbeat = heartbeat(deps, job);
   try {
-    const { runId, status } = await deps.executeInquiryRun.execute(job.runId);
+    const result = await deps.executeInquiryRun.execute(job.runId);
+    const { runId, status } = result;
     if (!runId) {
       deps.log.info({ runId: job.runId }, "inquiry run was already claimed");
       return;
     }
+    await recordPermanentFailure(deps, result);
     deps.log.info({ runId, status }, "inquiry run finished");
   } finally {
     stopHeartbeat();
@@ -42,8 +60,10 @@ async function runJob(deps: ConsumerDeps, job: InquiryJob): Promise<void> {
 
 async function drainStranded(deps: ConsumerDeps): Promise<void> {
   for (let recovered = 0; recovered < deps.reclaimBatchSize; recovered += 1) {
-    const { runId, status } = await deps.executeInquiryRun.execute();
+    const result = await deps.executeInquiryRun.execute();
+    const { runId, status } = result;
     if (!runId) return;
+    await recordPermanentFailure(deps, result);
     deps.log.info({ runId, status }, "recovered a stranded inquiry run");
   }
 }
@@ -96,17 +116,48 @@ export function createConsumer(deps: ConsumerDeps): {
   drainOnce: () => Promise<void>;
   recoverOnce: () => Promise<void>;
 } {
+  let available = Promise.resolve();
+  let recovery: Promise<void> | null = null;
+  let notifications: Promise<void> | null = null;
+
+  async function exclusively(pass: () => Promise<void>): Promise<void> {
+    const previous = available;
+    let release = (): void => {};
+    available = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    try {
+      await pass();
+    } finally {
+      release();
+    }
+  }
+
   return {
     async drainOnce() {
-      const jobs = await deps.queue.reserve(1);
-      for (const job of jobs) await settle(deps, job);
+      await exclusively(async () => {
+        const jobs = await deps.queue.reserve(1);
+        for (const job of jobs) await settle(deps, job);
+      });
     },
     async recoverOnce() {
-      await guarded(deps, "inquiry stranded drain failed", () => drainStranded(deps));
-      await guarded(deps, "inquiry reclaim pass failed", () => reclaimAbandoned(deps));
-      await guarded(deps, "inquiry notification reconcile failed", () =>
-        republishStrandedNotifications(deps),
-      );
+      if (!notifications) {
+        notifications = guarded(deps, "inquiry notification reconcile failed", () =>
+          republishStrandedNotifications(deps),
+        ).finally(() => {
+          notifications = null;
+        });
+      }
+      if (!recovery) {
+        recovery = exclusively(async () => {
+          await guarded(deps, "inquiry stranded drain failed", () => drainStranded(deps));
+          await guarded(deps, "inquiry reclaim pass failed", () => reclaimAbandoned(deps));
+        }).finally(() => {
+          recovery = null;
+        });
+      }
+      await Promise.all([recovery, notifications]);
     },
   };
 }

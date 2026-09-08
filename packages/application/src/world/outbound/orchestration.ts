@@ -22,6 +22,7 @@ export interface GraphRunInput {
 
 export interface GraphStreamInput extends GraphRunInput {
   attempt: number;
+  signal?: AbortSignal;
 }
 
 export type GraphEventType =

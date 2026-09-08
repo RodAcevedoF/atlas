@@ -11,11 +11,13 @@ import {
   parseInquiryRunsQuery,
 } from "../modules/inquiry/request.ts";
 import { writeInquiryRunStream } from "../modules/inquiry/run-events.ts";
+import { InquiryStreamCapacity } from "../modules/inquiry/stream-capacity.ts";
 
 export async function registerInquiryRoutes(
   app: FastifyInstance,
   deps: InquiryDeps,
 ): Promise<void> {
+  const streamCapacity = new InquiryStreamCapacity();
   app.post("/inquiry/attachments", async (req, reply) => {
     const user = requireUser(req);
     const mediaType = req.headers["content-type"]?.split(";", 1)[0] ?? "";
@@ -83,9 +85,11 @@ export async function registerInquiryRoutes(
   app.get("/inquiry/runs/:id/events", async (req, reply) => {
     const user = requireUser(req);
     const params = req.params as { id?: string };
-    const stream = await deps.streamInquiryRun.execute(parseInquiryRunId(params.id), user);
-    if (!stream) return reply.code(404).send({ error: "Inquiry run not found" });
-    return writeInquiryRunStream(reply, stream);
+    return streamCapacity.run(user.id, async () => {
+      const stream = await deps.streamInquiryRun.execute(parseInquiryRunId(params.id), user);
+      if (!stream) return reply.code(404).send({ error: "Inquiry run not found" });
+      return writeInquiryRunStream(reply, stream);
+    });
   });
 
   app.delete("/inquiry/runs/:id", async (req, reply) => {

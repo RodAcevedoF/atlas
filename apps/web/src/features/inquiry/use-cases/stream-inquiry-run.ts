@@ -66,11 +66,13 @@ export function makeWatchInquiryRunStream(
     const resume = () => {
       closeHandle();
       const delayMs = policy.reconnectDelaysMs[reconnectsUsed];
-      reconnectsUsed += 1;
       if (delayMs === undefined) {
-        onStalled();
+        if (reconnectsUsed === policy.reconnectDelaysMs.length) onStalled();
+        reconnectsUsed = policy.reconnectDelaysMs.length + 1;
+        reopenAfter(policy.reconnectDelaysMs.at(-1));
         return;
       }
+      reconnectsUsed += 1;
       reopenAfter(delayMs);
     };
 

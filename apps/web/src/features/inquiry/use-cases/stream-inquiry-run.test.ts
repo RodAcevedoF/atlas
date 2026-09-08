@@ -75,16 +75,43 @@ test("a dropped connection reopens, and the fresh stream resumes the flow", asyn
   expect(seen.map((run) => run.progress.revision)).toEqual([2]);
 });
 
-test("reconnects are bounded — a dead API reports the stall instead of retrying forever", async () => {
-  const { connections, isStalled } = watching();
+test("capacity returning after the initial retry budget restores live snapshots", async () => {
+  const { connections, seen, watch, isStalled } = watching();
+
+  try {
+    for (let rejected = 0; rejected < 5; rejected += 1) {
+      connections.at(-1)?.drop();
+      await until(() => connections.length === rejected + 2);
+    }
+    const reportedStall = isStalled();
+    connections.at(-1)?.emit(runningSnapshot(2));
+    connections.at(-1)?.emit(terminalSnapshot("succeeded", 3));
+    await delay(10);
+
+    expect(reportedStall).toBe(true);
+    expect(seen.map((run) => run.progress.revision)).toEqual([2, 3]);
+    expect(connections.filter((connection) => connection.isOpen)).toHaveLength(0);
+    expect(connections).toHaveLength(6);
+  } finally {
+    watch.stop();
+  }
+});
+
+test("stop cancels recovery after the initial reconnect budget is exhausted", async () => {
+  const { connections, watch, isStalled } = watching({
+    reconnectDelaysMs: [5],
+    retryReopenDelaysMs: [],
+  });
 
   connections[0]?.drop();
   await until(() => connections.length === 2);
   connections[1]?.drop();
+  expect(isStalled()).toBe(true);
+  watch.stop();
+  await delay(20);
 
-  await until(isStalled);
-  await delay(10);
   expect(connections).toHaveLength(2);
+  expect(connections.every((connection) => !connection.isOpen)).toBe(true);
 });
 
 test("a delivered snapshot restores the reconnect budget", async () => {

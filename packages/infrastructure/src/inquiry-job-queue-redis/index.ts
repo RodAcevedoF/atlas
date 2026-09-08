@@ -71,6 +71,8 @@ export class RedisInquiryJobPublisher implements InquiryJobPublisherPort {
 }
 
 export class RedisInquiryJobQueue extends RedisInquiryJobPublisher implements InquiryJobQueuePort {
+  private reclaimCursor = "0-0";
+
   constructor(
     redis: Redis,
     private readonly blocking: Redis,
@@ -115,6 +117,11 @@ export class RedisInquiryJobQueue extends RedisInquiryJobPublisher implements In
   }
 
   async deadLetter(job: InquiryJob, reason: string): Promise<void> {
+    await this.recordFailure(job.runId, reason);
+    await this.acknowledge(job.deliveryId);
+  }
+
+  async recordFailure(runId: InquiryRunId, reason: string): Promise<void> {
     await this.redis.xadd(
       INQUIRY_DEAD_LETTER_STREAM,
       "MINID",
@@ -122,11 +129,10 @@ export class RedisInquiryJobQueue extends RedisInquiryJobPublisher implements In
       String(Date.now() - DEAD_LETTER_RETENTION_MS),
       "*",
       RUN_ID_FIELD,
-      job.runId,
+      runId,
       "reason",
       reason,
     );
-    await this.acknowledge(job.deliveryId);
   }
 
   async reclaimStale(idleMs: number, limit: number): Promise<InquiryJob[]> {
@@ -135,12 +141,14 @@ export class RedisInquiryJobQueue extends RedisInquiryJobPublisher implements In
       INQUIRY_JOB_GROUP,
       this.config.consumerName,
       idleMs,
-      "0-0",
+      this.reclaimCursor,
       "COUNT",
       limit,
     );
-    const entries = (response as unknown[])[1] as StreamEntry[] | undefined;
-    return entries ? await this.settleParsed(entries) : [];
+    const [nextCursor, entries] = response as [string, StreamEntry[]];
+    const jobs = await this.settleParsed(entries);
+    this.reclaimCursor = nextCursor;
+    return jobs;
   }
 
   private async settleParsed(entries: StreamEntry[]): Promise<InquiryJob[]> {

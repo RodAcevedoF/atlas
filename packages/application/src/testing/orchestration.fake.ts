@@ -83,3 +83,19 @@ export function failing(error: Error): OrchestrationPort {
 export function hanging(): OrchestrationPort {
   return orchestrating(() => new Promise<Record<string, unknown>>(() => {}));
 }
+
+export function cancellableStall() {
+  let active = false;
+  const orchestration = streaming(async function* (input) {
+    active = true;
+    try {
+      await new Promise<void>((resolve) => {
+        if (input.signal?.aborted) resolve();
+        else input.signal?.addEventListener("abort", () => resolve(), { once: true });
+      });
+    } finally {
+      active = false;
+    }
+  });
+  return { orchestration, active: () => active };
+}

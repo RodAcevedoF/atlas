@@ -14,5 +14,6 @@ export interface InquiryJobQueuePort extends InquiryJobPublisherPort {
   refreshOwnership(deliveryId: string): Promise<void>;
   acknowledge(deliveryId: string): Promise<void>;
   deadLetter(job: InquiryJob, reason: string): Promise<void>;
+  recordFailure(runId: InquiryRunId, reason: string): Promise<void>;
   reclaimStale(idleMs: number, limit: number): Promise<InquiryJob[]>;
 }

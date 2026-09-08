@@ -7,8 +7,10 @@ import type {
 import type { InquiryRunId } from "@atlas/domain";
 import { makeInquiryRunId } from "@atlas/domain";
 import { createConsumer } from "./consumer.ts";
+import { ConcurrentExecution } from "./testing/concurrent-execution.fake.ts";
 import { InMemoryInquiryJobQueue } from "./testing/inquiry-job-queue.fake.ts";
 import { recordingLogger, silentLogger } from "./testing/logger.fake.ts";
+import { PendingNotifications } from "./testing/pending-notifications.fake.ts";
 
 const RUN_ID = makeInquiryRunId("run-1");
 
@@ -47,6 +49,91 @@ function consumerFor(
 }
 
 describe("inquiry job consumer", () => {
+  test("a failed diagnostic write does not turn a durable outcome into an execution error", async () => {
+    const queue = new InMemoryInquiryJobQueue();
+    await queue.publish(RUN_ID);
+    queue.failRecordFailure();
+    const consumer = consumerFor(
+      queue,
+      executing(() => Promise.resolve({ runId: RUN_ID, status: "failed_permanent" })),
+    );
+
+    await consumer.drainOnce();
+
+    expect(queue.deadLettered()).toEqual([]);
+    expect(await queue.reclaimStale(0, 10)).toEqual([]);
+  });
+
+  for (const path of ["drainOnce", "recoverOnce"] as const) {
+    test(`${path} records a permanent failure for diagnosis`, async () => {
+      const queue = new InMemoryInquiryJobQueue();
+      if (path === "drainOnce") await queue.publish(RUN_ID);
+      const waiting = [RUN_ID];
+      const consumer = consumerFor(
+        queue,
+        executing(() => {
+          const runId = waiting.shift() ?? null;
+          return Promise.resolve({ runId, status: runId ? "failed_permanent" : null });
+        }),
+      );
+
+      await consumer[path]();
+
+      expect(queue.recordedFailures()).toEqual([{ runId: RUN_ID, reason: "failed_permanent" }]);
+    });
+  }
+
+  test("overlapping recovery ticks consume only one recovery batch", async () => {
+    const queue = new InMemoryInquiryJobQueue();
+    const waiting = Array.from({ length: 25 }, (_value, index) =>
+      makeInquiryRunId(`stranded-${index}`),
+    );
+    const execution = new ConcurrentExecution(Promise.resolve(), waiting);
+    const consumer = consumerFor(queue, execution);
+
+    await Promise.all(Array.from({ length: 20 }, () => consumer.recoverOnce()));
+
+    expect(execution.completed).toHaveLength(10);
+    expect(execution.waiting).toHaveLength(15);
+  });
+
+  test("notification repair reaches clients while a research run is still executing", async () => {
+    const queue = new InMemoryInquiryJobQueue();
+    await queue.publish(RUN_ID);
+    const held = Promise.withResolvers<void>();
+    const execution = new ConcurrentExecution(held.promise);
+    const notifications = new PendingNotifications();
+    const consumer = consumerFor(queue, execution, notifications);
+
+    const draining = consumer.drainOnce();
+    await Bun.sleep(1);
+    const repairing = consumer.recoverOnce();
+    await Bun.sleep(1);
+    const pendingDuringExecution = notifications.pending;
+    const activeDuringRepair = execution.active;
+    held.resolve();
+    await Promise.all([draining, repairing]);
+
+    expect(pendingDuringExecution).toBe(false);
+    expect(activeDuringRepair).toBe(1);
+  });
+
+  test("recovery ticks and queued work share one execution slot", async () => {
+    const queue = new InMemoryInquiryJobQueue();
+    await queue.publish(RUN_ID);
+    const execution = new ConcurrentExecution();
+    const consumer = consumerFor(queue, execution);
+
+    await Promise.all([
+      consumer.drainOnce(),
+      ...Array.from({ length: 20 }, () => consumer.recoverOnce()),
+    ]);
+
+    expect(execution.peak).toBe(1);
+    expect(execution.completed).toEqual([RUN_ID]);
+    expect(await queue.reclaimStale(0, 10)).toEqual([]);
+  });
+
   test("a finished job is released so no other worker reclaims it", async () => {
     const queue = new InMemoryInquiryJobQueue();
     await queue.publish(RUN_ID);
