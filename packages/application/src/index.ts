@@ -55,6 +55,11 @@ export {
 } from "./world/outbound/run-envelope.ts";
 export type { UserPage, UserPageInput, UserStorePort } from "./auth/outbound/user-store.ts";
 export type { SessionPort } from "./auth/outbound/session-store.ts";
+export type {
+  PasswordLoginState,
+  PasswordLoginStatePort,
+} from "./auth/outbound/password-login-state.ts";
+export { GuardedPasswordProvider } from "./auth/inbound/guarded-password-provider.ts";
 export type { PasswordHasherPort } from "./auth/outbound/password-hasher.ts";
 export type { UserOwnedDataPort } from "./admin/outbound/user-owned-data.ts";
 export type {

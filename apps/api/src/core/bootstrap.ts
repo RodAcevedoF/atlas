@@ -1,3 +1,4 @@
+import { GuardedPasswordProvider } from "@atlas/application";
 import type { InquiryRunId } from "@atlas/domain";
 import { makeInquiryRunId } from "@atlas/domain";
 import { PasswordIdentityProvider } from "@atlas/infra/identity-password";
@@ -10,6 +11,7 @@ import { RedisInquiryRunSubscriptions } from "@atlas/infra/inquiry-updates-redis
 import type { Logger } from "@atlas/infra/logger";
 import { HttpOrchestration } from "@atlas/infra/orchestration-http";
 import { BunPasswordHasher } from "@atlas/infra/password-bun";
+import { RedisPasswordLoginState } from "@atlas/infra/password-login-redis";
 import { MongoProfileImageStore } from "@atlas/infra/profile-image-mongodb";
 import { DEFAULT_REDIS_URL, createWatchedRedisClient } from "@atlas/infra/redis-client";
 import { RedisSessionStore } from "@atlas/infra/session-redis";
@@ -78,7 +80,10 @@ export async function bootstrap(logger: Logger): Promise<AppDeps> {
   );
 
   const identityProviders = {
-    password: new PasswordIdentityProvider(userStore, hasher),
+    password: new GuardedPasswordProvider(
+      new PasswordIdentityProvider(userStore, hasher),
+      new RedisPasswordLoginState(redis),
+    ),
     ...makeOAuthStrategies(readOAuthConfigs()),
   };
 
