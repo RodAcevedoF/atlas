@@ -1,5 +1,10 @@
 import { SUCCESS_BODY } from "../../../../packages/application/src/testing/inquiry-run.builder.ts";
 
+function completionDelay(question: string) {
+  if (question === "redis-live" || question === "api-restart") return 5_000;
+  return 500;
+}
+
 export function startInquiryFixture() {
   const executions: { runId: string; worker: string; attempt: number }[] = [];
   const active = new Map<string, number>();
@@ -58,8 +63,10 @@ export function startInquiryFixture() {
               body.input.question === "timeout" ||
               (body.input.question === "kill" && body.attempt === 1);
             await new Promise<void>((resolve) => {
-              const delay = body.input.question === "redis-live" ? 3000 : 500;
-              const timer = setTimeout(resolve, slow ? 60_000 : delay);
+              const timer = setTimeout(
+                resolve,
+                slow ? 60_000 : completionDelay(body.input.question),
+              );
               finishDelay = () => {
                 clearTimeout(timer);
                 resolve();

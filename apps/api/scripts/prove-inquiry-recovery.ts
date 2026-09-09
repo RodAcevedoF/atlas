@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { makeInquiryRunId, makeUserId } from "@atlas/domain";
+import { type PublicInquiryRun, makeInquiryRunId, makeUserId } from "@atlas/domain";
 import {
   INQUIRY_JOB_GROUP,
   INQUIRY_JOB_STREAM,
@@ -11,6 +11,15 @@ import { MongoInquiryRunStore, createMongoClient } from "@atlas/infra/store-mong
 import { inquiryRun } from "../../../packages/application/src/testing/inquiry-run.builder.ts";
 import { startInquiryFixture } from "./testing/inquiry-proof-fixture.ts";
 
+type ProofProcess = ReturnType<typeof Bun.spawn>;
+type ProofSnapshot = Pick<PublicInquiryRun, "places" | "status"> & {
+  progress: Pick<PublicInquiryRun["progress"], "revision" | "stage">;
+};
+type ReadSnapshotOptions = {
+  allowInterruptedStream?: boolean;
+  onSnapshot?: (snapshot: ProofSnapshot) => void;
+};
+
 const root = new URL("../../../", import.meta.url).pathname;
 const mongo = createMongoClient("mongodb://127.0.0.1:17017");
 await mongo.connect();
@@ -18,10 +27,10 @@ const store = new MongoInquiryRunStore(mongo.db("atlas_p7"));
 const redis = createWatchedRedisClient("redis://127.0.0.1:16379", { name: "proof" });
 const publisher = new RedisInquiryJobPublisher(redis);
 const fixture = startInquiryFixture();
-const children: ReturnType<typeof Bun.spawn>[] = [];
+const children: ProofProcess[] = [];
 const prefix = crypto.randomUUID();
 
-function child(script: string, name: string, args: string[] = []) {
+function startChild(script: string, name: string, args: string[] = []) {
   const process = Bun.spawn(["bun", script, ...args], {
     cwd: root,
     env: {
@@ -44,7 +53,11 @@ function child(script: string, name: string, args: string[] = []) {
   return process;
 }
 
-async function until<T>(read: () => Promise<T>, accept: (value: T) => boolean, timeout = 45_000) {
+async function waitUntil<T>(
+  read: () => Promise<T>,
+  accept: (value: T) => boolean,
+  timeout = 45_000,
+) {
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
     const value = await read();
@@ -68,27 +81,80 @@ async function seed(name: string, question = "happy", publish = true) {
 }
 
 async function terminal(id: ReturnType<typeof makeInquiryRunId>) {
-  return until(
+  return waitUntil(
     () => store.findInquiryRunById(id),
     (run) => run !== null && ["succeeded", "failed_permanent"].includes(run.status),
   );
 }
 
-async function watch(port: number, run: Awaited<ReturnType<typeof seed>>) {
+function isConnectionRefused(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  if (error instanceof TypeError) return true;
+  if (!("code" in error)) return false;
+  return ["ConnectionRefused", "ECONNREFUSED"].includes(String(error.code));
+}
+
+async function waitForApi(port: number) {
+  return waitUntil(
+    async () => {
+      try {
+        const response = await fetch(`http://127.0.0.1:${port}/runs/readiness/events`);
+        return response.status;
+      } catch (error) {
+        if (isConnectionRefused(error)) return 0;
+        throw error;
+      }
+    },
+    (status) => status === 401,
+  );
+}
+
+async function readSnapshots(
+  port: number,
+  run: Awaited<ReturnType<typeof seed>>,
+  options: ReadSnapshotOptions = {},
+) {
   assert(run.ownerId);
+  const timeout = AbortSignal.timeout(45_000);
   const response = await fetch(`http://127.0.0.1:${port}/runs/${run.id}/events`, {
     headers: { "x-proof-owner": run.ownerId },
-    signal: AbortSignal.timeout(45_000),
+    signal: timeout,
   });
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /text\/event-stream/);
-  const body = await response.text();
-  return body
-    .split("\n")
-    .filter((line) => line.startsWith("data: "))
-    .map((line) => {
-      return JSON.parse(line.slice(6)) as { status: string; progress: { revision: number } };
-    });
+  assert(response.body);
+  const snapshots: ProofSnapshot[] = [];
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffered = "";
+  const parseLines = (text: string) => {
+    const lines = text.split("\n");
+    buffered = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const snapshot = JSON.parse(line.slice(6)) as ProofSnapshot;
+      snapshots.push(snapshot);
+      options.onSnapshot?.(snapshot);
+    }
+  };
+  const readChunk = async () => {
+    try {
+      return await reader.read();
+    } catch (error) {
+      if (timeout.aborted || !options.allowInterruptedStream || snapshots.length === 0) throw error;
+      return null;
+    }
+  };
+  while (true) {
+    const chunk = await readChunk();
+    if (!chunk) break;
+    if (chunk.done) {
+      parseLines(`${buffered + decoder.decode()}\n`);
+      break;
+    }
+    parseLines(buffered + decoder.decode(chunk.value, { stream: true }));
+  }
+  return snapshots;
 }
 
 async function docker(action: string) {
@@ -138,23 +204,18 @@ async function proveReclaimScan() {
   }
 }
 
-try {
-  await proveReclaimScan();
-  const workers = new Map([
-    ["worker-a", child("apps/worker/src/main.ts", "worker-a")],
-    ["worker-b", child("apps/worker/src/main.ts", "worker-b")],
-  ]);
-  child("apps/api/scripts/testing/inquiry-proof-api.ts", "api-a", ["18081"]);
-  child("apps/api/scripts/testing/inquiry-proof-api.ts", "api-b", ["18082"]);
-  await Bun.sleep(2000);
-
+async function proveConcurrentExecution() {
   const runs = await Promise.all(
     Array.from({ length: 8 }, (_value, index) => seed(`user-${index}`)),
   );
-  const watching = Promise.all(runs.flatMap((run) => [watch(18081, run), watch(18082, run)]));
+  const watching = Promise.all(
+    runs.flatMap((run) => [readSnapshots(18081, run), readSnapshots(18082, run)]),
+  );
   await Promise.all(runs.map((run) => publisher.publish(run.id)));
+
   const outcomes = await Promise.all(runs.map((run) => terminal(run.id)));
   const snapshots = await watching;
+
   assert(outcomes.every((run) => run?.status === "succeeded" && run.attempts === 1));
   assert(snapshots.every((values) => values.at(-1)?.status === "succeeded"));
   for (const values of snapshots) {
@@ -177,8 +238,11 @@ try {
       peaks: Object.fromEntries(fixture.peaks),
     }),
   );
+}
 
+async function proveTimeoutCancellation() {
   const timedOut = await seed("timeout", "timeout");
+
   assert.equal((await terminal(timedOut.id))?.completion, "degraded");
   await Bun.sleep(200);
   assert(
@@ -186,16 +250,21 @@ try {
     "timed-out provider work remains active",
   );
   console.log(JSON.stringify({ scenario: "timeout-releases-provider-connection", result: "pass" }));
+}
 
+async function proveIntelligenceFailures() {
   const degraded = await seed("degraded", "disconnect-after-map");
   const degradedResult = await terminal(degraded.id);
+
   assert.equal(degradedResult?.completion, "degraded");
   assert.equal(degradedResult?.places.length, 1);
+
   const failed = await seed("failed", "disconnect-before-map");
   const failedResult = await terminal(failed.id);
+
   assert.equal(failedResult?.status, "failed_permanent");
   assert.equal(failedResult?.attempts, 2);
-  await until(
+  await waitUntil(
     () => redis.xrange("inquiry:v1:jobs:dead", "-", "+"),
     (entries) => entries.some((entry) => entry[1].includes(failed.id)),
   );
@@ -206,9 +275,11 @@ try {
       deadLetters: await redis.xlen("inquiry:v1:jobs:dead"),
     }),
   );
+}
 
+async function proveWorkerRecovery(workers: ReadonlyMap<string, ProofProcess>) {
   const killed = await seed("killed", "kill");
-  await until(
+  await waitUntil(
     () => store.findInquiryRunById(killed.id),
     (run) => run?.progress.stage === "map_ready",
   );
@@ -216,37 +287,96 @@ try {
   assert(execution);
   const victim = workers.get(execution.worker);
   assert(victim);
+
   victim.kill("SIGKILL");
   await victim.exited;
   const recovered = await terminal(killed.id);
+
   assert.equal(recovered?.status, "succeeded");
   assert.equal(recovered?.attempts, 2);
   assert.equal(recovered?.places.length, 1);
   console.log(JSON.stringify({ scenario: "worker-death-after-map", result: "pass" }));
+}
 
+async function proveApiRecovery(apiProcess: ProofProcess) {
+  const restarting = await seed("api-restart", "api-restart");
+  const mapReady = Promise.withResolvers<ProofSnapshot>();
+  const interrupted = readSnapshots(18081, restarting, {
+    allowInterruptedStream: true,
+    onSnapshot(snapshot) {
+      if (snapshot.progress.stage === "map_ready") mapReady.resolve(snapshot);
+    },
+  });
+  const beforeRestart = await Promise.race([
+    mapReady.promise,
+    interrupted.then(() => {
+      throw new Error("API stream ended before delivering map-ready state");
+    }),
+  ]);
+
+  assert.equal(beforeRestart.places.length, 1);
+  apiProcess.kill("SIGKILL");
+  await apiProcess.exited;
+  const interruptedSnapshots = await interrupted;
+  assert.notEqual(interruptedSnapshots.at(-1)?.progress.stage, "terminal");
+
+  startChild("apps/api/scripts/testing/inquiry-proof-api.ts", "api-a", ["18081"]);
+  await waitForApi(18081);
+  const restartedSnapshots = await readSnapshots(18081, restarting);
+
+  assert((restartedSnapshots.at(0)?.progress.revision ?? -1) >= beforeRestart.progress.revision);
+  assert.equal(restartedSnapshots.at(0)?.places.length, 1);
+  assert.equal(restartedSnapshots.at(-1)?.status, "succeeded");
+  console.log(
+    JSON.stringify({ scenario: "api-process-restart-and-stream-reconnect", result: "pass" }),
+  );
+}
+
+async function proveRedisRecovery() {
   const live = await seed("redis-live", "redis-live");
-  await until(
+  await waitUntil(
     () => store.findInquiryRunById(live.id),
     (run) => run?.progress.stage === "map_ready",
   );
-  const reconnected = Promise.all([watch(18081, live), watch(18082, live)]);
+  const reconnected = Promise.all([readSnapshots(18081, live), readSnapshots(18082, live)]);
   await Bun.sleep(100);
+
   await docker("stop");
   const stranded = await seed("redis-outage", "happy", false);
   await Bun.sleep(1000);
   await docker("start");
+
   const reconnectedSnapshots = await reconnected;
   assert(reconnectedSnapshots.every((values) => values.at(-1)?.status === "succeeded"));
   assert.equal((await terminal(stranded.id))?.status, "succeeded");
+
   const probe = await seed("redis-restored");
   assert.equal((await terminal(probe.id))?.status, "succeeded");
-  await until(
+  await waitUntil(
     () => redis.xpending("inquiry:v1:jobs", "inquiry:v1:workers"),
     (pending) => Array.isArray(pending) && pending[0] === 0,
   );
   console.log(
     JSON.stringify({ scenario: "redis-restart-stranded-mongo-and-fresh-job", result: "pass" }),
   );
+}
+
+try {
+  await proveReclaimScan();
+  const workers = new Map([
+    ["worker-a", startChild("apps/worker/src/main.ts", "worker-a")],
+    ["worker-b", startChild("apps/worker/src/main.ts", "worker-b")],
+  ]);
+  const apiA = startChild("apps/api/scripts/testing/inquiry-proof-api.ts", "api-a", ["18081"]);
+  startChild("apps/api/scripts/testing/inquiry-proof-api.ts", "api-b", ["18082"]);
+  await Promise.all([waitForApi(18081), waitForApi(18082)]);
+
+  await proveConcurrentExecution();
+  await proveTimeoutCancellation();
+  await proveIntelligenceFailures();
+  await proveWorkerRecovery(workers);
+  await proveApiRecovery(apiA);
+  await proveRedisRecovery();
 } finally {
   await Promise.all(
     children.map(async (process) => {
