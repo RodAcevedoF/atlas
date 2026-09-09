@@ -1,0 +1,105 @@
+services:
+  - type: keyvalue
+    name: atlas-demo-redis
+    region: frankfurt
+    plan: 256mb
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+
+  - type: pserv
+    name: atlas-demo-intelligence
+    runtime: python
+    region: frankfurt
+    plan: 0.5c-512mb
+    rootDir: services/intelligence
+    buildCommand: uv sync --frozen --no-dev
+    startCommand: .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 10000
+    autoDeployTrigger: off
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.12
+      - key: UV_VERSION
+        value: 0.11.11
+      - key: INTELLIGENCE_RELOAD
+        value: "false"
+      - key: INTELLIGENCE_LOG_COLORS
+        value: "false"
+      - key: INTELLIGENCE_LLM_PROVIDER
+        value: openai
+      - key: INTELLIGENCE_LLM_MODEL
+        value: gpt-4o-mini
+      - key: INTELLIGENCE_OPENAI_API_KEY
+        sync: false
+      - key: EXA_API_KEY
+        sync: false
+
+  - type: web
+    name: atlas-demo-api
+    runtime: node
+    region: frankfurt
+    plan: 0.5c-512mb
+    buildCommand: NODE_ENV=development HUSKY=0 bun install --frozen-lockfile
+    startCommand: INTELLIGENCE_URL="http://${INTELLIGENCE_HOSTPORT}" bun apps/api/src/main.ts
+    healthCheckPath: /health
+    autoDeployTrigger: off
+    envVars:
+      - key: BUN_VERSION
+        value: 1.2.20
+      - key: NODE_ENV
+        value: production
+      - key: HUSKY
+        value: "0"
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        sync: false
+      - key: WEB_APP_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: atlas-demo-redis
+          property: connectionString
+      - key: INTELLIGENCE_HOSTPORT
+        fromService:
+          type: pserv
+          name: atlas-demo-intelligence
+          property: hostport
+      - key: EMAIL_PROVIDER
+        value: console
+
+  - type: worker
+    name: atlas-demo-worker
+    runtime: node
+    region: frankfurt
+    plan: 0.5c-512mb
+    buildCommand: NODE_ENV=development HUSKY=0 bun install --frozen-lockfile
+    startCommand: INTELLIGENCE_URL="http://${INTELLIGENCE_HOSTPORT}" bun apps/worker/src/main.ts
+    autoDeployTrigger: off
+    envVars:
+      - key: BUN_VERSION
+        value: 1.2.20
+      - key: NODE_ENV
+        value: production
+      - key: HUSKY
+        value: "0"
+      - key: MONGODB_URI
+        fromService:
+          type: web
+          name: atlas-demo-api
+          envVarKey: MONGODB_URI
+      - key: MONGODB_DB_NAME
+        fromService:
+          type: web
+          name: atlas-demo-api
+          envVarKey: MONGODB_DB_NAME
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: atlas-demo-redis
+          property: connectionString
+      - key: INTELLIGENCE_HOSTPORT
+        fromService:
+          type: pserv
+          name: atlas-demo-intelligence
+          property: hostport
