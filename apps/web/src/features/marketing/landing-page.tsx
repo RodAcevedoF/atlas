@@ -1,6 +1,6 @@
 import { useAuth } from "@/features/auth/auth-provider.tsx";
 import { CURATED_TOPIC_LABELS } from "@/features/world-awareness/utils/taxonomy.ts";
-import { ATLAS_STATS, HeaderCta, PublicPage, useCarousel, useLivePulse } from "@/shared/brand";
+import { HeaderCta, PublicPage, useCarousel, useLivePulse } from "@/shared/brand";
 import { useMemo } from "react";
 import { HeroCarousel } from "./components/hero-carousel.tsx";
 import { SLIDES } from "./data/landing-content.ts";
@@ -31,12 +31,8 @@ export function LandingPage() {
   );
 
   return (
-    <PublicPage
-      backdropWords={CURATED_TOPIC_LABELS}
-      headerActions={headerActions}
-      sourceStripTrailing={`+${ATLAS_STATS.sources.toLocaleString()} sources`}
-    >
-      <div className="relative z-3 flex flex-1 items-center justify-center px-8.5 pb-6.5">
+    <PublicPage backdropWords={CURATED_TOPIC_LABELS} headerActions={headerActions}>
+      <div className="relative z-3 flex flex-1 items-center justify-center px-4 pb-6.5 sm:px-8.5">
         <HeroCarousel carousel={carousel} pulse={pulse} />
       </div>
     </PublicPage>

@@ -6,8 +6,10 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { useProfileImage } from "./hooks/use-profile-image.ts";
 import type { Credentials } from "./repositories/auth-repository.ts";
 import { HttpAuthRepository } from "./repositories/http-auth-repository.ts";
 import { HttpProfileRepository } from "./repositories/http-profile-repository.ts";
@@ -36,16 +38,13 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function profileImageUrl(user: PublicUser, revision?: string): string {
-  const query = new URLSearchParams({ revision: revision ?? user.id });
-  return `/api/profile/image?${query.toString()}`;
-}
-
 export function AuthProvider({ children }: PropsWithChildren) {
   const [authRepository] = useState(() => new HttpAuthRepository());
   const [profileRepository] = useState(() => new HttpProfileRepository());
   const [user, setUser] = useState<PublicUser | null>(null);
-  const [currentProfileImageUrl, setCurrentProfileImageUrl] = useState<string | null>(null);
+  const profileImageVersion = useRef(0);
+  const [profileImageRevision, setProfileImageRevision] = useState<string | null>(null);
+  const currentProfileImageUrl = useProfileImage(profileRepository, profileImageRevision);
   const [status, setStatus] = useState<AuthStatus>("loading");
 
   const loadSession = useCallback(async () => {
@@ -53,7 +52,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     try {
       const current = await authRepository.me();
       setUser(current);
-      setCurrentProfileImageUrl(current ? profileImageUrl(current) : null);
+      setProfileImageRevision(current ? String(++profileImageVersion.current) : null);
       setStatus(current ? "authenticated" : "anonymous");
     } catch (caught) {
       console.error("Failed to load session", caught);
@@ -69,7 +68,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     async (credentials: Credentials) => {
       const current = await authRepository.login(credentials);
       setUser(current);
-      setCurrentProfileImageUrl(profileImageUrl(current));
+      setProfileImageRevision(String(++profileImageVersion.current));
       setStatus("authenticated");
     },
     [authRepository],
@@ -79,7 +78,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     async (credentials: Credentials) => {
       const current = await authRepository.register(credentials);
       setUser(current);
-      setCurrentProfileImageUrl(profileImageUrl(current));
+      setProfileImageRevision(String(++profileImageVersion.current));
       setStatus("authenticated");
     },
     [authRepository],
@@ -88,7 +87,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const logout = useCallback(async () => {
     await authRepository.logout();
     setUser(null);
-    setCurrentProfileImageUrl(null);
+    setProfileImageRevision(null);
     setStatus("anonymous");
   }, [authRepository]);
 
@@ -104,7 +103,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     async (image: File) => {
       if (!user) throw new Error("Authentication required");
       await uploadProfileImageUseCase(profileRepository, image);
-      setCurrentProfileImageUrl(profileImageUrl(user, crypto.randomUUID()));
+      setProfileImageRevision(String(++profileImageVersion.current));
     },
     [profileRepository, user],
   );
@@ -112,7 +111,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const deleteProfileImage = useCallback(async () => {
     if (!user) throw new Error("Authentication required");
     await deleteProfileImageUseCase(profileRepository);
-    setCurrentProfileImageUrl(null);
+    setProfileImageRevision(null);
   }, [profileRepository, user]);
 
   const verifyEmail = useCallback(

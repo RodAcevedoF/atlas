@@ -77,7 +77,7 @@ export const ARTIFACT: ArtifactContent = {
   claims: 34,
   places: 11,
   sources: 18,
-  refs: ["reuters", "apnews", "unnews", "+15"],
+  refs: ["Source links", "Publication dates", "Claim locations"],
 };
 
 export const SCAN_GRID = { cells: 54, columns: 9 } as const;

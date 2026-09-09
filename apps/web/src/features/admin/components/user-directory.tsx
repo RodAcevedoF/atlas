@@ -66,9 +66,9 @@ export function UserDirectory({ currentUser, directory }: UserDirectoryProps) {
 
       <div className="grid min-h-[520px] lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.85fr)]">
         <div className="min-w-0 border-b border-border lg:border-b-0 lg:border-r">
-          <div className="grid grid-cols-[minmax(0,1fr)_110px_112px] gap-3 border-b border-border bg-background/25 px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-faint">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_110px_112px] gap-3 border-b border-border bg-background/25 px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-faint">
             <span>Account</span>
-            <span>Sign-in</span>
+            <span className="hidden sm:block">Sign-in</span>
             <span>Role</span>
           </div>
           {directory.users.length > 0 ? (
@@ -82,7 +82,7 @@ export function UserDirectory({ currentUser, directory }: UserDirectoryProps) {
                     setIsCreating(false);
                   }}
                   className={cn(
-                    "grid w-full grid-cols-[minmax(0,1fr)_110px_112px] items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-foreground/[0.035]",
+                    "grid w-full grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_110px_112px] items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-foreground/[0.035]",
                     selected?.id === user.id && !isCreating ? "bg-primary/[0.06]" : null,
                   )}
                 >
@@ -99,7 +99,7 @@ export function UserDirectory({ currentUser, directory }: UserDirectoryProps) {
                       </span>
                     </span>
                   </span>
-                  <span className="truncate text-xs capitalize text-muted-foreground">
+                  <span className="hidden truncate text-xs capitalize text-muted-foreground sm:block">
                     {user.identityProviders.join(", ") || "None"}
                   </span>
                   <span className="flex items-center gap-1.5 text-xs text-card-foreground">

@@ -73,8 +73,8 @@ export function AuthForm({ mode }: { mode: Mode }) {
   };
 
   return (
-    <div className="flex flex-col justify-center p-10 md:p-11">
-      <div className="flex items-baseline justify-between">
+    <div className="flex flex-col justify-center px-5 py-8 sm:p-10 md:p-11">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="text-[26px] font-semibold tracking-[-0.038em]">{copy.title}</div>
         <div className="font-mono text-[11px] text-foreground/40">{copy.step}</div>
       </div>
@@ -136,7 +136,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         </Button>
       </form>
 
-      <div className="mt-5 flex items-center justify-between text-[13px] text-foreground/50">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-[13px] text-foreground/50">
         <span>{copy.switchPrompt}</span>
         <Link
           to={copy.switchTo}

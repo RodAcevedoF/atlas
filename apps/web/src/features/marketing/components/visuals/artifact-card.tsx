@@ -4,7 +4,10 @@ import { cn } from "@atlas/ui";
 import { ARTIFACT } from "../../data/landing-content.ts";
 
 const META_CLASS = eyebrowVariants({ variant: "meta" });
-const STAT_LABEL = cn(eyebrowVariants({ variant: "header" }), "text-faint");
+const STAT_LABEL = cn(
+  eyebrowVariants({ variant: "header" }),
+  "text-[9px] tracking-[0.08em] md:text-[10px] text-faint",
+);
 const STAT_VALUE = "mt-1.5 font-mono text-[23px] tracking-[-0.02em]";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -22,13 +25,18 @@ export function ArtifactCard() {
     <div className="relative w-full overflow-hidden rounded-[14px] border border-border bg-coverage/5">
       <div className="atlas4-sweep atlas4-sweep-fill pointer-events-none absolute inset-x-0 top-0 h-8.5" />
 
-      <div className={cn("flex justify-between border-b border-border px-4 py-3.25", META_CLASS)}>
-        <span>{ARTIFACT.header}</span>
+      <div
+        className={cn(
+          "flex flex-wrap justify-between gap-x-3 gap-y-1 border-b border-border px-4 py-3.25",
+          META_CLASS,
+        )}
+      >
+        <span>Example · {ARTIFACT.header}</span>
         <span>{utcClock()}</span>
       </div>
 
       <div className="px-4 pb-4.5 pt-5">
-        <div className="text-[22px] font-medium leading-[1.26] tracking-[-0.028em]">
+        <div className="text-[18px] md:text-[22px] font-medium leading-[1.26] tracking-[-0.028em]">
           {typed}
           <span className="atlas4-caret text-conviction">|</span>
         </div>

@@ -28,12 +28,10 @@ export async function registerProfileRoutes(
   app.get("/profile/image", async (req, reply) => {
     const user = requireUser(req);
     const image = await deps.getProfileImage.execute(user.id);
-    if (!image) return reply.code(404).send({ error: "Profile image not found" });
+    reply.header("Cache-Control", "private, no-store");
+    if (!image) return reply.code(204).send();
 
-    return reply
-      .header("Cache-Control", "private, no-store")
-      .type(image.mediaType)
-      .send(Buffer.from(image.bytes));
+    return reply.type(image.mediaType).send(Buffer.from(image.bytes));
   });
 
   app.put("/profile/image", async (req, reply) => {

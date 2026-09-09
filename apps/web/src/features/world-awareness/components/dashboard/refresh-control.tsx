@@ -41,7 +41,7 @@ export function RefreshControl({ refresh }: { refresh: WorldRefresh }) {
   const { canRefresh, isRefreshing, status, error, run, dismissError } = refresh;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 flex-wrap items-center gap-2">
       <output aria-live="polite" className="flex items-center empty:hidden">
         {isRefreshing ? <StagePill status={status} /> : null}
         {!isRefreshing && error ? <ErrorPill message={error} onDismiss={dismissError} /> : null}
@@ -54,7 +54,7 @@ export function RefreshControl({ refresh }: { refresh: WorldRefresh }) {
         aria-label="Refresh this run"
         className={cn(
           HEADER_CONTROL,
-          "font-semibold",
+          "min-h-11 shrink-0 font-semibold xl:min-h-0",
           headerControlTone(isRefreshing),
           HEADER_CONTROL_DISABLED,
         )}

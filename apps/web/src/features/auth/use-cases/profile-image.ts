@@ -10,3 +10,10 @@ export function uploadProfileImage(
 export function deleteProfileImage(profileRepository: ProfileRepository): Promise<void> {
   return profileRepository.deleteProfileImage();
 }
+
+export function getProfileImage(
+  profileRepository: ProfileRepository,
+  signal?: AbortSignal,
+): Promise<Blob | null> {
+  return profileRepository.getProfileImage(signal);
+}

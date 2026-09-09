@@ -21,7 +21,7 @@ export function PublicPage({
   children,
 }: PublicPageProps) {
   return (
-    <div className="atlas4-page relative flex min-h-screen flex-col overflow-hidden text-foreground">
+    <div className="atlas4-page relative flex min-h-dvh flex-col overflow-hidden text-foreground">
       <MarqueeBackdrop words={backdropWords} />
       <AtlasHeader actions={headerActions} />
       {children}

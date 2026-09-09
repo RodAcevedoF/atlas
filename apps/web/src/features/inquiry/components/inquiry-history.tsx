@@ -99,13 +99,18 @@ export function InquiryHistory({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 px-8.5 py-7">
+    <div className="flex h-full min-h-0 flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8.5 lg:py-7">
       {error ? (
         <Card className={cn(PANEL, "px-5 py-3 text-[13px] text-destructive")}>{error}</Card>
       ) : null}
 
-      <div className="flex min-h-0 flex-1 gap-4">
-        <Card className={cn(PANEL, "flex w-80 shrink-0 flex-col overflow-hidden")}>
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+        <Card
+          className={cn(
+            PANEL,
+            "flex max-h-[28dvh] w-full shrink-0 flex-col overflow-hidden lg:max-h-none lg:w-80",
+          )}
+        >
           <div className={RAIL_HEAD_CLASS}>
             <span>inquiry runs</span>
             <span className="tabular-nums text-conviction">{runs.length}</span>
@@ -116,7 +121,7 @@ export function InquiryHistory({
         </Card>
 
         <Card className={cn(PANEL, "flex min-w-0 flex-1 flex-col overflow-hidden")}>
-          <div className="min-h-0 flex-1 overflow-y-auto px-7 py-6.5">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-7 sm:py-6.5">
             <DetailPane detail={detail} onDelete={deleteSelected} />
           </div>
         </Card>

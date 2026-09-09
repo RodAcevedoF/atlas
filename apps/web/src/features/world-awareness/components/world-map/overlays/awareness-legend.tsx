@@ -1,7 +1,8 @@
 import type { InquiryRunRecord, InquiryRunSummaryRecord } from "@/features/inquiry";
 import { Eyebrow, PANEL_GLASS } from "@/shared/ui";
 import { cn } from "@atlas/ui";
-import { X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
+import { useId, useState } from "react";
 import type { AwarenessRequestMiss } from "../utils/awareness-run.ts";
 
 const LATEST_RUN_OUTCOME: Record<InquiryRunSummaryRecord["status"], string> = {
@@ -77,37 +78,61 @@ interface AwarenessLegendProps {
 }
 
 export function AwarenessLegend({ run, plotted }: AwarenessLegendProps) {
+  const [expanded, setExpanded] = useState(false);
+  const contentId = useId();
+
   return (
     <div
       className={cn(
         PANEL_GLASS,
-        "atlas4-reveal absolute right-6 top-6 z-5 flex w-68 flex-col gap-3 p-4",
+        "atlas4-reveal absolute left-3 top-3 z-5 flex max-h-[45%] w-68 max-w-[calc(100%-1.5rem)] flex-col overflow-y-auto xl:left-auto xl:right-6 xl:top-6 xl:max-h-[calc(100%-6rem)]",
       )}
     >
-      <div className="flex flex-col gap-1.5">
-        <Eyebrow variant="meta" className="text-context/85">
-          claims · {run.window}
-        </Eyebrow>
-        <p className="break-words text-[14px] font-medium leading-snug tracking-[-0.015em] text-card-foreground">
-          {run.question}
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={contentId}
+        onClick={() => setExpanded((value) => !value)}
+        className="flex min-h-11 w-full items-center justify-between gap-3 px-4 py-2 text-left text-xs text-card-foreground xl:hidden"
+      >
+        <span>
+          {run.claimCount} {run.claimCount === 1 ? "claim" : "claims"} · {plotted}{" "}
+          {plotted === 1 ? "place" : "places"}
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          className={cn("h-4 w-4 shrink-0 transition-transform", expanded && "rotate-180")}
+        />
+      </button>
+      <div
+        id={contentId}
+        className={cn("flex-col gap-3 p-4 xl:flex", expanded ? "flex" : "hidden")}
+      >
+        <div className="flex flex-col gap-1.5">
+          <Eyebrow variant="meta" className="text-context/85">
+            claims · {run.window}
+          </Eyebrow>
+          <p className="break-words text-[14px] font-medium leading-snug tracking-[-0.015em] text-card-foreground">
+            {run.question}
+          </p>
+        </div>
+
+        <div className="h-px w-full bg-border-strong" />
+
+        <div className="flex items-center gap-2.5">
+          <Eyebrow variant="meta">few</Eyebrow>
+          <div
+            className="h-1.5 flex-1 rounded-full"
+            style={{ background: "var(--map-orb-gradient)" }}
+          />
+          <Eyebrow variant="meta">many</Eyebrow>
+        </div>
+
+        <p className="font-mono text-[11.5px] leading-relaxed tabular-nums text-faint">
+          {run.claimCount} claims across {plotted} places
+          {run.unplacedClaims > 0 ? <span> · {run.unplacedClaims} could not be placed</span> : null}
         </p>
       </div>
-
-      <div className="h-px w-full bg-border-strong" />
-
-      <div className="flex items-center gap-2.5">
-        <Eyebrow variant="meta">few</Eyebrow>
-        <div
-          className="h-1.5 flex-1 rounded-full"
-          style={{ background: "var(--map-orb-gradient)" }}
-        />
-        <Eyebrow variant="meta">many</Eyebrow>
-      </div>
-
-      <p className="font-mono text-[11.5px] leading-relaxed tabular-nums text-faint">
-        {run.claimCount} claims across {plotted} places
-        {run.unplacedClaims > 0 ? <span> · {run.unplacedClaims} could not be placed</span> : null}
-      </p>
     </div>
   );
 }

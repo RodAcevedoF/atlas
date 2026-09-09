@@ -358,7 +358,7 @@ body {
 }
 .atlas4-marquee-word {
   padding-left: 3vw;
-  font-size: 9.4vw;
+  font-size: max(64px, 9.4vw);
   font-weight: 700;
   line-height: 0.98;
   letter-spacing: -0.03em;

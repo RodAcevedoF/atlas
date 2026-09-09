@@ -132,7 +132,7 @@ export function AccountMenu() {
           <Card
             className={cn(
               PANEL,
-              "absolute right-0 top-12 z-50 flex max-h-[calc(100vh-6rem)] w-80 flex-col gap-4 overflow-y-auto p-5",
+              "absolute right-0 top-12 z-50 flex max-h-[calc(100dvh-6rem)] w-80 max-w-[calc(100vw-2rem)] flex-col gap-4 overflow-y-auto p-5",
             )}
           >
             <input

@@ -9,17 +9,19 @@ export const MarqueeBackdrop = memo(function MarqueeBackdrop({
   words,
   durationSec = 68,
 }: MarqueeBackdropProps) {
-  const loop = [...words, ...words];
-
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
       <div
-        className="atlas4-marquee"
+        className="atlas4-marquee grid min-h-[200%] grid-rows-2"
         style={{ "--marquee-dur": `${durationSec}s` } as CSSProperties}
       >
-        {loop.map((word, index) => (
-          <div key={`${word}-${index < words.length ? "a" : "b"}`} className="atlas4-marquee-word">
-            {word}
+        {["first", "repeat"].map((copy) => (
+          <div key={copy} className="flex flex-col justify-around">
+            {words.map((word) => (
+              <div key={word} className="atlas4-marquee-word">
+                {word}
+              </div>
+            ))}
           </div>
         ))}
       </div>

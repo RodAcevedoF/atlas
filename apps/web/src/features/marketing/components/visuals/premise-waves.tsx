@@ -24,15 +24,15 @@ export function PremiseWaves({ coverage, located }: PremiseWavesProps) {
         label="Coverage"
         value={coverage}
         bars={coverageBars}
-        trackClassName="h-23"
+        trackClassName="h-12 md:h-23"
       />
-      <div className="mt-6.5">
+      <div className="mt-4 md:mt-6.5">
         <WaveMeter
           variant="conviction"
           label="Located claims"
           value={located}
           bars={locatedBars}
-          trackClassName="h-23"
+          trackClassName="h-12 md:h-23"
         />
       </div>
     </div>

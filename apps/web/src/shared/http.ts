@@ -29,3 +29,10 @@ async function readErrorMessage(response: Response): Promise<string> {
   const body = (await response.json()) as ErrorBody;
   return body.error ?? fallback;
 }
+
+export async function fetchBlob(url: string, options?: RequestInit): Promise<Blob | null> {
+  const response = await fetch(url, requestOptions(options));
+  if (!response.ok) throw new Error(await readErrorMessage(response));
+  if (response.status === 204) return null;
+  return response.blob();
+}

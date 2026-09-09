@@ -2,7 +2,16 @@ import { useAuth } from "@/features/auth/auth-provider.tsx";
 import { CTA_PRIMARY, PANEL_GLASS } from "@/shared/ui";
 import type { InquiryProgressStage, InquiryRunStatus } from "@atlas/domain";
 import { Button, cn } from "@atlas/ui";
-import { Bookmark, LoaderCircle, Paperclip, Plus, RefreshCw, Sparkles, X } from "lucide-react";
+import {
+  ArrowUpRight,
+  Bookmark,
+  LoaderCircle,
+  Paperclip,
+  Plus,
+  RefreshCw,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { type ChangeEvent, type FormEvent, useMemo, useRef } from "react";
 import { useElapsedSeconds } from "../hooks/use-elapsed-seconds.ts";
 import { useInquiryAsk } from "../hooks/use-inquiry-ask.ts";
@@ -196,10 +205,10 @@ export function InquiryAskBox() {
     <div
       className={cn(
         PANEL_GLASS,
-        "border border-transparent p-2 transition-colors focus-within:border-ring/50",
+        "border border-transparent p-1.5 sm:p-2 transition-colors focus-within:border-ring/50",
       )}
     >
-      <form onSubmit={(event) => void submit(event)} className="flex items-center gap-2">
+      <form onSubmit={(event) => void submit(event)} className="flex items-center gap-1 sm:gap-2">
         <input
           ref={fileInput}
           type="file"
@@ -215,7 +224,7 @@ export function InquiryAskBox() {
           aria-label="Attach a file"
           disabled={attachmentBusy || intent.id !== null}
           onClick={() => fileInput.current?.click()}
-          className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-card-foreground"
+          className="h-11 w-9 shrink-0 sm:w-11 xl:h-8 xl:w-8 rounded-full text-muted-foreground hover:text-card-foreground"
         >
           <Plus className="h-4 w-4" />
         </Button>
@@ -227,19 +236,37 @@ export function InquiryAskBox() {
           disabled={intent.stage === "interpreting" || intent.stage === "ended"}
           maxLength={INQUIRY_QUESTION_MAX_CHARS}
           onChange={(event) => intent.setQuestion(event.target.value)}
-          className="min-w-0 flex-1 bg-transparent px-3.5 py-2.5 text-[15.5px] leading-tight tracking-[-0.01em] text-card-foreground outline-none placeholder:text-muted-foreground/80"
+          className="min-w-0 flex-1 bg-transparent px-0.5 py-2.5 text-base sm:px-3.5 xl:text-[15.5px] leading-tight tracking-[-0.01em] text-card-foreground outline-none placeholder:text-[14px] sm:placeholder:text-base xl:placeholder:text-[15.5px] placeholder:text-muted-foreground/80"
         />
         <Button
           type="submit"
           variant={null}
           size="pillSm"
           disabled={cannotSubmit}
-          className={cn(CTA_PRIMARY, "shrink-0 font-semibold")}
+          aria-label={state.isAsking ? "Researching" : PRIMARY_LABEL[intent.stage]}
+          title={PRIMARY_LABEL[intent.stage]}
+          className={cn(
+            CTA_PRIMARY,
+            "group mr-0.5 mt-0.5 min-h-11 min-w-11 shrink-0 gap-1.5 rounded-full border border-primary/30 px-3 text-[13px] font-semibold shadow-sm transition-all active:scale-95 disabled:border-border disabled:shadow-none sm:px-4 xl:min-h-9 xl:min-w-9",
+            intent.stage === "idle" && "max-sm:w-11 max-sm:px-0",
+          )}
         >
-          {intent.stage === "ready" || intent.stage === "interpreting" ? (
-            <Sparkles className="h-3.5 w-3.5" />
-          ) : null}
-          {PRIMARY_LABEL[intent.stage]}
+          <span className={intent.stage === "idle" ? "sr-only sm:not-sr-only" : undefined}>
+            {state.isAsking ? "Researching" : PRIMARY_LABEL[intent.stage]}
+          </span>
+          {state.isAsking || attachmentBusy ? (
+            <LoaderCircle
+              aria-hidden="true"
+              className="h-4 w-4 animate-spin motion-reduce:animate-none"
+            />
+          ) : intent.stage === "ready" ? (
+            <Sparkles aria-hidden="true" className="h-4 w-4" />
+          ) : (
+            <ArrowUpRight
+              aria-hidden="true"
+              className="h-5 w-5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-disabled:transform-none sm:h-4 sm:w-4 motion-reduce:transform-none"
+            />
+          )}
         </Button>
       </form>
 
@@ -309,7 +336,7 @@ export function InquiryAskBox() {
       ) : null}
 
       {offersSeed || remaining !== null ? (
-        <div className="mx-3 mt-2 flex flex-wrap items-center gap-2">
+        <div className="mx-3 mb-1 mt-2 flex flex-wrap items-center gap-2">
           {offersSeed ? <PreferenceSeedButton onSeed={seedFromPreferences} /> : null}
           {remaining !== null ? <DailySearchAllowance remaining={remaining} /> : null}
         </div>

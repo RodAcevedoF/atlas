@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { once } from "node:events";
 import { createServer } from "node:http";
-import { fetchJson, fetchNoContent } from "./http.ts";
+import { fetchBlob, fetchJson, fetchNoContent } from "./http.ts";
 
 let server: ReturnType<typeof createServer>;
 let url: string;
@@ -107,4 +107,18 @@ test("reads do not introduce a custom CSRF header", async () => {
   const response = await fetchJson(`${url}/json`);
 
   expect(response).toMatchObject({ method: "GET", csrfHeader: null });
+});
+
+test("an absent optional image produces no blob", async () => {
+  const image = await fetchBlob(`${url}/empty`);
+
+  expect(image).toBeNull();
+});
+
+test("binary reads preserve response content", async () => {
+  const image = await fetchBlob(`${url}/json`);
+
+  expect(image?.type).toBe("application/json");
+  if (!image) throw new Error("Expected response content");
+  expect(JSON.parse(await image.text())).toMatchObject({ method: "GET" });
 });

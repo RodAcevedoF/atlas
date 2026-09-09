@@ -31,7 +31,7 @@ export function MapFieldState({
   const copy = stateCopy(isLoading, isResolving);
 
   return (
-    <div className="pointer-events-none absolute left-1/2 top-[54%] z-5 w-72 -translate-x-1/2 -translate-y-1/2">
+    <div className="pointer-events-none absolute left-1/2 top-[54%] z-5 w-72 max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2">
       <div className={cn(PANEL_GLASS, "atlas4-reveal p-4")}>
         <EvidenceFlow active={isActive} />
         <p className="mt-3 text-center text-[12.5px] leading-relaxed text-muted-foreground">

@@ -34,7 +34,7 @@ export function PlaceTable() {
       </div>
 
       {rows.map((row) => (
-        <div key={row.place} className="border-b border-border py-3.5">
+        <div key={row.place} className="border-b border-border py-2 md:py-3.5">
           <div className="grid grid-cols-[1fr_46px] items-center gap-3">
             <span className="flex h-2 bg-foreground/[0.06]">
               <span

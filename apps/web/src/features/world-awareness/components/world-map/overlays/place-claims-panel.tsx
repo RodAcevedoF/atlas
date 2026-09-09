@@ -76,7 +76,7 @@ export function PlaceClaimsPanel({ place, onClose }: PlaceClaimsPanelProps) {
     <div
       className={cn(
         PANEL_GLASS,
-        "atlas4-reveal pointer-events-auto absolute left-6 top-6 z-10 flex max-h-[calc(100%-6rem)] w-76 flex-col overflow-hidden",
+        "atlas4-reveal pointer-events-auto absolute inset-x-3 bottom-18 z-10 flex max-h-[50%] w-auto xl:inset-x-auto xl:bottom-auto xl:left-6 xl:top-6 xl:max-h-[calc(100%-6rem)] xl:w-76 flex-col overflow-hidden",
       )}
     >
       <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border-strong px-4 py-3.5">
@@ -95,7 +95,7 @@ export function PlaceClaimsPanel({ place, onClose }: PlaceClaimsPanelProps) {
           type="button"
           aria-label="Close place claims"
           onClick={onClose}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-coverage/[0.14] hover:text-foreground"
+          className="flex h-11 w-11 shrink-0 xl:h-6 xl:w-6 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-coverage/[0.14] hover:text-foreground"
         >
           <X aria-hidden="true" className="h-3 w-3" />
         </button>

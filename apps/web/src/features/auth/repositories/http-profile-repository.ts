@@ -1,8 +1,12 @@
-import { fetchJson, fetchNoContent } from "@/shared/http.ts";
+import { fetchBlob, fetchJson, fetchNoContent } from "@/shared/http.ts";
 import type { UserProfile } from "@atlas/domain";
 import type { PreferencesInput, ProfileRepository } from "./profile-repository.ts";
 
 export class HttpProfileRepository implements ProfileRepository {
+  getProfileImage(signal?: AbortSignal): Promise<Blob | null> {
+    return fetchBlob("/api/profile/image", { signal, cache: "no-store" });
+  }
+
   async updatePreferences(input: PreferencesInput): Promise<UserProfile> {
     const { profile } = await fetchJson<{ profile: UserProfile }>("/api/profile", {
       method: "PUT",

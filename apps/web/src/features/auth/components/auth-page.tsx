@@ -25,7 +25,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
 
   return (
     <PublicPage backdropWords={CURATED_TOPIC_LABELS} headerActions={headerActions}>
-      <main className="relative z-3 flex flex-1 items-center justify-center px-8.5 pb-11">
+      <main className="relative z-3 flex flex-1 items-center justify-center px-4 pb-11 sm:px-8.5">
         <div className="atlas4-panel grid w-full max-w-250 overflow-hidden rounded-[22px] md:grid-cols-2">
           <AuthPitchPanel mode={mode} pulse={pulse} />
           <AuthForm mode={mode} />

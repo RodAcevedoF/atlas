@@ -2,9 +2,7 @@ import { CTA_OUTLINE, CTA_SOLID } from "@/shared/ui/index.ts";
 import { Button, cn } from "@atlas/ui";
 import { type ReactNode, memo } from "react";
 import { Link } from "react-router-dom";
-import { ATLAS_STATS } from "./atlas-facts.ts";
 import { BrandMark } from "./brand-mark.tsx";
-import { useCountUp } from "./use-count-up.ts";
 
 interface AtlasHeaderProps {
   actions?: ReactNode;
@@ -12,12 +10,10 @@ interface AtlasHeaderProps {
 }
 
 export const AtlasHeader = memo(function AtlasHeader({ actions, className }: AtlasHeaderProps) {
-  const readToday = useCountUp(ATLAS_STATS.signalsReadToday);
-
   return (
     <header
       className={cn(
-        "relative z-3 flex items-center justify-between gap-4 px-8.5 py-6.5",
+        "relative z-3 flex items-center justify-between flex-wrap gap-3 px-4 py-4 sm:px-8.5 sm:py-6.5",
         className,
       )}
     >
@@ -30,8 +26,8 @@ export const AtlasHeader = memo(function AtlasHeader({ actions, className }: Atl
       </Link>
 
       <div className="flex items-center gap-4.5">
-        <span className="hidden items-center gap-2.5 font-mono text-[12px] text-foreground/60 sm:flex">
-          {readToday.toLocaleString()} signals read today
+        <span className="hidden items-center gap-2.5 font-mono text-[12px] text-foreground/60 lg:flex">
+          Research grounded in sources
           <span className="atlas4-fade h-1.5 w-1.5 rounded-full bg-conviction" />
         </span>
         {actions ? <div className="flex items-center gap-2.5">{actions}</div> : null}

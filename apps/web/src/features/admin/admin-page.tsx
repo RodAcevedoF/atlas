@@ -20,7 +20,7 @@ export function AdminPage() {
   const directory = useAdminUsers(usersChanged);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <AppHeader subtitle="Admin" account={<AccountMenu />} />
 
       <main className="min-h-0 flex-1 overflow-y-auto px-5 py-7 sm:px-8.5">

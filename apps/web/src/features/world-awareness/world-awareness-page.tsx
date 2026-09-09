@@ -6,7 +6,7 @@ export function WorldAwarenessPage() {
   const { awareness, runs, isLoading, error, selectRun, refresh } = useWorldAwareness();
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden">
+    <main className="flex h-dvh flex-col overflow-hidden">
       <TopBar runs={runs} shownRun={awareness.run} onSelectRun={selectRun} refresh={refresh} />
 
       <div className="relative flex min-h-0 flex-1 flex-col">

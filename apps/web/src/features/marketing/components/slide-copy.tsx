@@ -3,7 +3,7 @@ import { cn } from "@atlas/ui";
 
 const KICKER_CLASS = cn(
   eyebrowVariants({ variant: "header" }),
-  "inline-flex items-center gap-2.25 rounded-full border border-border bg-coverage/[0.04] px-3.5 py-1.75 text-foreground/80",
+  "inline-flex max-w-full items-center gap-2.25 rounded-full border border-border bg-coverage/[0.04] px-3.5 py-1.75 text-foreground/80",
 );
 
 interface SlideCopyProps {

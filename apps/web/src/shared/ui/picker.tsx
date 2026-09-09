@@ -41,7 +41,7 @@ export function Picker({ trigger, label, title, disabled, children }: PickerProp
   }, [open, close]);
 
   return (
-    <div className="relative">
+    <div className="relative min-w-0">
       <button
         ref={triggerRef}
         type="button"
@@ -50,7 +50,12 @@ export function Picker({ trigger, label, title, disabled, children }: PickerProp
         aria-haspopup="menu"
         disabled={disabled}
         onClick={() => setOpen((value) => !value)}
-        className={cn(HEADER_CONTROL, "max-w-60", headerControlTone(open), HEADER_CONTROL_DISABLED)}
+        className={cn(
+          HEADER_CONTROL,
+          "min-h-11 max-w-[min(15rem,calc(100vw-10rem))] xl:min-h-0",
+          headerControlTone(open),
+          HEADER_CONTROL_DISABLED,
+        )}
       >
         <span className="min-w-0 truncate">{trigger}</span>
         <ChevronDown
@@ -70,7 +75,7 @@ export function Picker({ trigger, label, title, disabled, children }: PickerProp
           <Card
             className={cn(
               PANEL,
-              "absolute right-0 top-12 z-50 flex max-h-[calc(100vh-6rem)] w-88 flex-col overflow-hidden",
+              "fixed inset-x-4 top-36 z-50 flex max-h-[calc(100dvh-10rem)] w-auto xl:absolute xl:inset-x-auto xl:right-0 xl:top-12 xl:w-88 xl:max-w-[calc(100vw-2rem)] flex-col overflow-hidden",
             )}
           >
             {title ? <div className={POPOVER_HEAD_CLASS}>{title}</div> : null}

@@ -104,3 +104,33 @@ describe("RunDetail explains a failure without handing over Atlas internals", ()
     expect(screen.getByText("No reason was recorded for this failure.")).toBeDefined();
   });
 });
+
+test("same-name places retain their own rows when their order changes", () => {
+  const first = buildInquiryPlace({
+    place: "Sanand",
+    country: "India",
+    latitude: 22.98,
+    claims: [buildInquiryClaim({ text: "First location report" })],
+  });
+  const second = buildInquiryPlace({
+    ...first,
+    latitude: 23.01,
+    claims: [buildInquiryClaim({ text: "Second location report" })],
+  });
+  const { rerender } = render(
+    <MemoryRouter>
+      <RunDetail run={buildInquiryRun({ places: [first, second] })} onDelete={null} />
+    </MemoryRouter>,
+  );
+  const firstLink = screen.getByRole("link", { name: /First location report/ });
+  const secondLink = screen.getByRole("link", { name: /Second location report/ });
+
+  rerender(
+    <MemoryRouter>
+      <RunDetail run={buildInquiryRun({ places: [second, first] })} onDelete={null} />
+    </MemoryRouter>,
+  );
+
+  expect(screen.getByRole("link", { name: /First location report/ })).toBe(firstLink);
+  expect(screen.getByRole("link", { name: /Second location report/ })).toBe(secondLink);
+});

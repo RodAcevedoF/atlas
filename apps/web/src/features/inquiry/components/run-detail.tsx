@@ -11,6 +11,7 @@ import type {
   InquiryPlaceRecord,
   InquiryRunRecord,
 } from "../repositories/inquiry-repository.ts";
+import { keyedPlaces } from "../utils/keyed-places.ts";
 import { ClaimConfidence } from "./claim-confidence.tsx";
 import { DeleteRunButton } from "./delete-run-button.tsx";
 import { isPaintableRun } from "./paintable-run.ts";
@@ -31,7 +32,7 @@ const RULED_HEAD = cn(
 const NUMERIC = "font-mono text-[11.5px] tabular-nums text-faint";
 const STAT_LABEL = cn(eyebrowVariants({ variant: "header" }), "text-faint");
 const STAT_VALUE = "mt-1.5 font-mono text-[23px] tabular-nums tracking-[-0.02em]";
-const HEADLINE = "min-w-0 text-[26px] font-medium leading-[1.22] tracking-[-0.028em]";
+const HEADLINE = "min-w-0 break-words text-[26px] font-medium leading-[1.22] tracking-[-0.028em]";
 const BODY = "text-[14.5px] leading-[1.62] text-card-foreground";
 
 interface RunStat {
@@ -52,8 +53,15 @@ function StatGrid({ stats }: { stats: RunStat[] }) {
   return (
     <div className="grid grid-cols-3 gap-px overflow-hidden rounded-[14px] bg-border">
       {stats.map((stat) => (
-        <div key={stat.label} className="bg-panel-cell px-3.5 py-3.5">
-          <div className={STAT_LABEL}>{stat.label}</div>
+        <div key={stat.label} className="bg-panel-cell px-2 py-3.5 sm:px-3.5">
+          <div
+            className={cn(
+              STAT_LABEL,
+              "whitespace-nowrap text-[9px] tracking-[0.1em] sm:text-[10px]",
+            )}
+          >
+            {stat.label}
+          </div>
           <div className={cn(STAT_VALUE, stat.isAccent ? "text-conviction" : null)}>
             {stat.value}
           </div>
@@ -170,8 +178,8 @@ function Places({ places }: { places: InquiryPlaceRecord[] }) {
 
   return (
     <div className="flex flex-col gap-5">
-      {places.map((place) => (
-        <PlaceBlock key={`${place.place}:${place.country ?? ""}`} place={place} />
+      {keyedPlaces(places).map(({ key, place }) => (
+        <PlaceBlock key={key} place={place} />
       ))}
     </div>
   );
@@ -179,7 +187,7 @@ function Places({ places }: { places: InquiryPlaceRecord[] }) {
 
 function RunActions({ run, onDelete }: { run: InquiryRunRecord; onDelete: (() => void) | null }) {
   return (
-    <div className="flex shrink-0 items-center gap-2">
+    <div className="flex shrink-0 flex-wrap items-center gap-2">
       {isPaintableRun(run.places.length) ? (
         <Button asChild variant={null} size="pillSm" className={CTA_SOLID}>
           <Link to={`/world?run=${encodeURIComponent(run.id)}`}>
@@ -203,14 +211,14 @@ export function RunDetail({
   const stats = useMemo(() => toRunStats(run), [run]);
 
   return (
-    <div className="atlas4-reveal flex flex-col gap-6">
+    <div className="atlas4-reveal flex flex-col gap-6 [overflow-wrap:anywhere]">
       <header className="flex flex-col gap-3">
         <div className={SECTION_HEAD}>
           <Eyebrow variant="meta">run · {run.window} window</Eyebrow>
           <span className={NUMERIC}>{formatRelativeTime(run.createdAt)}</span>
         </div>
 
-        <div className="flex items-start justify-between gap-5">
+        <div className="flex flex-col items-start justify-between gap-4 xl:flex-row xl:gap-5">
           <h2 className={HEADLINE}>{run.question}</h2>
           <RunActions run={run} onDelete={onDelete} />
         </div>
