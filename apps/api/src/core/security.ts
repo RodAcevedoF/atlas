@@ -1,8 +1,8 @@
 import type { createWatchedRedisClient } from "@atlas/infra/redis-client";
-import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import type { FastifyInstance } from "fastify";
+import { registerRequestSecurity } from "./request-security.ts";
 
 type RedisClient = ReturnType<typeof createWatchedRedisClient>;
 
@@ -25,7 +25,7 @@ function corsOrigin(): string[] | false {
 }
 
 export async function registerSecurity(app: FastifyInstance, redis: RedisClient): Promise<void> {
-  await app.register(cors, { origin: corsOrigin(), credentials: true });
+  await registerRequestSecurity(app, corsOrigin());
   await app.register(helmet);
   await app.register(rateLimit, {
     max: GLOBAL_MAX,
