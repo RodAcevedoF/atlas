@@ -43,6 +43,7 @@ export interface UserIdentity {
 }
 
 export interface User {
+  authenticationVersion?: number;
   id: UserId;
   email: string;
   emailVerified: boolean;

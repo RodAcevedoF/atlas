@@ -12,6 +12,7 @@ import { makeUserId } from "@atlas/domain";
 import { type Db, type Filter, MongoServerError } from "mongodb";
 
 interface UserDoc {
+  authenticationVersion?: number;
   _id: string;
   email: string;
   emailVerified?: boolean;
@@ -60,6 +61,7 @@ function docToIdentities(doc: UserDoc): UserIdentity[] {
 function docToUser(doc: UserDoc): User {
   return {
     id: makeUserId(doc._id),
+    authenticationVersion: doc.authenticationVersion ?? 0,
     email: doc.email,
     // Legacy docs predate verification → treat as verified so they aren't locked out.
     emailVerified: doc.emailVerified ?? true,
@@ -76,6 +78,7 @@ export class MongoUserStore implements UserStorePort {
   async createUser(user: User): Promise<void> {
     const doc: UserDoc = {
       _id: user.id,
+      authenticationVersion: user.authenticationVersion ?? 0,
       email: user.email,
       emailVerified: user.emailVerified,
       role: user.role,
@@ -155,17 +158,26 @@ export class MongoUserStore implements UserStorePort {
     }
   }
 
-  async setPasswordIdentity(id: UserId, identity: UserIdentity): Promise<void> {
-    const updated = await this.db
-      .collection<UserDoc>("users")
-      .updateOne(
-        { _id: id, "identities.provider": "password" },
-        { $set: { "identities.$": identity } },
-      );
-    if (updated.matchedCount === 1) return;
-    await this.db
-      .collection<UserDoc>("users")
-      .updateOne({ _id: id }, { $push: { identities: identity } });
+  async replacePasswordAndInvalidateSessions(id: UserId, identity: UserIdentity): Promise<void> {
+    await this.db.collection<UserDoc>("users").updateOne({ _id: id }, [
+      {
+        $set: {
+          authenticationVersion: { $add: [{ $ifNull: ["$authenticationVersion", 0] }, 1] },
+          identities: {
+            $concatArrays: [
+              {
+                $filter: {
+                  input: { $ifNull: ["$identities", []] },
+                  as: "identity",
+                  cond: { $ne: ["$$identity.provider", "password"] },
+                },
+              },
+              { $literal: [identity] },
+            ],
+          },
+        },
+      },
+    ]);
   }
 
   async deleteUser(id: UserId): Promise<void> {

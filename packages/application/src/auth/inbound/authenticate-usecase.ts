@@ -20,6 +20,11 @@ export class AuthenticateUseCase implements Authenticate {
     }
 
     const user = await this.users.findUserById(session.userId);
-    return user ? toPublicUser(user) : null;
+    if (!user) return null;
+    if ((session.authenticationVersion ?? 0) !== (user.authenticationVersion ?? 0)) {
+      await this.sessions.delete(session.token);
+      return null;
+    }
+    return toPublicUser(user);
   }
 }

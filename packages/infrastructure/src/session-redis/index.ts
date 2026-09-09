@@ -6,6 +6,7 @@ import type { Redis } from "ioredis";
 const KEY_PREFIX = "session:";
 
 interface SessionRecord {
+  authenticationVersion?: number;
   userId: string;
   createdAt: string;
   expiresAt: string;
@@ -17,6 +18,7 @@ export class RedisSessionStore implements SessionPort {
   async create(session: Session): Promise<void> {
     const record: SessionRecord = {
       userId: session.userId,
+      authenticationVersion: session.authenticationVersion ?? 0,
       createdAt: session.createdAt.toISOString(),
       expiresAt: session.expiresAt.toISOString(),
     };
@@ -30,6 +32,7 @@ export class RedisSessionStore implements SessionPort {
     const record = JSON.parse(raw) as SessionRecord;
     return {
       token,
+      authenticationVersion: record.authenticationVersion ?? 0,
       userId: makeUserId(record.userId),
       createdAt: new Date(record.createdAt),
       expiresAt: new Date(record.expiresAt),

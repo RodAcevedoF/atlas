@@ -33,7 +33,13 @@ export class AuthenticateWithProviderUseCase implements AuthenticateWithProvider
     const identity = await strategy.authenticate(payload);
     const user = await this.resolveUser(identity);
 
-    const session = await issueSession(this.sessions, user.id);
+    if (
+      provider === "password" &&
+      (identity.authenticationVersion ?? 0) !== (user.authenticationVersion ?? 0)
+    ) {
+      throw new InvalidCredentialsError();
+    }
+    const session = await issueSession(this.sessions, user.id, user.authenticationVersion ?? 0);
     return { token: session.token, user: toPublicUser(user) };
   }
 
@@ -42,15 +48,15 @@ export class AuthenticateWithProviderUseCase implements AuthenticateWithProvider
     if (identityOwner) return identityOwner;
     const existing = await this.users.findUserByEmail(identity.email);
     if (!existing) return this.createUser(identity);
-    if (findIdentity(existing, identity.provider)) return existing;
-    if (!identity.emailVerified) throw new InvalidCredentialsError();
-
-    const linked = toUserIdentity(identity);
-    await this.users.linkIdentity(existing.id, linked);
-    return { ...existing, identities: [...existing.identities, linked] };
+    const password = findIdentity(existing, "password");
+    if (identity.provider === "password" && password?.providerUserId === identity.providerUserId)
+      return existing;
+    throw new InvalidCredentialsError();
   }
 
   private async createUser(identity: ProviderIdentity): Promise<User> {
+    if (identity.provider === "password" || !identity.emailVerified)
+      throw new InvalidCredentialsError();
     const user: User = {
       id: makeUserId(crypto.randomUUID()),
       email: identity.email,

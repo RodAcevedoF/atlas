@@ -41,6 +41,7 @@ export class PasswordIdentityProvider implements IdentityProviderPort {
 
     return {
       provider: "password",
+      authenticationVersion: user.authenticationVersion ?? 0,
       providerUserId: identity.providerUserId,
       email: user.email,
       emailVerified: true,

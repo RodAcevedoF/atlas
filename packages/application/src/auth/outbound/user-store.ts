@@ -27,7 +27,7 @@ export interface UserStorePort {
   updateProfile(id: UserId, profile: UserProfile): Promise<void>;
   updateRole(id: UserId, role: GrantableRole): Promise<void>;
   updateEmail(id: UserId, email: string): Promise<void>;
-  setPasswordIdentity(id: UserId, identity: UserIdentity): Promise<void>;
+  replacePasswordAndInvalidateSessions(id: UserId, identity: UserIdentity): Promise<void>;
   deleteUser(id: UserId): Promise<void>;
   installSuperAdmin(id: UserId): Promise<void>;
   linkIdentity(id: UserId, identity: UserIdentity): Promise<void>;

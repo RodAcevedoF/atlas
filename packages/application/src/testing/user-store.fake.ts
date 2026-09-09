@@ -33,11 +33,12 @@ export function inMemoryUserStore(seed: User[] = []): InMemoryUserStore {
       });
       return Promise.resolve();
     },
-    setPasswordIdentity(id, identity) {
+    replacePasswordAndInvalidateSessions(id, identity) {
       const user = held.get(id);
       if (!user) return Promise.reject(new Error(`unknown user ${id}`));
       held.set(id, {
         ...user,
+        authenticationVersion: (user.authenticationVersion ?? 0) + 1,
         identities: [
           ...user.identities.filter((candidate) => candidate.provider !== "password"),
           identity,

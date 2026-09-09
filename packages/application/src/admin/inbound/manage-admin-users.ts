@@ -127,7 +127,10 @@ export class ResetAdminUserPasswordUseCase implements ResetAdminUserPassword {
     requireSuperAdmin(input.actor);
     const target = await requireTarget(this.users, input.targetUserId);
     const secret = await this.hasher.hash(input.password);
-    await this.users.setPasswordIdentity(target.id, passwordIdentity(target, secret));
+    await this.users.replacePasswordAndInvalidateSessions(
+      target.id,
+      passwordIdentity(target, secret),
+    );
   }
 }
 

@@ -6,6 +6,7 @@ export function makeSessionToken(value: string): SessionToken {
 }
 
 export interface Session {
+  authenticationVersion?: number;
   token: SessionToken;
   userId: UserId;
   createdAt: Date;

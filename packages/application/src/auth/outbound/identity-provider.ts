@@ -1,6 +1,7 @@
 import type { IdentityProvider } from "@atlas/domain";
 
 export interface ProviderIdentity {
+  authenticationVersion?: number;
   provider: IdentityProvider;
   providerUserId: string;
   email: string;

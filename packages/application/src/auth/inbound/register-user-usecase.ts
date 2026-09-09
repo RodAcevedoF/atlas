@@ -44,7 +44,7 @@ export class RegisterUserUseCase implements RegisterUser {
     };
     await this.users.createUser(user);
     await issueVerification(this.verificationTokens, this.email, this.verificationConfig, user);
-    const session = await issueSession(this.sessions, user.id);
+    const session = await issueSession(this.sessions, user.id, user.authenticationVersion ?? 0);
     return { token: session.token, user: toPublicUser(user) };
   }
 }
