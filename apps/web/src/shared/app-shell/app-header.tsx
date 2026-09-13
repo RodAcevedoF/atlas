@@ -55,7 +55,7 @@ export function AppHeader({ subtitle, actions, account }: AppHeaderProps) {
           {actions}
         </div>
       ) : null}
-      <div className="shrink-0 sm:ml-auto xl:ml-0">{account}</div>
+      <div className={cn("shrink-0 sm:ml-auto", actions ? "xl:ml-0" : null)}>{account}</div>
     </header>
   );
 }

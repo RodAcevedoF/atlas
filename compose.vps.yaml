@@ -1,0 +1,133 @@
+name: atlas
+
+services:
+  web:
+    image: atlas-web:${ATLAS_IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: deploy/vps/Dockerfile.bun
+      target: web
+    ports:
+      - "127.0.0.1:${ATLAS_WEB_PORT:-3080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 96m
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  api:
+    image: atlas-backend:${ATLAS_IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: deploy/vps/Dockerfile.bun
+      target: backend
+    environment:
+      NODE_ENV: production
+      PORT: "3100"
+      MONGODB_URI: ${MONGODB_URI:?Set the existing MongoDB URI}
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME:?Set the existing database name}
+      REDIS_URL: redis://redis:6379/0
+      INTELLIGENCE_URL: http://intelligence:8888
+      WEB_APP_URL: ${WEB_APP_URL:-http://localhost:3080}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+    networks:
+      - default
+      - redis
+    depends_on:
+      redis:
+        condition: service_healthy
+      intelligence:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bun", "-e", "const response = await fetch('http://localhost:3100/health'); process.exit(response.ok ? 0 : 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    restart: unless-stopped
+    mem_limit: 384m
+    logging: *logging
+
+  worker:
+    image: atlas-backend:${ATLAS_IMAGE_TAG:-local}
+    profiles: [research]
+    build:
+      context: .
+      dockerfile: deploy/vps/Dockerfile.bun
+      target: backend
+    command: ["bun", "apps/worker/src/main.ts"]
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: ${MONGODB_URI:?Set the existing MongoDB URI}
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME:?Set the existing database name}
+      REDIS_URL: redis://redis:6379/0
+      INTELLIGENCE_URL: http://intelligence:8888
+    networks:
+      - default
+      - redis
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 30s
+    mem_limit: 384m
+    logging: *logging
+
+  intelligence:
+    image: atlas-intelligence:${ATLAS_IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: deploy/vps/Dockerfile.intelligence
+    environment:
+      INTELLIGENCE_RELOAD: "false"
+      INTELLIGENCE_LOG_COLORS: "false"
+      INTELLIGENCE_LLM_PROVIDER: ${INTELLIGENCE_LLM_PROVIDER:-openai}
+      INTELLIGENCE_LLM_MODEL: ${INTELLIGENCE_LLM_MODEL:-gpt-4o-mini}
+      INTELLIGENCE_OPENAI_API_KEY: ${INTELLIGENCE_OPENAI_API_KEY:?Set the OpenAI key}
+      EXA_API_KEY: ${EXA_API_KEY:?Set the Exa key}
+    healthcheck:
+      test: ["CMD", "/app/.venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8888/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    restart: unless-stopped
+    mem_limit: 768m
+    logging: *logging
+
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "96mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis-data:/data
+    networks:
+      - redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    mem_limit: 192m
+    logging: *logging
+
+networks:
+  redis:
+    internal: true
+
+volumes:
+  redis-data:

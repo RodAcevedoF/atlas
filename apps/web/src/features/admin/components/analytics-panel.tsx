@@ -6,7 +6,10 @@ import { Card, cn } from "@atlas/ui";
 import type { ReactNode } from "react";
 import type { AdminAnalyticsRecord } from "../repositories/admin-repository.ts";
 
-const COST_DECIMALS = 3;
+const COST_FORMAT = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
 
 const ROLE_LABEL: Record<UserRole, string> = {
   user: "Users",
@@ -18,7 +21,7 @@ const STAT_LABEL = cn(eyebrowVariants({ variant: "header" }), "text-faint");
 const STAT_VALUE = "mt-2 font-mono text-[26px] tabular-nums tracking-[-0.035em]";
 
 function formatCost(costUsd: number): string {
-  return `$${costUsd.toFixed(COST_DECIMALS)}`;
+  return COST_FORMAT.format(costUsd);
 }
 
 function StatCell({

@@ -4,7 +4,7 @@ import { pluginReact } from "@rsbuild/plugin-react";
 export default defineConfig({
   plugins: [pluginReact()],
   html: {
-    title: "Atlas — Mapped research",
+    title: "Atlas | Mapped research",
     tags: [{ tag: "link", attrs: { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" } }],
   },
   server: {

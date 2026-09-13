@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   javascript:
@@ -74,3 +74,53 @@ jobs:
 
       - name: Test
         run: uv run pytest
+
+  deploy:
+    name: Deploy Atlas VPS
+    needs: [javascript, python]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.ATLAS_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ATLAS_IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build AMD64 images
+        run: |
+          docker build --platform linux/amd64 -f deploy/vps/Dockerfile.bun --target web -t "atlas-web:$ATLAS_IMAGE_TAG" .
+          docker build --platform linux/amd64 -f deploy/vps/Dockerfile.bun --target backend -t "atlas-backend:$ATLAS_IMAGE_TAG" .
+          docker build --platform linux/amd64 -f deploy/vps/Dockerfile.intelligence -t "atlas-intelligence:$ATLAS_IMAGE_TAG" .
+          docker save "atlas-web:$ATLAS_IMAGE_TAG" "atlas-backend:$ATLAS_IMAGE_TAG" "atlas-intelligence:$ATLAS_IMAGE_TAG" | gzip > "$RUNNER_TEMP/atlas-images.tar.gz"
+
+      - name: Configure SSH
+        env:
+          ATLAS_SSH_PRIVATE_KEY: ${{ secrets.ATLAS_SSH_PRIVATE_KEY }}
+          ATLAS_SSH_KNOWN_HOSTS: ${{ secrets.ATLAS_SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$ATLAS_SSH_PRIVATE_KEY"
+          test -n "$ATLAS_SSH_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          umask 077
+          printf '%s\n' "$ATLAS_SSH_PRIVATE_KEY" > ~/.ssh/atlas_deploy
+          printf '%s\n' "$ATLAS_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<'EOF'
+          Host atlas-vps
+            HostName 37.59.105.85
+            User debian
+            Port 22
+            IdentityFile ~/.ssh/atlas_deploy
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+            ConnectTimeout 10
+            ServerAliveInterval 30
+          EOF
+
+      - name: Transfer and deploy
+        run: |
+          ssh atlas-vps 'test -s /opt/atlas/.env'
+          printf 'mkdir -p /opt/atlas/releases/%s\n' "$ATLAS_IMAGE_TAG" | ssh atlas-vps 'bash -se'
+          scp compose.vps.yaml deploy/vps/deploy.sh "atlas-vps:/opt/atlas/releases/$ATLAS_IMAGE_TAG/"
+          ssh atlas-vps 'sudo -n docker load' < "$RUNNER_TEMP/atlas-images.tar.gz"
+          printf 'bash /opt/atlas/releases/%s/deploy.sh %s\n' "$ATLAS_IMAGE_TAG" "$ATLAS_IMAGE_TAG" | ssh atlas-vps 'bash -se'
