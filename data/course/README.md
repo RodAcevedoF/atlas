@@ -41,9 +41,23 @@ erDiagram
 
 ## Use in Atlas
 
-In the research question box, open **Saved datasets**, choose **Save a dataset**, and select either supplied file. The saved dataset belongs to the signed-in user; the synthetic seed owner is separate. Choose **Use** to attach its CSV representation to a new research question. Saving and downloading do not invoke an AI provider. Interpretation and research follow the existing provider and worker flow.
+1. In the research question box, open **Saved datasets**, choose **Save a dataset**, and select a CSV or XLSX file. Atlas validates and saves all rows under your signed-in account. The synthetic seed owner is separate.
+2. Choose **Use** to export the saved table as CSV and upload it as a research attachment. This prepares a table profile; it does not start an AI call. The **CSV** link downloads the saved table, and **Delete** removes it from saved datasets.
+3. Add any instructions and submit to interpret the attachment. AI receives the table profile, including a preview of the first 20 rows, and your instructions. It returns a summary and proposed research question, or asks for clarification.
+4. Review and edit the question, or request refinement. Submit the accepted question to start the existing research flow. Research execution needs an active worker and configured providers.
 
-All 120 records are saved. The existing research attachment flow uses a preview of the first 20 rows, so it does not establish exhaustive analysis of every project. Saved datasets accept one sheet, 1–1000 data rows, 1–50 uniquely named columns, and files up to 5 MB. Formulas and formula-like values are rejected; use plain cell values. Each row must match the header width.
+```mermaid
+flowchart LR
+    Save[Save all rows] --> Use[Use as CSV attachment]
+    Use --> Profile[Profile with first 20 rows]
+    Profile --> Interpret[User submits for AI interpretation]
+    Interpret --> Review[Review proposed question]
+    Review --> Research[Submit research question]
+```
+
+Saving, downloading and attaching do not invoke an AI provider. Interpretation and research are separate user-triggered steps. Uploaded rows are not automatically mapped, and Atlas does not run research for each row. Map points come from the resulting research claims. All 120 course records are stored, but the preview does not establish exhaustive analysis of every project. End-to-end browser and dataset-triggered research acceptance remain pending.
+
+Saved datasets accept one sheet, 1–1000 data rows, 1–50 uniquely named columns, and files up to 5 MB. Their serialized UTF-8 CSV must also fit within 5 MB so it can be reused as an attachment. Formulas and formula-like values are rejected; use plain cell values. Each row must match the header width. Downloads pending when the dataset component unmounts, including on account change, cannot subsequently attach that file.
 
 ## Verification commands
 
