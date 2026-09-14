@@ -1,5 +1,8 @@
+import asyncio
 import base64
 import binascii
+import math
+import time
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -28,6 +31,16 @@ class AttachmentInterpretationGraph:
         self._vision_interpreter = vision_interpreter
 
     async def run(self, run_id: str, input: dict[str, Any]) -> dict[str, Any]:
+        deadline = input.get("deadline")
+        if not isinstance(deadline, (int, float)) or not math.isfinite(deadline):
+            raise GraphInputError("attachment interpretation needs a finite deadline")
+        remaining = min(120.0, deadline / 1000 - time.time())
+        if remaining <= 0:
+            raise GraphInputError("attachment interpretation deadline elapsed")
+        async with asyncio.timeout(remaining):
+            return await self._interpret(input)
+
+    async def _interpret(self, input: dict[str, Any]) -> dict[str, Any]:
         kind = input.get("kind")
         user_text = str(input.get("userText") or "").strip()
         if kind == "image":

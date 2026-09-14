@@ -1,4 +1,5 @@
 import asyncio
+import time
 from typing import Any
 
 import pytest
@@ -51,6 +52,7 @@ def test_tabular_profile_becomes_the_shared_interpretation_shape() -> None:
         graph.run(
             "run-1",
             {
+                "deadline": (time.time() + 120) * 1000,
                 "kind": "tabular",
                 "profile": {"sheets": [{"name": "Suppliers"}]},
                 "userText": "focus on supply disruptions",
@@ -78,7 +80,12 @@ def test_non_tabular_input_is_rejected_before_a_model_call() -> None:
     )
 
     with pytest.raises(GraphInputError, match="supported kind"):
-        asyncio.run(graph.run("run-1", {"kind": "pdf", "profile": {"sheets": []}}))
+        asyncio.run(
+            graph.run(
+                "run-1",
+                {"deadline": (time.time() + 120) * 1000, "kind": "pdf", "profile": {"sheets": []}},
+            )
+        )
 
 
 def test_image_bytes_reach_vision_through_the_same_result_shape() -> None:
@@ -99,6 +106,7 @@ def test_image_bytes_reach_vision_through_the_same_result_shape() -> None:
         graph.run(
             "run-2",
             {
+                "deadline": (time.time() + 120) * 1000,
                 "kind": "image",
                 "mediaType": "image/png",
                 "bytesBase64": "dmlzaWJsZSBwaXhlbHM=",
@@ -108,3 +116,50 @@ def test_image_bytes_reach_vision_through_the_same_result_shape() -> None:
     )
 
     assert result["proposedQuestion"] == expected.proposed_question
+
+
+class PendingAttachmentInterpreter:
+    def __init__(self) -> None:
+        self.cancelled = False
+
+    async def interpret(self, profile: dict[str, Any], user_text: str) -> AttachmentInterpretation:
+        try:
+            await asyncio.Event().wait()
+        finally:
+            self.cancelled = True
+        raise AssertionError("Pending interpretation unexpectedly completed")
+
+
+def test_interpretation_deadline_cancels_pending_model_work() -> None:
+    interpreter = PendingAttachmentInterpreter()
+    graph = AttachmentInterpretationGraph(
+        interpreter,
+        InMemoryVisionAttachmentInterpreter(AttachmentInterpretation("", [], [], "", False, None)),
+    )
+
+    with pytest.raises(TimeoutError):
+        asyncio.run(
+            graph.run(
+                "deadline",
+                {
+                    "deadline": (time.time() + 0.02) * 1000,
+                    "kind": "tabular",
+                    "profile": {"sheets": []},
+                },
+            )
+        )
+
+    assert interpreter.cancelled
+
+
+@pytest.mark.parametrize("deadline", [0, None, float("inf"), float("nan"), "tomorrow"])
+def test_invalid_or_expired_deadline_rejects_before_interpretation(deadline: Any) -> None:
+    interpreter = InMemoryAttachmentInterpreter(
+        AttachmentInterpretation("", [], [], "", False, None)
+    )
+    graph = AttachmentInterpretationGraph(
+        interpreter, InMemoryVisionAttachmentInterpreter(interpreter.result)
+    )
+
+    with pytest.raises(GraphInputError, match="deadline"):
+        asyncio.run(graph.run("expired", {"deadline": deadline, "kind": "tabular", "profile": {}}))

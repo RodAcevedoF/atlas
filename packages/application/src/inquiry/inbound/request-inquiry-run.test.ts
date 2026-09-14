@@ -380,7 +380,7 @@ describe("RequestInquiryRunUseCase", () => {
     });
   }
 
-  test("a refresh past the cap still re-asks, because a refresh does not spend", async () => {
+  test("a refresh cannot bypass the daily cap", async () => {
     const seed = [1, 2, 3].map((index) =>
       run({ id: makeInquiryRunId(`run-${index}`), questionKey: `question ${index}` }),
     );
@@ -390,7 +390,7 @@ describe("RequestInquiryRunUseCase", () => {
     ]);
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
-    const result = await useCase.execute({
+    const result = useCase.execute({
       emailVerified: true,
       ownerId: OWNER,
       role: "user",
@@ -398,9 +398,8 @@ describe("RequestInquiryRunUseCase", () => {
       refresh: true,
     });
 
-    expect(result.deduped).toBe(false);
-    expect(result.status).toBe("queued");
-    expect(runs()).toHaveLength(5);
+    await expect(result).rejects.toBeInstanceOf(InquiryDailyCapReachedError);
+    expect(runs()).toHaveLength(4);
   });
 
   test("another user's answers do not spend this user's cap", async () => {
@@ -425,7 +424,7 @@ describe("RequestInquiryRunUseCase", () => {
     expect(result.status).toBe("queued");
   });
 
-  test("a failed run does not spend the cap, so a new question is still accepted", async () => {
+  test("failed runs retain their reservations", async () => {
     const seed = [1, 2, 3].map((index) =>
       run({
         id: makeInquiryRunId(`run-${index}`),
@@ -436,7 +435,7 @@ describe("RequestInquiryRunUseCase", () => {
     const { store } = inMemoryInquiryRunStore(seed);
     const useCase = new RequestInquiryRunUseCase(store, DAILY_CAP, new InMemoryInquiryJobQueue());
 
-    const result = await useCase.execute({
+    const result = useCase.execute({
       emailVerified: true,
       ownerId: OWNER,
       role: "user",
@@ -444,7 +443,7 @@ describe("RequestInquiryRunUseCase", () => {
       refresh: false,
     });
 
-    expect(result.status).toBe("queued");
+    await expect(result).rejects.toBeInstanceOf(InquiryDailyCapReachedError);
   });
 
   const unlimited: { name: string; role: "admin" | "super_admin" }[] = [
@@ -541,4 +540,67 @@ describe("RequestInquiryRunUseCase", () => {
     expect(runs()).toHaveLength(1);
     expect(recovered?.id).toBe(result.runId);
   });
+});
+
+for (const scenario of [
+  { name: "concurrent daily reservations", cap: 3, role: "user" as const, accepted: 3, seed: [] },
+  { name: "admin outstanding work", cap: 3, role: "admin" as const, accepted: 5, seed: [] },
+  {
+    name: "outstanding work across UTC days",
+    cap: 10,
+    role: "user" as const,
+    accepted: 0,
+    seed: Array.from({ length: 5 }, (_unused, index) =>
+      run({ id: makeInquiryRunId(`older-${index}`), day: "2020-01-01", status: "queued" }),
+    ),
+  },
+]) {
+  test(`bounds ${scenario.name}`, async () => {
+    const { store, runs } = inMemoryInquiryRunStore(scenario.seed);
+    const useCase = new RequestInquiryRunUseCase(
+      store,
+      scenario.cap,
+      new InMemoryInquiryJobQueue(),
+    );
+
+    const results = await Promise.allSettled(
+      Array.from({ length: 8 }, (_unused, index) =>
+        useCase.execute({
+          emailVerified: true,
+          ownerId: OWNER,
+          role: scenario.role,
+          question: `question ${index}`,
+          refresh: false,
+        }),
+      ),
+    );
+
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(
+      scenario.accepted,
+    );
+    expect(runs()).toHaveLength(scenario.seed.length + scenario.accepted);
+  });
+}
+
+test("deleting a run does not refund its reservation", async () => {
+  const { store } = inMemoryInquiryRunStore();
+  const useCase = new RequestInquiryRunUseCase(store, 1, new InMemoryInquiryJobQueue());
+  const first = await useCase.execute({
+    emailVerified: true,
+    ownerId: OWNER,
+    role: "user",
+    question: QUESTION,
+    refresh: false,
+  });
+  await store.deleteInquiryRunById(first.runId);
+
+  const next = useCase.execute({
+    emailVerified: true,
+    ownerId: OWNER,
+    role: "user",
+    question: "another question",
+    refresh: false,
+  });
+
+  await expect(next).rejects.toBeInstanceOf(InquiryDailyCapReachedError);
 });

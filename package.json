@@ -12,7 +12,9 @@
     "test": "bun nx run-many -t test",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "build": "bun nx run-many -t build"
+    "build": "bun nx run-many -t build",
+    "dataset:generate": "node --experimental-transform-types apps/api/scripts/datasets.ts generate data/course",
+    "dataset:seed": "node --env-file=apps/api/.env --experimental-transform-types apps/api/scripts/datasets.ts seed"
   },
   "lint-staged": {
     "*.{js,jsx,mjs,cjs,ts,tsx,json,jsonc,css}": "biome check --write --no-errors-on-unmatched"

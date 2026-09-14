@@ -77,7 +77,7 @@ export class MongoInquiryAttachmentStore implements InquiryAttachmentStorePort {
   private readonly uploadUsage: Collection<AttachmentUsageDocument>;
   private readonly interpretationUsage: Collection<AttachmentUsageDocument>;
 
-  constructor(db: Db) {
+  constructor(private readonly db: Db) {
     this.bucket = new GridFSBucket(db, { bucketName: BUCKET_NAME });
     this.files = db.collection<GridFSFile>(FILES_COLLECTION);
     this.uploadUsage = db.collection<AttachmentUsageDocument>("inquiry_attachment_upload_usage");
@@ -153,6 +153,59 @@ export class MongoInquiryAttachmentStore implements InquiryAttachmentStorePort {
       );
       return result.matchedCount === 1;
     }
+  }
+
+  async reserveSharedInterpretation(
+    day: string,
+    cap: number,
+    concurrency: number,
+    leaseMs: number,
+  ): Promise<{ id: string; expiresAt: Date } | null> {
+    const usage = this.db.collection<{
+      _id: string;
+      days: Record<string, number>;
+      leases: { id: string; expiresAt: Date }[];
+    }>("inquiry_shared_interpretation_usage");
+    await usage.updateOne(
+      { _id: "shared" },
+      { $setOnInsert: { days: {}, leases: [] } },
+      { upsert: true },
+    );
+    const id = crypto.randomUUID();
+    const liveLeases = {
+      $filter: {
+        input: "$leases",
+        as: "lease",
+        cond: { $gt: ["$$lease.expiresAt", "$$NOW"] },
+      },
+    };
+    const result = await usage.findOneAndUpdate(
+      {
+        _id: "shared",
+        $expr: { $lt: [{ $size: liveLeases }, concurrency] },
+        $or: [{ [`days.${day}`]: { $exists: false } }, { [`days.${day}`]: { $lt: cap } }],
+      },
+      [
+        {
+          $set: {
+            leases: {
+              $concatArrays: [liveLeases, [{ id, expiresAt: { $add: ["$$NOW", leaseMs] } }]],
+            },
+            [`days.${day}`]: { $add: [{ $ifNull: [`$days.${day}`, 0] }, 1] },
+          },
+        },
+      ],
+      { returnDocument: "after" },
+    );
+    return result?.leases.find((lease) => lease.id === id) ?? null;
+  }
+
+  async releaseSharedInterpretation(id: string): Promise<void> {
+    await this.db
+      .collection<{ _id: string; leases: { id: string; expiresAt: Date }[] }>(
+        "inquiry_shared_interpretation_usage",
+      )
+      .updateOne({ _id: "shared" }, { $pull: { leases: { id } } });
   }
 
   async saveAttachmentInterpretation(

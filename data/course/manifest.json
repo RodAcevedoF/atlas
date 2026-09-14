@@ -1,0 +1,16 @@
+{
+  "name": "Synthetic infrastructure projects",
+  "recordCount": 120,
+  "provenance": "Deterministic fictional projects in real cities; no retrieved claims or personal information",
+  "columns": {
+    "project_id": "Stable demo identifier",
+    "project": "Explicitly fictional project name",
+    "city": "City name",
+    "country": "Country name",
+    "category": "Infrastructure category",
+    "status": "Fictional planning stage",
+    "investment_eur": "Fictional estimated investment, whole euros",
+    "research_question": "Question for external investigation, not a factual assertion",
+    "data_origin": "Synthetic-data label"
+  }
+}

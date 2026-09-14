@@ -82,6 +82,12 @@ export interface InquiryRunSummaryCounts {
 }
 
 export interface InquiryRunStorePort {
+  reserveInquiryRun(
+    run: InquiryRun,
+    dailyCap: number | null,
+    outstandingCap: number,
+  ): Promise<boolean>;
+  countReservedRunsForOwnerDay(ownerId: UserId, day: string): Promise<number>;
   saveInquiryRun(run: InquiryRun): Promise<void>;
   findInquiryRunById(id: InquiryRunId): Promise<InquiryRun | null>;
   findInquiryRunByQuestionDay(
@@ -90,7 +96,6 @@ export interface InquiryRunStorePort {
     day: string,
   ): Promise<InquiryRun | null>;
   findInquiryRunListRowById(id: InquiryRunId): Promise<InquiryRunListRow | null>;
-  countSucceededQuestionsForOwnerDay(ownerId: UserId, day: string): Promise<number>;
   claimNextInquiryRun(input: ClaimInquiryRunInput): Promise<InquiryRun | null>;
   claimInquiryRunById(id: InquiryRunId, input: ClaimInquiryRunInput): Promise<InquiryRun | null>;
   deleteInquiryRunById(id: InquiryRunId): Promise<boolean>;

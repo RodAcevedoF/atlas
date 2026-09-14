@@ -246,3 +246,16 @@ export type {
   ProfileImageStorePort,
 } from "./profile/outbound/profile-image-store.ts";
 export { PROFILE_IMAGE_MEDIA_TYPES } from "./profile/outbound/profile-image-store.ts";
+
+export type { DatasetStorePort } from "./datasets/outbound/dataset-store.ts";
+export type { DatasetParserPort } from "./datasets/outbound/dataset-parser.ts";
+export {
+  ImportDatasetUseCase,
+  ListDatasetsUseCase,
+  GetDatasetUseCase,
+  DeleteDatasetUseCase,
+  validateDatasetTable,
+  datasetCsv,
+  DATASET_MAX_BYTES,
+} from "./datasets/inbound/datasets.ts";
+export type { ImportDataset, ImportDatasetInput } from "./datasets/inbound/datasets.ts";

@@ -11,15 +11,17 @@ import { registerAuthGate } from "./core/auth-hook.ts";
 import { bootstrap } from "./core/bootstrap.ts";
 import { registerErrorHandler } from "./core/error-handler.ts";
 import { loggerRedactPaths, registerSecurity } from "./core/security.ts";
+import { trustIngressProxy } from "./core/trust-proxy.ts";
 import { oauthPublicRoutes, readOAuthConfigs, registerOAuthRoutes } from "./modules/auth/oauth.ts";
 import { registerAdminRoutes } from "./routes/admin.ts";
 import { registerAuthRoutes } from "./routes/auth.ts";
+import { registerDatasetRoutes } from "./routes/datasets.ts";
 import { registerInquiryRoutes } from "./routes/inquiry.ts";
 import { registerProfileRoutes } from "./routes/profile.ts";
 import { registerUserRoutes } from "./routes/users.ts";
 
 const logger: FastifyBaseLogger = createLogger({ redact: loggerRedactPaths });
-const app = Fastify({ loggerInstance: logger });
+const app = Fastify({ loggerInstance: logger, trustProxy: trustIngressProxy });
 await app.register(cookie);
 app.addContentTypeParser(
   [...new Set([...PROFILE_IMAGE_MEDIA_TYPES, ...INQUIRY_ATTACHMENT_MEDIA_TYPES])],
@@ -41,7 +43,8 @@ await registerAuthRoutes(app, deps.auth);
 await registerOAuthRoutes(app, deps.auth, oauthConfigs);
 await registerProfileRoutes(app, deps.profile);
 await registerUserRoutes(app, deps.users);
-await registerInquiryRoutes(app, deps.inquiry);
+await registerInquiryRoutes(app, deps.inquiry, deps.auth.authenticate);
+await registerDatasetRoutes(app, deps.datasets);
 await registerAdminRoutes(app, deps.admin);
 
 const port = Number(process.env.PORT ?? 3100);

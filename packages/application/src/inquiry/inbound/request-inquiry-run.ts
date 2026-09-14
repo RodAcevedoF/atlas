@@ -13,6 +13,7 @@ import type { InquiryRunStorePort } from "../outbound/inquiry-run-store.ts";
 
 export const INQUIRY_WINDOW = "1w";
 const MAX_QUESTION_CHARS = 500;
+const MAX_OUTSTANDING_RUNS = 5;
 
 export class InvalidInquiryQuestionError extends Error {
   constructor(reason: string) {
@@ -23,7 +24,9 @@ export class InvalidInquiryQuestionError extends Error {
 
 export class InquiryDailyCapReachedError extends Error {
   constructor(dailyCap: number) {
-    super(`Daily inquiry limit reached — ${dailyCap} runs today. Stored runs are still readable.`);
+    super(
+      `Inquiry limit reached — ${dailyCap} daily runs or ${MAX_OUTSTANDING_RUNS} outstanding runs. Stored runs are still readable.`,
+    );
     this.name = "InquiryDailyCapReachedError";
   }
 }
@@ -152,13 +155,10 @@ export class RequestInquiryRunUseCase implements RequestInquiryRun {
       return { runId: reusable.id, status: reusable.status, deduped: true, dispatched: true };
     }
 
-    if (countsAgainstBudget(input, stored)) {
-      const used = await this.store.countSucceededQuestionsForOwnerDay(input.ownerId, day);
-      if (used >= this.dailyCap) throw new InquiryDailyCapReachedError(this.dailyCap);
-    }
-
     const run = queuedRun({ ownerId: input.ownerId, question, questionKey, day, now });
-    await this.store.saveInquiryRun(run);
+    const cap = hasAtLeastRole(input.role, "admin") ? null : this.dailyCap;
+    const reserved = await this.store.reserveInquiryRun(run, cap, MAX_OUTSTANDING_RUNS);
+    if (!reserved) throw new InquiryDailyCapReachedError(this.dailyCap);
     if (input.attachmentId) {
       await this.attachments?.attachInquiryAttachment(input.attachmentId, run.id);
     }
@@ -189,10 +189,4 @@ function pickReusable(stored: InquiryRun | null, refresh: boolean): InquiryRun |
   if (!stored) return null;
   if (refresh) return isInFlight(stored) ? stored : null;
   return isReusable(stored) ? stored : null;
-}
-
-function countsAgainstBudget(input: RequestInquiryRunInput, stored: InquiryRun | null): boolean {
-  if (hasAtLeastRole(input.role, "admin")) return false;
-  if (input.refresh && stored !== null) return false;
-  return true;
 }

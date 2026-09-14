@@ -48,7 +48,7 @@ describe("GetInquiryBudgetUseCase", () => {
     expect(budget).toEqual({ used: 2, cap: DAILY_CAP, remaining: 3 });
   });
 
-  test("a refresh of the same question does not spend a second slot", async () => {
+  test("a refresh of the same question reserves a second slot", async () => {
     const original = run({ id: makeInquiryRunId("run-1") });
     const refreshed = run({ id: makeInquiryRunId("run-2"), createdAt: new Date() });
     const { store } = inMemoryInquiryRunStore([original, refreshed]);
@@ -56,8 +56,8 @@ describe("GetInquiryBudgetUseCase", () => {
 
     const budget = await useCase.execute({ ownerId: OWNER, role: "user" });
 
-    expect(budget.used).toBe(1);
-    expect(budget.remaining).toBe(4);
+    expect(budget.used).toBe(2);
+    expect(budget.remaining).toBe(3);
   });
 
   test("another user's answers do not spend this user's budget", async () => {

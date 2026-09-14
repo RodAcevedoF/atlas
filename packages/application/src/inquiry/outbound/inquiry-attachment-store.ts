@@ -11,12 +11,24 @@ export interface SaveInquiryAttachmentInput {
   bytes: Uint8Array;
 }
 
+export interface InterpretationLease {
+  id: string;
+  expiresAt: Date;
+}
+
 export interface InquiryAttachmentStorePort {
   saveInquiryAttachment(input: SaveInquiryAttachmentInput): Promise<void>;
   findInquiryAttachmentById(id: InquiryAttachmentId): Promise<InquiryAttachment | null>;
   findInquiryAttachmentBytes(id: InquiryAttachmentId): Promise<Uint8Array | null>;
   reserveInquiryAttachmentUpload(ownerId: UserId, day: string, cap: number): Promise<boolean>;
   reserveAttachmentInterpretation(ownerId: UserId, day: string, cap: number): Promise<boolean>;
+  reserveSharedInterpretation(
+    day: string,
+    cap: number,
+    concurrency: number,
+    leaseMs: number,
+  ): Promise<InterpretationLease | null>;
+  releaseSharedInterpretation(id: string): Promise<void>;
   saveAttachmentInterpretation(
     id: InquiryAttachmentId,
     interpretation: AttachmentInterpretation,

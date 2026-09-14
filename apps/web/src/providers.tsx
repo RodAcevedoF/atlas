@@ -2,6 +2,8 @@ import { AdminProvider } from "@/features/admin/admin-provider.tsx";
 import type { AdminRepository } from "@/features/admin/repositories/admin-repository.ts";
 import { HttpAdminRepository } from "@/features/admin/repositories/http-admin-repository.ts";
 import { AuthProvider } from "@/features/auth/auth-provider.tsx";
+import { DatasetProvider } from "@/features/datasets/dataset-provider.tsx";
+import { HttpDatasetRepository } from "@/features/datasets/repositories/http-dataset-repository.ts";
 import { AppErrorBoundary } from "@/features/errors";
 import { InquiryRunCompletionToast } from "@/features/inquiry/components/inquiry-run-completion-toast.tsx";
 import { attachInquiryRunStreams } from "@/features/inquiry/infra/store/inquiry.streams.ts";
@@ -19,6 +21,7 @@ import { Provider as ReduxProvider } from "react-redux";
 
 export function AppProviders({ children }: PropsWithChildren) {
   const [inquiryRepository] = useState<InquiryRepository>(() => new HttpInquiryRepository());
+  const [datasetRepository] = useState(() => new HttpDatasetRepository());
   const [adminRepository] = useState<AdminRepository>(() => new HttpAdminRepository());
   const [store] = useState(() => makeStore({ inquiryRepository }));
 
@@ -40,7 +43,9 @@ export function AppProviders({ children }: PropsWithChildren) {
         <InquiryRunCompletionToast />
         <AuthProvider>
           <AdminProvider repository={adminRepository}>
-            <AppErrorBoundary>{children}</AppErrorBoundary>
+            <DatasetProvider repository={datasetRepository}>
+              <AppErrorBoundary>{children}</AppErrorBoundary>
+            </DatasetProvider>
           </AdminProvider>
         </AuthProvider>
       </ToastProvider>

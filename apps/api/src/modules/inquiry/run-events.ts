@@ -25,6 +25,9 @@ function release(reply: FastifyReply, stream: InquiryRunStream): Promise<void> {
 export async function writeInquiryRunStream(
   reply: FastifyReply,
   stream: InquiryRunStream,
+  authorize: () => Promise<boolean>,
+  heartbeatMs = HEARTBEAT_MS,
+  authorizationTimeoutMs = 5_000,
 ): Promise<void> {
   const negotiated = reply.getHeaders();
   reply.hijack();
@@ -33,20 +36,51 @@ export async function writeInquiryRunStream(
   }
   for (const [name, value] of Object.entries(SSE_HEADERS)) reply.raw.setHeader(name, value);
   reply.raw.writeHead(200);
-  const heartbeat = setInterval(() => frame(reply, ": heartbeat\n\n"), HEARTBEAT_MS);
-  reply.raw.on("close", () => {
-    void release(reply, stream);
-  });
+  let closed = false;
+  let releasing: Promise<void> | null = null;
+  let heartbeat: ReturnType<typeof setTimeout> | undefined;
+  const close = (): Promise<void> => {
+    closed = true;
+    clearTimeout(heartbeat);
+    releasing ??= release(reply, stream);
+    if (!reply.raw.writableEnded && !reply.raw.destroyed) reply.raw.end();
+    return releasing;
+  };
+  const authorized = async (): Promise<boolean> => {
+    if (closed) return false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const allowed = await Promise.race([
+        authorize(),
+        new Promise<boolean>((resolve) => {
+          timeout = setTimeout(() => resolve(false), authorizationTimeoutMs);
+        }),
+      ]);
+      if (allowed && !closed) return true;
+    } catch (error) {
+      reply.log.error({ err: error }, "inquiry stream reauthorization failed");
+    } finally {
+      clearTimeout(timeout);
+    }
+    await close();
+    return false;
+  };
+  const beat = async (): Promise<void> => {
+    if (!(await authorized())) return;
+    frame(reply, ": heartbeat\n\n");
+    heartbeat = setTimeout(() => void beat(), heartbeatMs);
+  };
+  heartbeat = setTimeout(() => void beat(), heartbeatMs);
+  reply.raw.once("close", () => void close());
 
   try {
     for await (const snapshot of stream.snapshots) {
+      if (!(await authorized())) break;
       await writeStreamFrame(reply.raw, `data: ${JSON.stringify(snapshot)}\n\n`);
     }
   } catch (error) {
     reply.log.error({ err: error }, "inquiry run stream ended before the run did");
   } finally {
-    clearInterval(heartbeat);
-    await release(reply, stream);
-    if (!reply.raw.writableEnded && !reply.raw.destroyed) reply.raw.end();
+    await close();
   }
 }

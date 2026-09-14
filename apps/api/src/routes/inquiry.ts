@@ -1,5 +1,6 @@
+import type { Authenticate } from "@atlas/application";
 import type { FastifyInstance } from "fastify";
-import { requireUser } from "../core/auth-hook.ts";
+import { SESSION_COOKIE, requireUser } from "../core/auth-hook.ts";
 import type { RawQuery } from "../core/parsing.ts";
 import type { InquiryDeps } from "../modules/inquiry/dependencies.ts";
 import {
@@ -16,6 +17,7 @@ import { InquiryStreamCapacity } from "../modules/inquiry/stream-capacity.ts";
 export async function registerInquiryRoutes(
   app: FastifyInstance,
   deps: InquiryDeps,
+  authenticate: Authenticate,
 ): Promise<void> {
   const streamCapacity = new InquiryStreamCapacity();
   app.post("/inquiry/attachments", async (req, reply) => {
@@ -40,6 +42,7 @@ export async function registerInquiryRoutes(
       id: parseInquiryAttachmentId(params.id),
       ownerId: user.id,
       question: parseAttachmentInterpretationBody(body),
+      emailVerified: user.emailVerified,
     });
     return reply.send(interpretation);
   });
@@ -88,7 +91,11 @@ export async function registerInquiryRoutes(
     return streamCapacity.run(user.id, async () => {
       const stream = await deps.streamInquiryRun.execute(parseInquiryRunId(params.id), user);
       if (!stream) return reply.code(404).send({ error: "Inquiry run not found" });
-      return writeInquiryRunStream(reply, stream);
+      return writeInquiryRunStream(reply, stream, async () => {
+        const token = req.cookies[SESSION_COOKIE];
+        const current = token ? await authenticate.execute(token) : null;
+        return current !== null && current.id === user.id && current.role === user.role;
+      });
     });
   });
 

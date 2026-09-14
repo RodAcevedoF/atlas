@@ -20,7 +20,7 @@ import type {
   UserId,
 } from "@atlas/domain";
 import { INQUIRY_PROGRESS_STAGES, makeInquiryRunId, makeUserId } from "@atlas/domain";
-import type { Db, Document, Filter } from "mongodb";
+import type { ClientSession, Db, Document, Filter } from "mongodb";
 import type { InquiryRunDoc } from "./collections.ts";
 
 const COLLECTION = "inquiry_runs";
@@ -256,7 +256,64 @@ function docToInquiryRun(doc: StoredInquiryRunDoc): InquiryRun {
 export class MongoInquiryRunStore implements InquiryRunStorePort {
   constructor(private readonly db: Db) {}
 
-  async saveInquiryRun(run: InquiryRun): Promise<void> {
+  async countReservedRunsForOwnerDay(ownerId: UserId, day: string): Promise<number> {
+    const [usage, legacyCount] = await Promise.all([
+      this.db
+        .collection<{ _id: string; days: Record<string, number> }>("inquiry_run_usage")
+        .findOne({ _id: ownerId }),
+      this.db.collection<InquiryRunDoc>(COLLECTION).countDocuments({ ownerId, day }),
+    ]);
+    return Math.max(usage?.days[day] ?? 0, legacyCount);
+  }
+
+  async reserveInquiryRun(
+    run: InquiryRun,
+    dailyCap: number | null,
+    outstandingCap: number,
+  ): Promise<boolean> {
+    const ownerId = run.ownerId;
+    if (ownerId === null) throw new Error("Reserved inquiry runs require an owner");
+    await this.db
+      .collection<{ _id: string; revision: number; days: Record<string, number> }>(
+        "inquiry_run_usage",
+      )
+      .updateOne({ _id: ownerId }, { $setOnInsert: { revision: 0, days: {} } }, { upsert: true });
+    return this.db.client.withSession(async (session) => {
+      const result = await session.withTransaction(async () => {
+        const usage = this.db.collection<{
+          _id: string;
+          days: Record<string, number>;
+          revision: number;
+        }>("inquiry_run_usage");
+        const held = await usage.findOneAndUpdate(
+          { _id: ownerId },
+          { $inc: { revision: 1 } },
+          { returnDocument: "after", session },
+        );
+        const runs = this.db.collection<InquiryRunDoc>(COLLECTION);
+        const outstanding = await runs.countDocuments(
+          { ownerId: run.ownerId, status: { $in: ["queued", "running", "failed_retryable"] } },
+          { session },
+        );
+        const existing = await runs.countDocuments(
+          { ownerId: run.ownerId, day: run.day },
+          { session },
+        );
+        const used = Math.max(held?.days[run.day] ?? 0, existing);
+        if (outstanding >= outstandingCap || (dailyCap !== null && used >= dailyCap)) return false;
+        await usage.updateOne(
+          { _id: ownerId },
+          { $set: { [`days.${run.day}`]: used + 1 } },
+          { session },
+        );
+        await this.saveInquiryRun(run, session);
+        return true;
+      });
+      return result === true;
+    });
+  }
+
+  async saveInquiryRun(run: InquiryRun, session?: ClientSession): Promise<void> {
     const doc: InquiryRunDoc = {
       _id: run.id,
       ownerId: run.ownerId,
@@ -281,7 +338,7 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
       startedAt: run.startedAt,
       completedAt: run.completedAt,
     };
-    await this.db.collection<InquiryRunDoc>(COLLECTION).insertOne(doc);
+    await this.db.collection<InquiryRunDoc>(COLLECTION).insertOne(doc, { session });
   }
 
   async findInquiryRunById(id: InquiryRunId): Promise<InquiryRun | null> {
@@ -307,13 +364,6 @@ export class MongoInquiryRunStore implements InquiryRunStorePort {
       .collection<InquiryRunDoc>(COLLECTION)
       .findOne<StoredInquiryRunDoc>({ ownerId, questionKey, day }, { sort: { createdAt: -1 } });
     return doc ? docToInquiryRun(doc) : null;
-  }
-
-  async countSucceededQuestionsForOwnerDay(ownerId: UserId, day: string): Promise<number> {
-    const keys = await this.db
-      .collection<InquiryRunDoc>(COLLECTION)
-      .distinct("questionKey", { ownerId, day, status: "succeeded" });
-    return keys.length;
   }
 
   async claimNextInquiryRun(input: ClaimInquiryRunInput): Promise<InquiryRun | null> {

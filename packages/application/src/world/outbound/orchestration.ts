@@ -18,11 +18,11 @@ export interface GraphRunInput {
   graphName: string;
   input: Record<string, unknown>;
   runId?: string;
+  signal?: AbortSignal;
 }
 
 export interface GraphStreamInput extends GraphRunInput {
   attempt: number;
-  signal?: AbortSignal;
 }
 
 export type GraphEventType =

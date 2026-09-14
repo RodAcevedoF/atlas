@@ -31,6 +31,9 @@ export class MongoUserOwnedDataStore implements UserOwnedDataPort {
       deleteGridFsFiles(this.attachments, { "metadata.ownerId": userId }),
       deleteGridFsFiles(this.profileImages, { filename: userId }),
       this.db.collection("inquiry_runs").deleteMany({ ownerId: userId }),
+      this.db.collection<{ _id: string }>("inquiry_run_usage").deleteOne({ _id: userId }),
+      this.db.collection("datasets").deleteMany({ ownerId: userId }),
+      this.db.collection("dataset_records").deleteMany({ ownerId: userId }),
       this.db
         .collection<{ _id: string }>("inquiry_attachment_upload_usage")
         .deleteMany({ _id: { $regex: `^${escapedRegex(userId)}:` } }),

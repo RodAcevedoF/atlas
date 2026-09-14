@@ -23,7 +23,7 @@ app.get<{ Params: { id: string } }>("/runs/:id/events", async (request, reply) =
     role: "user",
   });
   if (!opened) return reply.code(404).send();
-  return writeInquiryRunStream(reply, opened);
+  return writeInquiryRunStream(reply, opened, () => Promise.resolve(true));
 });
 await app.listen({ host: "127.0.0.1", port: Number(process.argv[2]) });
 console.log("proof api ready");

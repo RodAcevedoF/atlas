@@ -80,3 +80,5 @@ export {
 
 export type { SessionToken, Session } from "./entities/session.ts";
 export { makeSessionToken } from "./entities/session.ts";
+
+export type { Dataset, DatasetTable, DatasetRecord, SavedDataset } from "./entities/dataset.ts";

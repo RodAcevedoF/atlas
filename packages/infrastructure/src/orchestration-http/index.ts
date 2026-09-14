@@ -37,6 +37,7 @@ export class HttpOrchestration implements OrchestrationPort {
       `${this.baseUrl}/graphs/${encodeURIComponent(input.graphName)}/run`,
       { "content-type": "application/json" },
       { input: input.input, runId: input.runId },
+      input.signal,
     );
     try {
       return (await res.json()) as Record<string, unknown>;

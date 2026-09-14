@@ -166,7 +166,12 @@ describe("interpreting an owned draft", () => {
     const store = new InMemoryInquiryAttachmentStore([draft]);
     const useCase = new InterpretInquiryAttachmentUseCase(store, orchestration(INTERPRETATION));
 
-    const result = await useCase.execute({ id: draft.id, ownerId: OWNER_ID, question: "" });
+    const result = await useCase.execute({
+      emailVerified: true,
+      id: draft.id,
+      ownerId: OWNER_ID,
+      question: "",
+    });
     const stored = await store.findInquiryAttachmentById(draft.id);
 
     expect(result).toEqual(INTERPRETATION);
@@ -183,6 +188,7 @@ describe("interpreting an owned draft", () => {
 
     const interpretation = useCase.execute({
       id: draft.id,
+      emailVerified: true,
       ownerId: OTHER_OWNER_ID,
       question: "",
     });
@@ -203,7 +209,12 @@ describe("interpreting an owned draft", () => {
       imageOrchestration(INTERPRETATION),
     );
 
-    const result = await useCase.execute({ id: draft.id, ownerId: OWNER_ID, question: "" });
+    const result = await useCase.execute({
+      emailVerified: true,
+      id: draft.id,
+      ownerId: OWNER_ID,
+      question: "",
+    });
 
     expect(result).toEqual(INTERPRETATION);
   });
@@ -218,8 +229,93 @@ describe("interpreting an owned draft", () => {
       orchestration(INTERPRETATION),
     );
 
-    const interpretation = useCase.execute({ id: draft.id, ownerId: OWNER_ID, question: "" });
+    const interpretation = useCase.execute({
+      emailVerified: true,
+      id: draft.id,
+      ownerId: OWNER_ID,
+      question: "",
+    });
 
     await expect(interpretation).rejects.toBeInstanceOf(InquiryAttachmentInterpretationCapError);
   });
+});
+
+test("unverified owners cannot interpret an attachment", async () => {
+  const draft = attachment();
+  const store = new InMemoryInquiryAttachmentStore([draft]);
+  const useCase = new InterpretInquiryAttachmentUseCase(store, orchestration(INTERPRETATION));
+
+  const result = useCase.execute({
+    emailVerified: false,
+    id: draft.id,
+    ownerId: OWNER_ID,
+    question: "",
+  });
+
+  await expect(result).rejects.toThrow("Verify your email");
+  expect((await store.findInquiryAttachmentById(draft.id))?.interpretation).toBeNull();
+});
+
+test("shared interpretation capacity rejects another owner before paid work", async () => {
+  const draft = attachment();
+  const store = new InMemoryInquiryAttachmentStore([draft]);
+  const day = new Date().toISOString().slice(0, 10);
+  const lease = await store.reserveSharedInterpretation(day, 100, 2, 150_000);
+  if (!lease) throw new Error("Expected a lease");
+  await store.reserveSharedInterpretation(day, 100, 2, 150_000);
+  const useCase = new InterpretInquiryAttachmentUseCase(store, orchestration(INTERPRETATION));
+
+  await expect(
+    useCase.execute({ emailVerified: true, id: draft.id, ownerId: OWNER_ID, question: "" }),
+  ).rejects.toBeInstanceOf(InquiryAttachmentInterpretationCapError);
+  await store.releaseSharedInterpretation(lease.id);
+  const result = await useCase.execute({
+    emailVerified: true,
+    id: draft.id,
+    ownerId: OWNER_ID,
+    question: "",
+  });
+
+  expect(result).toEqual(INTERPRETATION);
+});
+
+test("the shared daily interpretation budget survives released capacity", async () => {
+  const draft = attachment();
+  const store = new InMemoryInquiryAttachmentStore([draft]);
+  const day = new Date().toISOString().slice(0, 10);
+  for (let index = 0; index < 100; index += 1) {
+    const lease = await store.reserveSharedInterpretation(day, 100, 2, 150_000);
+    if (!lease) throw new Error("Expected a lease");
+    await store.releaseSharedInterpretation(lease.id);
+  }
+  const useCase = new InterpretInquiryAttachmentUseCase(store, orchestration(INTERPRETATION));
+
+  const result = useCase.execute({
+    emailVerified: true,
+    id: draft.id,
+    ownerId: OWNER_ID,
+    question: "",
+  });
+
+  await expect(result).rejects.toBeInstanceOf(InquiryAttachmentInterpretationCapError);
+});
+
+test("expired interpretation leases recover capacity without refunding usage or releasing a successor", async () => {
+  let now = Date.now();
+  const store = new InMemoryInquiryAttachmentStore([], () => now);
+  const day = new Date(now).toISOString().slice(0, 10);
+  const abandoned = await store.reserveSharedInterpretation(day, 2, 1, 100);
+  if (!abandoned) throw new Error("Expected a lease");
+  expect(await store.reserveSharedInterpretation(day, 2, 1, 100)).toBeNull();
+
+  now += 100;
+  const successor = await store.reserveSharedInterpretation(day, 2, 1, 100);
+  expect(successor).not.toBeNull();
+  await store.releaseSharedInterpretation(abandoned.id);
+  await store.releaseSharedInterpretation(abandoned.id);
+
+  expect(await store.reserveSharedInterpretation("next-day", 2, 1, 100)).toBeNull();
+  now += 100;
+  expect(await store.reserveSharedInterpretation(day, 2, 1, 100)).toBeNull();
+  expect(await store.reserveSharedInterpretation("next-day", 2, 1, 100)).not.toBeNull();
 });

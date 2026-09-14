@@ -89,6 +89,11 @@ function checkpointed(run: InquiryRun, checkpoint: InquiryRunCheckpoint): Partia
 
 export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquiryRunStore {
   const held = new Map<InquiryRunId, InquiryRun>(seed.map((run) => [run.id, run]));
+  const usage = new Map<string, number>();
+  for (const run of seed) {
+    const key = `${run.ownerId}:${run.day}`;
+    usage.set(key, (usage.get(key) ?? 0) + 1);
+  }
   const cursors = new Map<InquiryRunId, { attempt: number; sequence: number }>();
   const notified = new Map<InquiryRunId, number>();
 
@@ -108,6 +113,23 @@ export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquir
   }
 
   const store: InquiryRunStorePort = {
+    countReservedRunsForOwnerDay(ownerId, day) {
+      return Promise.resolve(usage.get(`${ownerId}:${day}`) ?? 0);
+    },
+    reserveInquiryRun(run, dailyCap, outstandingCap) {
+      const key = `${run.ownerId}:${run.day}`;
+      const used = usage.get(key) ?? 0;
+      const outstanding = [...held.values()].filter(
+        (stored) =>
+          stored.ownerId === run.ownerId &&
+          ["queued", "running", "failed_retryable"].includes(stored.status),
+      ).length;
+      if (outstanding >= outstandingCap || (dailyCap !== null && used >= dailyCap))
+        return Promise.resolve(false);
+      usage.set(key, used + 1);
+      held.set(run.id, run);
+      return Promise.resolve(true);
+    },
     saveInquiryRun(run) {
       if (held.has(run.id)) {
         return Promise.reject(new Error(`duplicate inquiry run ${run.id}`));
@@ -127,14 +149,6 @@ export function inMemoryInquiryRunStore(seed: InquiryRun[] = []): InMemoryInquir
         )
         .sort(newestFirst);
       return Promise.resolve(newest ?? null);
-    },
-    countSucceededQuestionsForOwnerDay(ownerId, day) {
-      const keys = new Set(
-        [...held.values()]
-          .filter((run) => run.ownerId === ownerId && run.day === day && run.status === "succeeded")
-          .map((run) => run.questionKey),
-      );
-      return Promise.resolve(keys.size);
     },
     claimNextInquiryRun(input) {
       const [next] = [...held.values()].filter((run) => isClaimable(run, input)).sort(newestFirst);

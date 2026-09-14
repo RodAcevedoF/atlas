@@ -13,10 +13,15 @@ import type {
 export class InMemoryInquiryAttachmentStore implements InquiryAttachmentStorePort {
   private readonly attachments = new Map<InquiryAttachmentId, InquiryAttachment>();
   private readonly bytes = new Map<InquiryAttachmentId, Uint8Array>();
+  private readonly sharedInterpretations = new Map<string, number>();
+  private readonly activeInterpretations = new Map<string, Date>();
   private readonly dailyUploads = new Map<string, number>();
   private readonly dailyInterpretations = new Map<string, number>();
 
-  constructor(seed: InquiryAttachment[] = []) {
+  constructor(
+    seed: InquiryAttachment[] = [],
+    private readonly now: () => number = Date.now,
+  ) {
     for (const attachment of seed) {
       this.attachments.set(attachment.id, attachment);
       this.bytes.set(attachment.id, new Uint8Array([1, 2, 3]));
@@ -53,6 +58,28 @@ export class InMemoryInquiryAttachmentStore implements InquiryAttachmentStorePor
     if (used >= cap) return Promise.resolve(false);
     this.dailyInterpretations.set(key, used + 1);
     return Promise.resolve(true);
+  }
+
+  reserveSharedInterpretation(
+    day: string,
+    cap: number,
+    concurrency: number,
+    leaseMs: number,
+  ): Promise<{ id: string; expiresAt: Date } | null> {
+    for (const [id, expiresAt] of this.activeInterpretations) {
+      if (expiresAt.getTime() <= this.now()) this.activeInterpretations.delete(id);
+    }
+    const used = this.sharedInterpretations.get(day) ?? 0;
+    if (used >= cap || this.activeInterpretations.size >= concurrency) return Promise.resolve(null);
+    const lease = { id: crypto.randomUUID(), expiresAt: new Date(this.now() + leaseMs) };
+    this.sharedInterpretations.set(day, used + 1);
+    this.activeInterpretations.set(lease.id, lease.expiresAt);
+    return Promise.resolve(lease);
+  }
+
+  releaseSharedInterpretation(id: string): Promise<void> {
+    this.activeInterpretations.delete(id);
+    return Promise.resolve();
   }
 
   saveAttachmentInterpretation(

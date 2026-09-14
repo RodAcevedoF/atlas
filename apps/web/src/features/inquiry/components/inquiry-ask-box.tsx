@@ -1,4 +1,5 @@
 import { useAuth } from "@/features/auth/auth-provider.tsx";
+import { SavedDatasets } from "@/features/datasets/components/saved-datasets.tsx";
 import { CTA_PRIMARY, PANEL_GLASS } from "@/shared/ui";
 import type { InquiryProgressStage, InquiryRunStatus } from "@atlas/domain";
 import { Button, cn } from "@atlas/ui";
@@ -289,6 +290,12 @@ export function InquiryAskBox() {
           </button>
         </div>
       ) : null}
+
+      <SavedDatasets
+        key={user?.id}
+        onUse={intent.upload}
+        disabled={attachmentBusy || intent.id !== null || state.isAsking}
+      />
 
       <AttachmentThinkingState stage={intent.stage} />
 

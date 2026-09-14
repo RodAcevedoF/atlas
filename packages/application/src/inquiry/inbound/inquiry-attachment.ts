@@ -16,11 +16,16 @@ import {
 import type { OrchestrationPort } from "../../world/outbound/orchestration.ts";
 import type { InquiryAttachmentStorePort } from "../outbound/inquiry-attachment-store.ts";
 import type { TabularParserPort } from "../outbound/tabular-parser.ts";
+import { InquiryEmailVerificationRequiredError } from "./request-inquiry-run.ts";
 
 export const INQUIRY_ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024;
 export const INQUIRY_ATTACHMENT_DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 export const INQUIRY_ATTACHMENT_DAILY_INTERPRETATION_CAP = 10;
 export const INQUIRY_ATTACHMENT_DAILY_UPLOAD_CAP = 20;
+const SHARED_DAILY_INTERPRETATION_CAP = 100;
+const SHARED_INTERPRETATION_CONCURRENCY = 2;
+const INTERPRETATION_LEASE_MS = 150_000;
+const INTERPRETATION_RELEASE_GRACE_MS = 30_000;
 const GRAPH_NAME = "attachment-interpretation";
 const MAX_FILENAME_CHARS = 180;
 const MAX_ATTACHMENT_CONTEXT_CHARS = 1_200;
@@ -80,6 +85,7 @@ export interface UploadInquiryAttachment {
 }
 
 export interface InterpretInquiryAttachmentInput {
+  emailVerified: boolean;
   id: InquiryAttachmentId;
   ownerId: UserId;
   question: string;
@@ -262,6 +268,7 @@ export class InterpretInquiryAttachmentUseCase implements InterpretInquiryAttach
   ) {}
 
   async execute(input: InterpretInquiryAttachmentInput): Promise<AttachmentInterpretation> {
+    if (!input.emailVerified) throw new InquiryEmailVerificationRequiredError();
     const attachment = await this.attachments.findInquiryAttachmentById(input.id);
     if (!attachment || attachment.ownerId !== input.ownerId || attachment.runId !== null) {
       throw new InquiryAttachmentNotFoundError();
@@ -289,11 +296,24 @@ export class InterpretInquiryAttachmentUseCase implements InterpretInquiryAttach
       throw new InquiryAttachmentInterpretationCapError();
     }
 
+    const day = now.toISOString().slice(0, 10);
+    const shared = await this.attachments.reserveSharedInterpretation(
+      day,
+      SHARED_DAILY_INTERPRETATION_CAP,
+      SHARED_INTERPRETATION_CONCURRENCY,
+      INTERPRETATION_LEASE_MS,
+    );
+    if (!shared) throw new InquiryAttachmentInterpretationCapError();
+    const deadline = shared.expiresAt.getTime() - INTERPRETATION_RELEASE_GRACE_MS;
     const graphInput = await this.graphInput(attachment, question);
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) throw new Error("Attachment interpretation deadline elapsed");
     const body = await this.orchestration.run({
       graphName: GRAPH_NAME,
-      input: graphInput,
+      input: { ...graphInput, deadline },
+      signal: AbortSignal.timeout(remainingMs),
     });
+    await this.attachments.releaseSharedInterpretation(shared.id);
     const interpretation = interpretationFrom(body);
     await this.attachments.saveAttachmentInterpretation(attachment.id, interpretation);
     return interpretation;

@@ -32,10 +32,7 @@ export class GetInquiryBudgetUseCase implements GetInquiryBudget {
       return { used: 0, cap: null, remaining: null };
     }
 
-    const used = await this.store.countSucceededQuestionsForOwnerDay(
-      input.ownerId,
-      toDay(new Date()),
-    );
+    const used = await this.store.countReservedRunsForOwnerDay(input.ownerId, toDay(new Date()));
     return {
       used,
       cap: this.dailyCap,

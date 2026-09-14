@@ -32,7 +32,6 @@ export async function registerSecurity(app: FastifyInstance, redis: RedisClient)
     timeWindow: GLOBAL_WINDOW,
     redis,
     nameSpace: "atlas-rl:",
-    // redis is unreachable
-    skipOnError: true,
+    skipOnError: false,
   });
 }

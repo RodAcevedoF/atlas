@@ -1,6 +1,7 @@
 import { GuardedPasswordProvider } from "@atlas/application";
 import type { InquiryRunId } from "@atlas/domain";
 import { makeInquiryRunId } from "@atlas/domain";
+import { MongooseDatasetStore, connectDatasetDatabase } from "@atlas/infra/dataset-mongoose";
 import { PasswordIdentityProvider } from "@atlas/infra/identity-password";
 import {
   MongoInquiryAttachmentStore,
@@ -16,6 +17,7 @@ import { MongoProfileImageStore } from "@atlas/infra/profile-image-mongodb";
 import { DEFAULT_REDIS_URL, createWatchedRedisClient } from "@atlas/infra/redis-client";
 import { RedisSessionStore } from "@atlas/infra/session-redis";
 import { MongoInquiryRunStore, createMongoClient, ensureIndexes } from "@atlas/infra/store-mongodb";
+import { ExcelJsDatasetParser } from "@atlas/infra/tabular-parser";
 import { ExcelJsTabularParser } from "@atlas/infra/tabular-parser";
 import { MongoUserOwnedDataStore } from "@atlas/infra/user-owned-data-mongodb";
 import { MongoUserStore, ensureUserIndexes } from "@atlas/infra/user-store-mongodb";
@@ -25,6 +27,7 @@ import { type AdminDeps, makeAdminDependencies } from "../modules/admin/dependen
 import { type AuthDeps, makeAuthDependencies } from "../modules/auth/dependencies.ts";
 import { makeEmailPort } from "../modules/auth/email.ts";
 import { makeOAuthStrategies, readOAuthConfigs } from "../modules/auth/oauth.ts";
+import { type DatasetDeps, makeDatasetDependencies } from "../modules/datasets/dependencies.ts";
 import { type InquiryDeps, makeInquiryDependencies } from "../modules/inquiry/dependencies.ts";
 import { type ProfileDeps, makeProfileDependencies } from "../modules/profile/dependencies.ts";
 import { type UsersDeps, makeUsersDependencies } from "../modules/users/dependencies.ts";
@@ -32,6 +35,7 @@ import { type UsersDeps, makeUsersDependencies } from "../modules/users/dependen
 const DEFAULT_INQUIRY_DAILY_CAP = 5;
 
 export interface AppDeps {
+  datasets: DatasetDeps;
   auth: AuthDeps;
   profile: ProfileDeps;
   users: UsersDeps;
@@ -59,6 +63,10 @@ export async function bootstrap(logger: Logger): Promise<AppDeps> {
   const client = createMongoClient(uri);
   await client.connect();
   const db = client.db(dbName);
+  const datasetConnection = await connectDatasetDatabase(uri, dbName);
+  const datasetStore = new MongooseDatasetStore(datasetConnection);
+  await datasetStore.initialize();
+  const datasets = makeDatasetDependencies(datasetStore, new ExcelJsDatasetParser());
   await ensureIndexes(db);
   await ensureUserIndexes(db);
   await ensureInquiryAttachmentIndexes(db);
@@ -118,5 +126,5 @@ export async function bootstrap(logger: Logger): Promise<AppDeps> {
   });
   const admin = makeAdminDependencies({ userStore, inquiryStore });
 
-  return { auth, profile, users, inquiry, admin, redis };
+  return { auth, profile, users, inquiry, admin, redis, datasets };
 }
