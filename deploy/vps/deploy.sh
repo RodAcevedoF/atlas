@@ -12,7 +12,7 @@ test -f "$release_directory/compose.vps.yaml"
 exec 9>/opt/atlas/deploy.lock
 flock -n 9
 
-compose=(sudo -n docker compose --project-name atlas --env-file /opt/atlas/.env -f "$release_directory/compose.vps.yaml")
+compose=(sudo -n --preserve-env=ATLAS_IMAGE_TAG docker compose --project-name atlas --env-file /opt/atlas/.env -f "$release_directory/compose.vps.yaml")
 "${compose[@]}" config --quiet
 active_worker=$(sudo -n docker ps -q --filter label=com.docker.compose.project=atlas --filter label=com.docker.compose.service=worker)
 if [[ -n "$active_worker" ]]; then
