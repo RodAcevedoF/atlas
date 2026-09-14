@@ -1,57 +1,53 @@
-# Atlas
+# Atlas — mapped research
 
-AI-powered predictive analytics for prediction markets. Built on multi-sourced data and powered by LLMs.
+Atlas turns a research question into a map of sourced claims. It helps readers see where events are happening, inspect evidence for each place, and read an accompanying Intelligence summary without assembling that geographic context from separate search results.
 
-Three modules, one data layer:
+Research starts with Exa retrieval. The Python Intelligence service normalises claim locations and synthesises results; the browser progressively displays the map and analysis. Locations describe the claims themselves, rather than the publisher's headquarters.
 
-- **Market Intelligence** — on-demand AI deep-dive on any market or event: price history, key moves, narrative report, forecast checklist
-- **Edge Finder** — periodic AI scan across active markets, fair-value estimates vs market price, ranked opportunities
-- **Discrepancy Detector** — cross-market consistency analysis; flags when related markets imply inconsistent probabilities
+## Features
 
-Read-only. No trading, no wallet integration. Research tooling.
+- Interactive MapLibre map with place selection and linked source claims.
+- Research questions, run history, progress over server-sent events, and Intelligence summaries.
+- CSV, Excel and image attachments that can help formulate a research question.
+- Password signup and email verification, Google/GitHub login, profiles and avatars.
+- Role-based administration for user management and research analytics.
+
+External research requires configured providers and a running worker. The standard VPS deployment leaves the worker inactive; see [deployment](docs/deployment.md).
 
 ## Stack
 
-| Layer | Tech |
-|---|---|
-| Runtime | Bun |
-| API | Fastify |
-| Frontend | React + Rsbuild |
-| UI components | shadcn |
-| Monorepo | Nx |
-| Linter / formatter | Biome |
-| AI orchestration | LangGraph (4 graphs) |
-| LLM | Anthropic (Haiku + Sonnet) |
-| Data source | Polymarket (Gamma + CLOB APIs) |
-| Database | Postgres + pgvector |
-| ORM | Drizzle |
+| Area | Implementation |
+| --- | --- |
+| Web | React 19, TypeScript, Rsbuild, Tailwind, MapLibre |
+| API / worker | Bun, Fastify, application use cases and infrastructure adapters |
+| Intelligence | Python 3.12+, FastAPI, LangGraph, LangChain |
+| Retrieval / models | Exa; configurable OpenAI or Cerebras text models |
+| Persistence | MongoDB native driver, GridFS uploads |
+| Queue / sessions | Redis |
+| Tooling | Bun workspaces, Nx, Biome, uv, Ruff, mypy, pytest |
 
-Architecture: **ports & adapters** (hexagonal). `MarketDataPort` is provider-agnostic — Kalshi/Manifold can be added later without touching application logic. See [docs/03-architecture.md](./docs/03-architecture.md).
+## Local development
 
-## Quickstart (local dev)
+Install Bun (CI uses 1.2.20), Python 3.12 and uv. Provide MongoDB and Redis, then follow the [setup guide](docs/setup.md) to configure each application's environment before starting services.
 
 ```bash
-bun install
-bun nx run-many -t typecheck   # verify everything compiles
-
-# API (terminal 1)
-bun nx run @atlas/api:dev
-
-# Web (terminal 2)
-bun nx run @atlas/web:dev
-
-# Worker (terminal 3)
-bun nx run @atlas/worker:dev
+bun install --frozen-lockfile
 ```
 
-Web: http://localhost:3000 · API: http://localhost:3100 · Health: http://localhost:3100/health
+From `services/intelligence`:
 
-## Documentation
+```bash
+uv sync --frozen
+```
 
-See [docs/00-readme.md](./docs/00-readme.md) for the full documentation index.
+Web uses `http://localhost:3000`, API `http://localhost:3100`, and the supplied Intelligence environment example selects `http://localhost:8888`.
 
-## Current status
+## Guides
 
-**M0 (scaffold)** — workspace skeleton, all port interfaces, all adapter stubs, design docs. No live data yet.
-
-See [docs/07-roadmap.md](./docs/07-roadmap.md) for the milestone plan.
+- [Architecture and package boundaries](docs/architecture.md)
+- [Setup, environment and validation](docs/setup.md)
+- [Use cases, authentication and roles](docs/use-cases.md)
+- [AI execution, streaming and costs](docs/ai.md)
+- [CI and VPS deployment](docs/deployment.md)
+- [Data relationships and seeds](docs/data.md)
+- [Course requirements and proposed adaptations](docs/course.md)
