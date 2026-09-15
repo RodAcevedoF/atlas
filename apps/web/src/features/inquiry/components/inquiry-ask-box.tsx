@@ -1,6 +1,7 @@
 import { useAuth } from "@/features/auth/auth-provider.tsx";
 import { SavedDatasets } from "@/features/datasets/components/saved-datasets.tsx";
 import { CTA_PRIMARY, PANEL_GLASS } from "@/shared/ui";
+import { ACTION_CHIP } from "@/shared/ui/surface.ts";
 import type { InquiryProgressStage, InquiryRunStatus } from "@atlas/domain";
 import { Button, cn } from "@atlas/ui";
 import {
@@ -139,7 +140,10 @@ function PreferenceSeedButton({ onSeed }: { onSeed: () => void }) {
       variant={null}
       size={null}
       onClick={onSeed}
-      className="gap-1.75 rounded-full border border-border-strong bg-secondary px-2.5 py-1 text-[10.5px] font-medium text-muted-foreground hover:text-card-foreground"
+      className={cn(
+        ACTION_CHIP,
+        "border-context/35 bg-context/10 text-context hover:border-context/60 hover:bg-context/20",
+      )}
     >
       <Bookmark aria-hidden="true" className="h-3 w-3" />
       Use my preferences
@@ -295,7 +299,10 @@ export function InquiryAskBox() {
         key={user?.id}
         onUse={intent.upload}
         disabled={attachmentBusy || intent.id !== null || state.isAsking}
-      />
+      >
+        {offersSeed ? <PreferenceSeedButton onSeed={seedFromPreferences} /> : null}
+        {remaining !== null ? <DailySearchAllowance remaining={remaining} /> : null}
+      </SavedDatasets>
 
       <AttachmentThinkingState stage={intent.stage} />
 
@@ -340,13 +347,6 @@ export function InquiryAskBox() {
 
       {intent.error ? (
         <p className="px-3 pb-1 pt-2 text-[11.5px] text-destructive">{intent.error}</p>
-      ) : null}
-
-      {offersSeed || remaining !== null ? (
-        <div className="mx-3 mb-1 mt-2 flex flex-wrap items-center gap-2">
-          {offersSeed ? <PreferenceSeedButton onSeed={seedFromPreferences} /> : null}
-          {remaining !== null ? <DailySearchAllowance remaining={remaining} /> : null}
-        </div>
       ) : null}
 
       {message ? (

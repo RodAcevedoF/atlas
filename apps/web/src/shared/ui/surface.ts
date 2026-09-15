@@ -18,3 +18,6 @@ export function headerControlTone(isEngaged: boolean): string {
 
 export const HEADER_CONTROL_DISABLED =
   "disabled:border-border-strong disabled:bg-coverage/[0.04] disabled:text-muted-foreground/60 disabled:hover:border-border-strong disabled:hover:bg-coverage/[0.04]";
+
+export const ACTION_CHIP =
+  "gap-1.75 rounded-full border px-2.5 py-1 text-[10.5px] font-medium transition-colors";

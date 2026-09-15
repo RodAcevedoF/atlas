@@ -249,13 +249,13 @@ export { PROFILE_IMAGE_MEDIA_TYPES } from "./profile/outbound/profile-image-stor
 
 export type { DatasetStorePort } from "./datasets/outbound/dataset-store.ts";
 export type { DatasetParserPort } from "./datasets/outbound/dataset-parser.ts";
-export {
-  ImportDatasetUseCase,
-  ListDatasetsUseCase,
-  GetDatasetUseCase,
-  DeleteDatasetUseCase,
-  validateDatasetTable,
-  datasetCsv,
-  DATASET_MAX_BYTES,
-} from "./datasets/inbound/datasets.ts";
-export type { ImportDataset, ImportDatasetInput } from "./datasets/inbound/datasets.ts";
+export type { ImportDatasetInput } from "./datasets/inbound/dataset-input.ts";
+export { DeleteDatasetUseCase } from "./datasets/inbound/delete-dataset.ts";
+export { GetDatasetUseCase } from "./datasets/inbound/get-dataset.ts";
+export type { ImportDataset } from "./datasets/inbound/import-dataset.ts";
+export { ImportDatasetUseCase } from "./datasets/inbound/import-dataset.ts";
+export { ListDatasetsUseCase } from "./datasets/inbound/list-datasets.ts";
+export { PreviewDatasetUseCase } from "./datasets/inbound/preview-dataset.ts";
+export { DATASET_MAX_BYTES } from "./datasets/limits.ts";
+export { datasetCsv } from "./datasets/serialization/dataset-csv.ts";
+export { validateDatasetTable } from "./datasets/validation/dataset-table.ts";

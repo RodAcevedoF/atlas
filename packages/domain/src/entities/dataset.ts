@@ -25,3 +25,13 @@ export interface SavedDataset {
   dataset: Dataset;
   records: DatasetRecord[];
 }
+
+export interface DatasetSheet extends DatasetTable {
+  name: string;
+}
+
+export interface DatasetSheetPreview {
+  name: string;
+  rowCount: number;
+  columnCount: number;
+}

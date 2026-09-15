@@ -2,7 +2,7 @@
 
 [Architecture](architecture.md) · [Course adaptation](course.md)
 
-Atlas uses the native MongoDB driver for existing account/research storage and Mongoose for saved datasets. Dataset writes use transactions and require MongoDB replica-set support.
+Atlas uses the native MongoDB driver for existing account/research storage and Mongoose for saved datasets. Dataset writes use transactions and require MongoDB replica-set support. Importing multiple worksheets writes all selected datasets and their records in a single transaction.
 
 ## Relationships
 
@@ -34,7 +34,15 @@ These are logical references, not database-enforced foreign keys. The diagram us
 
 Attachment usage counters are stored separately. Redis holds sessions, verification tokens, login state and inquiry queue/notification data. Claims and places are embedded objects, not independent MongoDB collections.
 
-Source: [user adapter](../packages/infrastructure/src/user-store-mongodb/index.ts), [run documents](../packages/infrastructure/src/store-mongodb/collections.ts), [attachment adapter](../packages/infrastructure/src/inquiry-attachment-mongodb/index.ts), [profile images](../packages/infrastructure/src/profile-image-mongodb/index.ts).
+Source: [dataset models](../packages/infrastructure/src/dataset-mongoose/models.ts), [dataset adapter](../packages/infrastructure/src/dataset-mongoose/index.ts), [user adapter](../packages/infrastructure/src/user-store-mongodb/index.ts), [run documents](../packages/infrastructure/src/store-mongodb/collections.ts), [attachment adapter](../packages/infrastructure/src/inquiry-attachment-mongodb/index.ts), [profile images](../packages/infrastructure/src/profile-image-mongodb/index.ts).
+
+## Saved workbook imports
+
+A workbook preview returns sheet names and row/column counts without saving data. The user can import one worksheet or all. Each selected worksheet creates its own `datasets` entry and ordered `dataset_records`; different sheet columns stay separate. Dataset names include the worksheet name when the source workbook has multiple sheets.
+
+All selected tables are validated before the transaction starts. Imports are limited to 10 selected sheets, 1,000 total data rows, 50 columns per sheet, a 5 MB input file and 5 MB of combined exported CSV. CSV download, reuse and deletion operate on one saved dataset at a time. See the [dataset guide](../data/course/README.md#import-limits-and-data-handling) for validation details.
+
+Source: [dataset use cases](../packages/application/src/datasets/inbound/datasets.ts), [API routes](../apps/api/src/routes/datasets.ts).
 
 ## Existing admin seed
 

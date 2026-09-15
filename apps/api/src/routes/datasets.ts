@@ -1,8 +1,21 @@
 import { DATASET_MAX_BYTES, datasetCsv } from "@atlas/application";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { requireUser } from "../core/auth-hook.ts";
 import type { DatasetDeps } from "../modules/datasets/dependencies.ts";
 import { parseAttachmentFilename } from "../modules/inquiry/request.ts";
+
+function datasetInput(req: FastifyRequest) {
+  return {
+    ownerId: requireUser(req).id,
+    filename: parseAttachmentFilename(req.headers["x-atlas-filename"]),
+    mediaType: req.headers["content-type"]?.split(";", 1)[0] ?? "",
+    bytes: req.body instanceof Uint8Array ? req.body : new Uint8Array(),
+    worksheet:
+      req.headers["x-atlas-worksheet"] === undefined
+        ? undefined
+        : parseAttachmentFilename(req.headers["x-atlas-worksheet"]),
+  };
+}
 
 export async function registerDatasetRoutes(
   app: FastifyInstance,
@@ -12,14 +25,14 @@ export async function registerDatasetRoutes(
     "/datasets",
     { bodyLimit: DATASET_MAX_BYTES, config: { rateLimit: { max: 20, timeWindow: "1 hour" } } },
     async (req, reply) => {
-      const dataset = await deps.importDataset.execute({
-        ownerId: requireUser(req).id,
-        filename: parseAttachmentFilename(req.headers["x-atlas-filename"]),
-        mediaType: req.headers["content-type"]?.split(";", 1)[0] ?? "",
-        bytes: req.body instanceof Uint8Array ? req.body : new Uint8Array(),
-      });
+      const dataset = await deps.importDataset.execute(datasetInput(req));
       return reply.code(201).send(dataset);
     },
+  );
+  app.post(
+    "/datasets/preview",
+    { bodyLimit: DATASET_MAX_BYTES, config: { rateLimit: { max: 20, timeWindow: "1 hour" } } },
+    async (req, reply) => reply.send(await deps.previewDataset.execute(datasetInput(req))),
   );
   app.get("/datasets", async (req, reply) =>
     reply.send(await deps.listDatasets.execute(requireUser(req).id)),

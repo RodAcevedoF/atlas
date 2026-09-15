@@ -5,6 +5,7 @@ import {
   type TabularParserPort,
 } from "@atlas/application";
 import type {
+  DatasetSheet,
   DatasetTable,
   TableCell,
   TableColumnProfile,
@@ -242,26 +243,36 @@ function datasetText(value: RawCell): string {
 }
 
 export class ExcelJsDatasetParser implements DatasetParserPort {
-  async read(input: ParseTableInput): Promise<DatasetTable> {
-    const rawRows = await this.rows(input);
-    ensureComplexity(rawRows);
-    const columns = (rawRows[0] ?? []).map(datasetText);
-    const rows = rawRows.slice(1).map((row) => row.map(datasetText));
-    return { columns, rows };
-  }
-
-  private async rows(input: ParseTableInput): Promise<RawCell[][]> {
+  async read(input: ParseTableInput): Promise<DatasetSheet[]> {
     if (input.mediaType === XLSX_MEDIA_TYPE) {
       const workbook = await readWorkbook(input.bytes);
-      const worksheet = workbook.worksheets[0];
-      if (workbook.worksheets.length !== 1 || !worksheet)
-        throw new InvalidTableError("Saved datasets require exactly one worksheet");
-      return worksheetRows(worksheet);
+      return workbook.worksheets.map((worksheet) => {
+        const rawRows = worksheetRows(worksheet);
+        ensureComplexity(rawRows);
+        const values = rawRows.map((row) => row.map(datasetText));
+        const width = values.reduce(
+          (maximum, row) => Math.max(maximum, row.findLastIndex((cell) => cell !== "") + 1),
+          0,
+        );
+        const trimmed = values.map((row) => row.slice(0, width));
+        while (trimmed.length > 0 && trimmed[trimmed.length - 1]?.every((cell) => cell === "")) {
+          trimmed.pop();
+        }
+        return { name: worksheet.name, columns: trimmed[0] ?? [], rows: trimmed.slice(1) };
+      });
     }
     try {
-      return csvRows(
+      const rawRows = csvRows(
         new TextDecoder("utf-8", { fatal: true }).decode(input.bytes).replace(/^\uFEFF/, ""),
       );
+      ensureComplexity(rawRows);
+      return [
+        {
+          name: input.filename,
+          columns: (rawRows[0] ?? []).map(datasetText),
+          rows: rawRows.slice(1).map((row) => row.map(datasetText)),
+        },
+      ];
     } catch (cause) {
       if (cause instanceof InvalidTableError) throw cause;
       throw new InvalidTableError("CSV must use UTF-8 encoding");

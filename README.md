@@ -8,11 +8,25 @@ Research starts with Exa retrieval. The Python Intelligence service normalises c
 
 - Interactive MapLibre map with place selection and linked source claims.
 - Research questions, run history, progress over server-sent events, and Intelligence summaries.
+- Saved CSV/Excel datasets with worksheet selection, CSV downloads and reuse in research.
 - CSV, Excel and image attachments that can help formulate a research question.
 - Password signup and email verification, Google/GitHub login, profiles and avatars.
 - Role-based administration for user management and research analytics.
 
 External research requires configured providers and a running worker. The standard VPS deployment leaves the worker inactive; see [deployment](docs/deployment.md).
+
+## Saved datasets
+
+Open **Saved datasets** in the research question box and choose **Save a dataset**. For workbooks with multiple worksheets, choose one or all; each imported sheet becomes a separate dataset. Choose **Use** to attach a saved table, interpret its context and review the proposed research question.
+
+Imports support up to 10 worksheets, 1,000 total data rows, 50 columns per sheet and 5 MB. All imported rows are saved; research interpretation previews the first 20 rows of the selected dataset. See the [dataset guide](data/course/README.md) for the full flow, limits and sample workbook.
+
+## Planned improvements
+
+- **Polymarket retrieval:** use prediction-market information as additional research context.
+- **X.com retrieval:** use relevant posts and discussions as additional research context.
+
+These integrations are planned. Exa is the current research retrieval source.
 
 ## Stack
 
@@ -22,7 +36,7 @@ External research requires configured providers and a running worker. The standa
 | API / worker | Bun, Fastify, application use cases and infrastructure adapters |
 | Intelligence | Python 3.12+, FastAPI, LangGraph, LangChain |
 | Retrieval / models | Exa; configurable OpenAI or Cerebras text models |
-| Persistence | MongoDB native driver, GridFS uploads |
+| Persistence | MongoDB native driver, Mongoose dataset storage, GridFS uploads |
 | Queue / sessions | Redis |
 | Tooling | Bun workspaces, Nx, Biome, uv, Ruff, mypy, pytest |
 
@@ -50,4 +64,5 @@ Web uses `http://localhost:3000`, API `http://localhost:3100`, and the supplied 
 - [AI execution, streaming and costs](docs/ai.md)
 - [CI and VPS deployment](docs/deployment.md)
 - [Data relationships and seeds](docs/data.md)
-- [Course requirements and proposed adaptations](docs/course.md)
+- [Saved datasets, sample workbook and import workflow](data/course/README.md)
+- [Course requirements and remaining runtime work](docs/course.md)

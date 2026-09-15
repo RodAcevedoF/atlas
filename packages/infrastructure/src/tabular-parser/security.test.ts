@@ -56,7 +56,7 @@ test("attachment and dataset parsing share a concurrency cap and release capacit
   await expect(new ExcelJsTabularParser().parse(input)).rejects.toThrow("busy");
   await Promise.all([profile, dataset]);
 
-  expect((await new ExcelJsDatasetParser().read(input)).rows).toEqual([["a"]]);
+  expect((await new ExcelJsDatasetParser().read(input))[0]?.rows).toEqual([["a"]]);
 });
 
 test("ZIP expansion is rejected before ExcelJS loads individually bounded cells", async () => {

@@ -1,4 +1,4 @@
-import type { Dataset } from "@atlas/domain";
+import type { Dataset, DatasetSheetPreview } from "@atlas/domain";
 import { useEffect, useRef, useState } from "react";
 import { useDatasetRepository } from "../dataset-provider.tsx";
 
@@ -9,6 +9,10 @@ export function useDatasets(onUse: (file: File) => void) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [pending, setPending] = useState<{ file: File; sheets: DatasetSheetPreview[] } | null>(
+    null,
+  );
+  const [worksheet, setWorksheet] = useState("");
   const lifetime = useRef(0);
 
   useEffect(() => {
@@ -37,7 +41,23 @@ export function useDatasets(onUse: (file: File) => void) {
 
   async function save(file: File): Promise<void> {
     await perform(async () => {
+      setPending(null);
+      const sheets = await repository.preview(file);
+      if (sheets.length > 1) {
+        setWorksheet("");
+        setPending({ file, sheets });
+        return;
+      }
       await repository.save(file);
+      setDatasets(await repository.list());
+    });
+  }
+
+  async function confirmImport(): Promise<void> {
+    if (!pending) return;
+    await perform(async () => {
+      await repository.save(pending.file, worksheet === "" ? undefined : worksheet);
+      setPending(null);
       setDatasets(await repository.list());
     });
   }
@@ -59,5 +79,19 @@ export function useDatasets(onUse: (file: File) => void) {
     });
   }
 
-  return { datasets, open, busy, error, toggle, save, use, remove };
+  return {
+    datasets,
+    open,
+    busy,
+    error,
+    toggle,
+    save,
+    use,
+    remove,
+    pending,
+    worksheet,
+    setWorksheet,
+    confirmImport,
+    cancelImport: () => setPending(null),
+  };
 }

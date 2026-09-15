@@ -28,7 +28,7 @@ try {
       values: [city],
     })),
   };
-  await store.save(saved);
+  await store.saveMany([saved]);
   assert.deepEqual(await store.find(id, owner), saved);
   assert.equal(await store.find(id, other), null);
   assert.equal(
@@ -38,7 +38,9 @@ try {
   await store.delete(id, other);
   assert.deepEqual(await store.find(id, owner), saved);
   await assert.rejects(
-    store.save({ ...saved, records: saved.records.map((record) => ({ ...record, position: 0 })) }),
+    store.saveMany([
+      { ...saved, records: saved.records.map((record) => ({ ...record, position: 0 })) },
+    ]),
   );
   assert.deepEqual(await store.find(id, owner), saved);
   await store.delete(id, owner);

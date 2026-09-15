@@ -17,9 +17,14 @@ async function readTable(filename: string): Promise<DatasetTable> {
     ? "text/csv"
     : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
   if (!/\.(csv|xlsx)$/i.test(filename)) throw new Error("Choose a .csv or .xlsx input");
-  return validateDatasetTable(
-    await parser.read({ filename: basename(filename), mediaType, bytes: await readFile(filename) }),
-  );
+  const sheets = await parser.read({
+    filename: basename(filename),
+    mediaType,
+    bytes: await readFile(filename),
+  });
+  const sheet = sheets[0];
+  if (sheets.length !== 1 || !sheet) throw new Error("The course seed requires one worksheet");
+  return validateDatasetTable({ columns: sheet.columns, rows: sheet.rows });
 }
 
 async function generate(directory: string): Promise<void> {
@@ -107,9 +112,9 @@ async function seed(filename: string, reportPath: string): Promise<void> {
         values,
       })),
     };
-    await store.save(saved);
+    await store.saveMany([saved]);
     const first = await store.find(DATASET_ID, OWNER_ID);
-    await store.save(saved);
+    await store.saveMany([saved]);
     const second = await store.find(DATASET_ID, OWNER_ID);
     if (!isDeepStrictEqual(first, saved) || !isDeepStrictEqual(second, saved))
       throw new Error("Seed readback or repeatability failed");

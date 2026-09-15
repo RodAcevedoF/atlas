@@ -34,7 +34,7 @@ test("a saved dataset can be selected as a research attachment", async () => {
   );
   render(<ResearchInput repository={repository} />);
   fireEvent.click(screen.getByRole("button", { name: "Saved datasets" }));
-  await screen.findByText("projects.xlsx · 120 rows");
+  await screen.findByText("projects.xlsx");
   fireEvent.click(screen.getByRole("button", { name: "Use" }));
 
   await screen.findByText("Attached projects.csv");
@@ -45,7 +45,7 @@ test("deleting a dataset removes it from the saved list", async () => {
   const repository = new MemoryDatasetRepository([dataset], new Map());
   render(<ResearchInput repository={repository} />);
   fireEvent.click(screen.getByRole("button", { name: "Saved datasets" }));
-  await screen.findByText("projects.xlsx · 120 rows");
+  await screen.findByText("projects.xlsx");
   fireEvent.click(screen.getByRole("button", { name: "Delete projects.xlsx" }));
 
   await screen.findByText("No saved datasets yet.");
@@ -55,11 +55,62 @@ test("deleting a dataset removes it from the saved list", async () => {
 test("a failed download leaves the research input unchanged and explains the failure", async () => {
   render(<ResearchInput repository={new MemoryDatasetRepository([dataset], new Map())} />);
   fireEvent.click(screen.getByRole("button", { name: "Saved datasets" }));
-  await screen.findByText("projects.xlsx · 120 rows");
+  await screen.findByText("projects.xlsx");
   fireEvent.click(screen.getByRole("button", { name: "Use" }));
 
   await waitFor(() =>
     expect(screen.getByRole("alert").textContent).toBe("Dataset file is unavailable"),
   );
   expect(screen.getByText("No attachment")).toBeDefined();
+});
+
+for (const selection of ["", "Customers"]) {
+  test(`workbook upload waits for confirmation and imports ${selection || "all worksheets"}`, async () => {
+    const file = new File(["workbook"], "dealer.xlsx");
+    const sheets = [
+      { name: "Vehicles", columns: ["VIN"], rows: [["001"]] },
+      { name: "Customers", columns: ["Name"], rows: [["Ana"]] },
+    ];
+    const repository = new MemoryDatasetRepository([], new Map(), new Map([[file, sheets]]));
+    render(<ResearchInput repository={repository} />);
+    fireEvent.click(screen.getByRole("button", { name: "Saved datasets" }));
+    await screen.findByText("No saved datasets yet.");
+
+    fireEvent.change(screen.getByLabelText("Save a CSV or Excel dataset"), {
+      target: { files: [file] },
+    });
+    const picker = await screen.findByRole("combobox", { name: "Worksheets to import" });
+    expect(await repository.list()).toEqual([]);
+    fireEvent.change(picker, { target: { value: selection } });
+    fireEvent.click(screen.getByRole("button", { name: "Import worksheets" }));
+
+    await screen.findByText("Customers.xlsx");
+    expect((await repository.list()).map((entry) => entry.name)).toEqual(
+      selection ? ["Customers.xlsx"] : ["Vehicles.xlsx", "Customers.xlsx"],
+    );
+    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(screen.getByText("No attachment")).toBeDefined();
+  });
+}
+
+test("canceling worksheet selection saves nothing", async () => {
+  const file = new File(["workbook"], "dealer.xlsx");
+  const sheets = ["Vehicles", "Customers"].map((name) => ({
+    name,
+    columns: ["ID"],
+    rows: [["001"]],
+  }));
+  const repository = new MemoryDatasetRepository([], new Map(), new Map([[file, sheets]]));
+  render(<ResearchInput repository={repository} />);
+  fireEvent.click(screen.getByRole("button", { name: "Saved datasets" }));
+  await screen.findByText("No saved datasets yet.");
+  fireEvent.change(screen.getByLabelText("Save a CSV or Excel dataset"), {
+    target: { files: [file] },
+  });
+  await screen.findByRole("combobox");
+
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+  expect(screen.queryByRole("combobox")).toBeNull();
+  expect(await repository.list()).toEqual([]);
 });

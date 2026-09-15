@@ -50,3 +50,7 @@ Claims retain source URLs and titles; source documents and mapped claims are sto
 Retrieval reports cost and whether it was provider-reported; configurable Exa unit prices support estimates. Admin retrieval spend is not a complete bill for all model usage. Optional LangSmith tracing provides execution observability. No live pricing claim is implied by configured price defaults.
 
 Source: [claims graph](../services/intelligence/app/graphs/claims_lens.py), [worker execution](../packages/application/src/inquiry/inbound/execute-inquiry-run.ts).
+
+## Planned retrieval sources
+
+Polymarket information and relevant X.com posts and discussions are planned as additional research inputs. Exa remains the implemented research retrieval source.

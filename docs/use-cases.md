@@ -8,7 +8,13 @@ A signed-in reader submits a question and research window. The API creates an in
 
 Run history and detail routes support returning to research. Updates arrive over SSE. A queued run needs a worker to advance; lack of coverage and execution failure are separate outcomes.
 
-CSV and XLSX uploads can provide table context. JPEG, PNG and WebP uploads can provide image context. Attachment interpretation proposes a question before inquiry execution. Profile images are a separate upload flow. These paths exist in code; deployment acceptance still requires exercising them with suitable test files.
+CSV and XLSX uploads can provide table context. JPEG, PNG and WebP uploads can provide image context. Attachment interpretation proposes a question before inquiry execution. Profile images are a separate upload flow. Saved-dataset UI and flow acceptance was reported by the owner on 2026-09-15; deployment verification remains separate.
+
+## Save and reuse a dataset
+
+Open **Saved datasets** in the research question box. Choose **Save a dataset** to upload CSV or Excel. Workbooks with multiple sheets offer a choice of one sheet or all; confirm with **Import worksheets** to save each selected sheet as a separate dataset.
+
+Saved rows show the file name, row count and column count, with actions to **Use**, download CSV or delete. **Use** attaches one saved table for interpretation; saving or downloading does not trigger AI. Research interpretation previews the first 20 rows while all imported rows remain stored. The [dataset guide](../data/course/README.md#use-in-atlas) covers the complete flow and limits.
 
 ## Authentication and roles
 

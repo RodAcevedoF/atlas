@@ -1,3 +1,4 @@
+import { InquiryControls } from "./components/dashboard/inquiry-controls.tsx";
 import { TopBar } from "./components/dashboard/top-bar.tsx";
 import { MapCockpit } from "./components/world-map/map-cockpit.tsx";
 import { useWorldAwareness } from "./hooks/use-world-awareness.ts";
@@ -10,7 +11,19 @@ export function WorldAwarenessPage() {
       <TopBar runs={runs} shownRun={awareness.run} onSelectRun={selectRun} refresh={refresh} />
 
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <MapCockpit awareness={awareness} isLoading={isLoading} error={error} />
+        <MapCockpit
+          awareness={awareness}
+          isLoading={isLoading}
+          error={error}
+          controls={
+            <InquiryControls
+              runs={runs}
+              shownRun={awareness.run}
+              onSelectRun={selectRun}
+              refresh={refresh}
+            />
+          }
+        />
       </div>
     </main>
   );

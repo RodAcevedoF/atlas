@@ -3,8 +3,8 @@ import type { DatasetStorePort } from "../outbound/dataset-store.ts";
 
 export class MemoryDatasetStore implements DatasetStorePort {
   readonly saved = new Map<string, SavedDataset>();
-  async save(input: SavedDataset): Promise<void> {
-    this.saved.set(input.dataset.id, structuredClone(input));
+  async saveMany(input: SavedDataset[]): Promise<void> {
+    for (const entry of input) this.saved.set(entry.dataset.id, structuredClone(entry));
   }
   async list(ownerId: UserId, limit: number): Promise<Dataset[]> {
     return [...this.saved.values()]

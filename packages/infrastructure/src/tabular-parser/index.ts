@@ -5,7 +5,7 @@ import {
   type ParseTableInput,
   type TabularParserPort,
 } from "@atlas/application";
-import type { DatasetTable, TableProfile } from "@atlas/domain";
+import type { DatasetSheet, TableProfile } from "@atlas/domain";
 export { datasetWorkbook } from "./parser.ts";
 
 const MAX_ACTIVE_PARSERS = 2;
@@ -13,11 +13,11 @@ const PARSE_TIMEOUT_MS = 5_000;
 let activeParsers = 0;
 
 async function parseBounded(input: ParseTableInput, mode: "profile"): Promise<TableProfile>;
-async function parseBounded(input: ParseTableInput, mode: "dataset"): Promise<DatasetTable>;
+async function parseBounded(input: ParseTableInput, mode: "dataset"): Promise<DatasetSheet[]>;
 async function parseBounded(
   input: ParseTableInput,
   mode: "profile" | "dataset",
-): Promise<TableProfile | DatasetTable> {
+): Promise<TableProfile | DatasetSheet[]> {
   if (input.bytes.byteLength > 5 * 1024 * 1024)
     throw new InvalidTableError("Spreadsheet must be 5 MB or smaller");
   if (activeParsers >= MAX_ACTIVE_PARSERS)
@@ -27,14 +27,14 @@ async function parseBounded(
   try {
     worker = new Worker(new URL("./worker.ts", import.meta.url), { workerData: { input, mode } });
     const parser = worker;
-    return await new Promise<TableProfile | DatasetTable>((resolve, reject) => {
+    return await new Promise<TableProfile | DatasetSheet[]>((resolve, reject) => {
       const timer = setTimeout(
         () => reject(new InvalidTableError("Spreadsheet parsing timed out")),
         PARSE_TIMEOUT_MS,
       );
       parser.once(
         "message",
-        (message: { result?: TableProfile | DatasetTable; error?: string }) => {
+        (message: { result?: TableProfile | DatasetSheet[]; error?: string }) => {
           clearTimeout(timer);
           if (message.result) resolve(message.result);
           else reject(new InvalidTableError(message.error ?? "Spreadsheet could not be read"));
@@ -62,7 +62,7 @@ export class ExcelJsTabularParser implements TabularParserPort {
 }
 
 export class ExcelJsDatasetParser implements DatasetParserPort {
-  read(input: ParseTableInput): Promise<DatasetTable> {
+  read(input: ParseTableInput): Promise<DatasetSheet[]> {
     return parseBounded(input, "dataset");
   }
 }

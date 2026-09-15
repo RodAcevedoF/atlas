@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { AuthenticateUseCase, datasetCsv } from "@atlas/application";
 import {
   type Dataset,
+  type DatasetSheetPreview,
   type SavedDataset,
   emptyProfile,
   makeSessionToken,
@@ -13,6 +14,7 @@ import Fastify from "fastify";
 import { MemorySessions } from "../../../../packages/application/src/auth/testing/sessions.ts";
 import { MemoryDatasetStore } from "../../../../packages/application/src/datasets/testing/dataset-store.fake.ts";
 import { inMemoryUserStore } from "../../../../packages/application/src/testing/user-store.fake.ts";
+import { multiSheetWorkbook } from "../../../../packages/infrastructure/src/tabular-parser/testing/dataset-workbook.ts";
 import { registerAuthGate } from "../core/auth-hook.ts";
 import { registerErrorHandler } from "../core/error-handler.ts";
 import { makeDatasetDependencies } from "../modules/datasets/dependencies.ts";
@@ -46,7 +48,8 @@ for (const format of ["csv", "xlsx"]) {
         payload: bytes,
       });
       expect(response.statusCode).toBe(201);
-      const dataset = response.json<Dataset>();
+      const dataset = response.json<Dataset[]>()[0];
+      if (!dataset) throw new Error("Expected an imported dataset");
       const detail = await app.inject({
         method: "GET",
         url: `/datasets/${dataset.id}`,
@@ -103,3 +106,66 @@ test("invalid dataset content returns a client error without persisting data", a
     await app.close();
   }
 });
+
+for (const selection of [undefined, "Customers"]) {
+  test(`workbook preview and ${selection ?? "all worksheets"} import preserve each table`, async () => {
+    const app = await datasetTestApplication();
+    const sheets = [
+      { name: "Vehicles", columns: ["VIN", "Brand"], rows: [["001", "Seat"]] },
+      { name: "Customers", columns: ["ID", "Name"], rows: [["01", "Ana"]] },
+    ];
+    const payload = Buffer.from(await multiSheetWorkbook(sheets));
+    const headers = {
+      "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "x-atlas-filename": "dealer.xlsx",
+    };
+    try {
+      const preview = await app.inject({
+        method: "POST",
+        url: "/datasets/preview",
+        cookies: { atlas_session: "owner" },
+        headers,
+        payload,
+      });
+      expect(preview.statusCode).toBe(200);
+      expect(preview.json<DatasetSheetPreview[]>()).toEqual(
+        sheets.map((sheet) => ({ name: sheet.name, rowCount: 1, columnCount: 2 })),
+      );
+      expect(
+        (
+          await app.inject({ method: "GET", url: "/datasets", cookies: { atlas_session: "owner" } })
+        ).json<Dataset[]>(),
+      ).toEqual([]);
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/datasets",
+        cookies: { atlas_session: "owner" },
+        headers: {
+          ...headers,
+          ...(selection === undefined ? {} : { "x-atlas-worksheet": selection }),
+        },
+        payload,
+      });
+      expect(response.statusCode).toBe(201);
+      const datasets = response.json<Dataset[]>();
+      const selected =
+        selection === undefined ? sheets : sheets.filter((sheet) => sheet.name === selection);
+      expect(datasets.map((dataset) => dataset.name)).toEqual(
+        selected.map((sheet) => `dealer — ${sheet.name}.xlsx`),
+      );
+      for (const [index, dataset] of datasets.entries()) {
+        const sheet = selected[index];
+        if (!sheet) throw new Error("Expected a selected sheet");
+        const download = await app.inject({
+          method: "GET",
+          url: `/datasets/${dataset.id}/csv`,
+          cookies: { atlas_session: "owner" },
+        });
+        expect(download.body).toBe(datasetCsv(sheet));
+      }
+    } finally {
+      await app.close();
+    }
+  });
+}

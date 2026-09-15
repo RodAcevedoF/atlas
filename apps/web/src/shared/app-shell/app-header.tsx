@@ -12,6 +12,7 @@ const LIVE_CLASS = cn(
 interface AppHeaderProps {
   subtitle: string;
   actions?: ReactNode;
+  actionsClassName?: string;
   account?: ReactNode;
 }
 
@@ -30,7 +31,7 @@ function LivePulse() {
   );
 }
 
-export function AppHeader({ subtitle, actions, account }: AppHeaderProps) {
+export function AppHeader({ subtitle, actions, actionsClassName, account }: AppHeaderProps) {
   return (
     <header className="relative z-40 flex flex-none flex-wrap items-center gap-x-3 gap-y-3 border-b border-border px-4 py-3 sm:px-6 xl:h-17 xl:flex-nowrap xl:gap-6 xl:px-8.5 xl:py-0">
       <div className="mr-auto flex shrink-0 items-center gap-3 xl:mr-0 xl:w-40">
@@ -46,12 +47,17 @@ export function AppHeader({ subtitle, actions, account }: AppHeaderProps) {
       <div className="hidden xl:block">
         <LivePulse />
       </div>
-      <div className="order-3 flex w-full justify-center sm:order-none sm:w-auto">
+      <div className="order-3 flex w-full justify-center min-[590px]:order-none min-[590px]:w-auto max-[590px]:[&>nav]:w-full max-[590px]:[&>nav]:max-w-88 max-[590px]:[&>nav>a]:flex-1 max-[590px]:[&>nav>a]:text-center">
         <AppNavTabs />
       </div>
 
       {actions ? (
-        <div className="order-4 flex w-full min-w-0 flex-wrap items-center gap-2 xl:order-none xl:ml-auto xl:w-auto xl:flex-nowrap xl:gap-3">
+        <div
+          className={cn(
+            "order-4 flex w-full min-w-0 flex-wrap items-center gap-2 xl:order-none xl:ml-auto xl:w-auto xl:flex-nowrap xl:gap-3",
+            actionsClassName,
+          )}
+        >
           {actions}
         </div>
       ) : null}

@@ -81,8 +81,8 @@
   --map-orb-quietest: #2d4a9e;
   --map-orb-quiet: #2f7fd0;
   --map-orb-mid: #22b3c4;
-  --map-orb-loud: #4fe3c1;
-  --map-orb-loudest: #c2ffe8;
+  --map-orb-loud: var(--context);
+  --map-orb-loudest: var(--warning);
   --page-field: linear-gradient(
     172deg,
     var(--secondary) 0%,

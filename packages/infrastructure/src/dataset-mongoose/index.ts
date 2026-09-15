@@ -25,16 +25,21 @@ export class MongooseDatasetStore implements DatasetStorePort {
     await Promise.all([this.models.datasets.init(), this.models.records.init()]);
   }
 
-  async save(input: SavedDataset): Promise<void> {
-    const { id, ...fields } = input.dataset;
+  async saveMany(input: SavedDataset[]): Promise<void> {
     await this.connection.transaction(async (session) => {
-      await this.models.datasets.replaceOne(
-        { _id: id, ownerId: fields.ownerId },
-        { _id: id, ...fields },
-        { upsert: true, session, runValidators: true },
-      );
-      await this.models.records.deleteMany({ datasetId: id, ownerId: fields.ownerId }, { session });
-      await this.models.records.insertMany(input.records, { session });
+      for (const entry of input) {
+        const { id, ...fields } = entry.dataset;
+        await this.models.datasets.replaceOne(
+          { _id: id, ownerId: fields.ownerId },
+          { _id: id, ...fields },
+          { upsert: true, session, runValidators: true },
+        );
+        await this.models.records.deleteMany(
+          { datasetId: id, ownerId: fields.ownerId },
+          { session },
+        );
+        await this.models.records.insertMany(entry.records, { session });
+      }
     });
   }
 
