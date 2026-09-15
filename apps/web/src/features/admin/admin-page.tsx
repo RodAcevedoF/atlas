@@ -2,7 +2,7 @@ import { useAuth } from "@/features/auth/auth-provider.tsx";
 import { AccountMenu } from "@/features/auth/components/account-menu.tsx";
 import { AppHeader } from "@/shared/app-shell";
 import { AsyncState, PANEL } from "@/shared/ui";
-import { Card, cn } from "@atlas/ui";
+import { Card, cn, useToast } from "@atlas/ui";
 import { useCallback } from "react";
 import { AnalyticsPanel } from "./components/analytics-panel.tsx";
 import { UserDirectory } from "./components/user-directory.tsx";
@@ -12,12 +12,17 @@ import { useAdminUsers } from "./hooks/use-admin-users.ts";
 const LOADING = "Loading analytics…";
 
 export function AdminPage() {
-  const { user } = useAuth();
+  const { user, retry } = useAuth();
+  const { toast } = useToast();
   const { analytics, isLoading, error, refresh } = useAdminAnalytics();
   const usersChanged = useCallback(() => {
     void refresh();
   }, [refresh]);
-  const directory = useAdminUsers(usersChanged);
+  const ownPasswordReset = useCallback(() => {
+    toast("Password changed. Sign in with your new password.", "success");
+    void retry();
+  }, [retry, toast]);
+  const directory = useAdminUsers(usersChanged, user?.id, ownPasswordReset);
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden">

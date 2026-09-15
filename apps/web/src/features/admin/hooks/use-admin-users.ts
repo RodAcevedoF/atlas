@@ -29,7 +29,11 @@ function errorMessage(cause: unknown): string {
   return cause instanceof Error ? cause.message : "Could not load users";
 }
 
-export function useAdminUsers(onChanged: () => void): UseAdminUsersResult {
+export function useAdminUsers(
+  onChanged: () => void,
+  currentUserId: string | undefined,
+  onOwnPasswordReset: () => void,
+): UseAdminUsersResult {
   const repository = useAdminRepository();
   const actions = useMemo(
     () => ({
@@ -92,10 +96,15 @@ export function useAdminUsers(onChanged: () => void): UseAdminUsersResult {
   }, [actions, isLoading, nextCursor]);
 
   const mutate = useCallback(
-    async (operation: () => Promise<void>) => {
+    async (operation: () => Promise<void>, onSaved?: () => void) => {
       setIsSaving(true);
       try {
         await operation();
+        if (onSaved) {
+          setError(null);
+          onSaved();
+          return;
+        }
         await loadFirstPage();
         setError(null);
         onChanged();
@@ -118,8 +127,12 @@ export function useAdminUsers(onChanged: () => void): UseAdminUsersResult {
     [actions, mutate],
   );
   const resetPassword = useCallback(
-    (id: string, password: string) => mutate(() => actions.resetPassword(id, password)),
-    [actions, mutate],
+    (id: string, password: string) =>
+      mutate(
+        () => actions.resetPassword(id, password),
+        id === currentUserId ? onOwnPasswordReset : undefined,
+      ),
+    [actions, currentUserId, mutate, onOwnPasswordReset],
   );
   const updateRole = useCallback(
     (id: string, role: GrantableRole) => mutate(() => actions.updateRole(id, role)),

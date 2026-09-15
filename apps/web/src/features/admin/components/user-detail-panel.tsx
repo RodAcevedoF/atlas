@@ -40,6 +40,7 @@ export function UserDetailPanel({
   const { toast } = useToast();
   const [email, setEmail] = useState(user.email);
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<GrantableRole>(user.role === "admin" ? "admin" : "user");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const protectedAccount = user.role === "super_admin";
@@ -47,6 +48,7 @@ export function UserDetailPanel({
   useEffect(() => {
     setEmail(user.email);
     setPassword("");
+    setConfirmPassword("");
     setRole(user.role === "admin" ? "admin" : "user");
     setConfirmDelete(false);
   }, [user]);
@@ -63,10 +65,15 @@ export function UserDetailPanel({
 
   const savePassword = async (event: FormEvent) => {
     event.preventDefault();
+    if (password !== confirmPassword) {
+      toast("Passwords do not match.", "error");
+      return;
+    }
     try {
       await onResetPassword(user.id, password);
       setPassword("");
-      toast("Password set.", "success");
+      setConfirmPassword("");
+      if (user.id !== currentUserId) toast("Password set.", "success");
     } catch (cause) {
       toast(cause instanceof Error ? cause.message : "Could not set password", "error");
     }
@@ -193,6 +200,11 @@ export function UserDetailPanel({
           </div>
 
           <form onSubmit={(event) => void savePassword(event)} className="grid gap-2">
+            {user.id === currentUserId ? (
+              <p className="text-xs text-muted-foreground">
+                Changing your password signs you out. Sign in again with your new password.
+              </p>
+            ) : null}
             <label
               className="text-xs font-medium text-muted-foreground"
               htmlFor="admin-user-password"
@@ -212,11 +224,38 @@ export function UserDetailPanel({
                 className={ADMIN_FIELD}
                 placeholder="At least 8 characters"
               />
-              <Button type="submit" variant="outline" disabled={isSaving || password.length < 8}>
+              <Button
+                type="submit"
+                variant="outline"
+                disabled={isSaving || password.length < 8 || password !== confirmPassword}
+              >
                 <KeyRound className="h-3.5 w-3.5" />
                 Set
               </Button>
             </div>
+            <label
+              className="text-xs font-medium text-muted-foreground"
+              htmlFor="admin-user-confirm-password"
+            >
+              Confirm password
+            </label>
+            <input
+              id="admin-user-confirm-password"
+              type="password"
+              required
+              minLength={8}
+              maxLength={200}
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              className={ADMIN_FIELD}
+              placeholder="Re-enter the new password"
+            />
+            {confirmPassword && password !== confirmPassword ? (
+              <p role="alert" className="text-xs text-destructive">
+                Passwords do not match.
+              </p>
+            ) : null}
           </form>
         </div>
       )}
